@@ -1,3 +1,12 @@
 add_library(klib
         common.h
-        log.cpp log.h)
+        logging.h
+        HashUtil.cpp HashUtil.h)
+
+target_link_libraries(klib
+        PRIVATE
+        Boost::headers
+        PUBLIC
+        fmt::fmt glog::glog)
+
+target_include_directories(klib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../)

@@ -5,6 +5,8 @@ target_compile_options(smhash
         PRIVATE
         -Wno-implicit-fallthrough)
 
+target_include_directories(smhash PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../)
+
 #project(SMHasher)
 #
 #cmake_minimum_required(VERSION 2.4)
