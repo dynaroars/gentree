@@ -11,6 +11,10 @@
 
 #include "logging.h"
 
+namespace z3 {
+class expr;
+}
+
 namespace igen {
 
 namespace bc = boost::container;
@@ -25,6 +29,8 @@ using intrusive_ref_base_st = boost::intrusive_ref_counter<T, boost::thread_unsa
 template<class T>
 using intrusive_ref_base_mt = boost::intrusive_ref_counter<T, boost::thread_safe_counter>;
 template<class T> using ptr = boost::intrusive_ptr<T>;
+
+using expr = z3::expr;
 
 }
 

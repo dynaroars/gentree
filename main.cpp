@@ -14,6 +14,8 @@
 
 #include <glog/raw_logging.h>
 
+#include <igen/AlgoDriver.h>
+
 namespace po = boost::program_options;
 
 void init_glog(int argc, char **argv) {
@@ -92,13 +94,7 @@ int prog(int argc, char *argv[]) {
         }
     BOOST_SCOPE_EXIT_END
 
-    if (vm.count("iterative")) {
-        return 0;
-    }
-
-    if (vm.count("C50")) {
-        return 0;
-    }
+    if (vm.count("c50")) return igen::run_interative_algorithm(vm);
 
     return 0;
 }

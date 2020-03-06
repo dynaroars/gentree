@@ -1,5 +1,5 @@
 add_library(igen4_lib
-        Context.cpp Context.h Config.cpp Config.h Domain.cpp Domain.h Z3Scope.h)
+        Context.cpp Context.h Config.cpp Config.h Domain.cpp Domain.h Z3Scope.h AlgoDriver.cpp AlgoDriver.h)
 
 target_link_libraries(igen4_lib
         PRIVATE

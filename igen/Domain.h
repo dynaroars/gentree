@@ -15,20 +15,26 @@ struct VarEntry : Object {
 private:
     friend class Domain;
 
-    int var_idx_{};
+    int id_;
     str name_;
     vec<std::string> labels_;
+
+private:
+    expr zvar;
+    vec<expr> zvar_eq_val;
 
 public:
     explicit VarEntry(PContext ctx);
 
-    int n_range() const { return (int) labels_.size(); }
+    int n_vars() const { return (int) labels_.size(); }
 
-    int id() const { return var_idx_; }
+    int id() const { return id_; }
 
     const str &name() const { return name_; };
 
     const vec<str> &labels() const { return labels_; };
+
+    expr eq(int val) const;
 };
 
 using PVarEntry = ptr<VarEntry>;
@@ -39,9 +45,16 @@ class Domain : public Object {
 public:
     explicit Domain(PContext ctx);
 
+    std::istream &parse(std::istream &input);
+
+    int n_all_values() const { return n_all_values_; }
+
 private:
     vec<PVarEntry> vars;
+    int n_all_values_;
 };
+
+std::istream &operator>>(std::istream &input, Domain &d);
 
 using PDomain = ptr<Domain>;
 

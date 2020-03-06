@@ -3,6 +3,9 @@
 //
 
 #include "Context.h"
+#include "Domain.h"
+
+#include <fstream>
 
 namespace igen {
 
@@ -17,7 +20,23 @@ boost::any Context::get_option(const str &key) const {
     return it->second;
 }
 
-Context::Context() : z3solver(z3ctx), z3true(z3ctx.bool_val(true)), z3false(z3ctx.bool_val(false)) {
+Context::Context() :
+        z3solver(z3ctx), z3true(z3ctx.bool_val(true)), z3false(z3ctx.bool_val(false)) {
 }
 
+void Context::init() {
+    dom = new Domain(this);
+
+    str stem = get_option_as<str>("filestem");
+    str dom_path = stem + ".dom";
+    std::ifstream ifs_dom(dom_path);
+    FCHECK(ifs_dom, "Bad dom input file: {}", dom_path);
+    ifs_dom >> (*dom);
+}
+
+void Context::cleanup() {
+    dom = nullptr;
+}
+
+ptr<const Domain> Object::dom() const { return ctx->dom; }
 }

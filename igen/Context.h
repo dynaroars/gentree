@@ -26,16 +26,24 @@ public:
 
     boost::any get_option(const str &key) const;
 
+    template<class T>
+    T get_option_as(const str &key) const { return boost::any_cast<T>(get_option(key)); }
+
+    void init();
+
+    void cleanup();
+
 private:
     friend class Object;
 
     map<str, boost::any> options;
-    ptr<Domain> dom;
 
     z3::context z3ctx;
     z3::solver z3solver;
     z3::expr z3true;
     z3::expr z3false;
+
+    ptr<Domain> dom;
 };
 
 using PContext = ptr<Context>;
@@ -54,7 +62,7 @@ public:
 
     const z3::expr &zfalse() const { return ctx->z3false; }
 
-    ptr<const Domain> dom() const { return ctx->dom; }
+    ptr<const Domain> dom() const;
 
 protected:
     explicit Object(PContext ctx) : ctx(move(ctx)) {};
