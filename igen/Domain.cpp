@@ -6,9 +6,9 @@
 
 namespace igen {
 
-VarEntry::VarEntry(PMutContext ctx) : Object(move(ctx)), zvar(zctx()) {}
+VarDomain::VarDomain(PMutContext ctx) : Object(move(ctx)), zvar(zctx()) {}
 
-expr VarEntry::eq(int val) const { return zvar_eq_val.at(val); }
+expr VarDomain::eq(int val) const { return zvar_eq_val.at(val); }
 
 //===================================================================================
 
@@ -45,7 +45,7 @@ std::istream &Domain::parse(std::istream &input) {
         z3::expr zvar = zctx().int_const(name.c_str());
         zsolver().add(0 <= zvar && zvar < n_vals);
 
-        PMutVarEntry entry = new VarEntry(ctx_);
+        PMutVarDomain entry = new VarDomain(ctx_);
         vars.emplace_back(entry);
         cvars.emplace_back(entry);
 
@@ -72,7 +72,7 @@ std::istream &operator>>(std::istream &input, Domain &d) {
 std::ostream &operator<<(std::ostream &output, const Domain &d) {
     fmt::print(output, "Domain[{}]: ", d.n_vars());
     bool first_var = true;
-    for (const PVarEntry &e : d) {
+    for (const PVarDomain &e : d) {
         if (!first_var) output << "; "; else first_var = false;
 
         fmt::print(output, "({}) {} = ", e->n_values(), e->name());

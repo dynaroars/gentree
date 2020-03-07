@@ -16,7 +16,7 @@ ProgramRunner::ProgramRunner(PMutContext _ctx) : Object(move(_ctx)), type(Runner
     }
 }
 
-set<str> ProgramRunner::run(PConfig config) const {
+set<str> ProgramRunner::run(const PConfig &config) const {
     set<str> locations;
 
     return locations;

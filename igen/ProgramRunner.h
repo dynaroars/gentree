@@ -19,7 +19,7 @@ class ProgramRunner : public Object {
 public:
     explicit ProgramRunner(PMutContext ctx);
 
-    set<str> run(PConfig config) const;
+    set<str> run(const PConfig &config) const;
 
 private:
     RunnerType type;

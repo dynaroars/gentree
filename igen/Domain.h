@@ -6,12 +6,11 @@
 #define IGEN4_DOMAIN_H
 
 #include "Context.h"
-#include "Config.h"
 #include <z3++.h>
 
 namespace igen {
 
-class VarEntry : public Object {
+class VarDomain : public Object {
 private:
     friend class Domain;
 
@@ -24,7 +23,7 @@ private:
     vec<expr> zvar_eq_val;
 
 public:
-    explicit VarEntry(PMutContext ctx);
+    explicit VarDomain(PMutContext ctx);
 
     int n_values() const { return (int) labels_.size(); }
 
@@ -37,8 +36,8 @@ public:
     expr eq(int val) const;
 };
 
-using PVarEntry = ptr<const VarEntry>;
-using PMutVarEntry = ptr<VarEntry>;
+using PVarDomain = ptr<const VarDomain>;
+using PMutVarDomain = ptr<VarDomain>;
 
 //===================================================================================
 
@@ -52,30 +51,38 @@ public:
 
     int n_vars() const { return int(vars.size()); }
 
+    int n_values(int var_id) const { return cvars.at(var_id)->n_values(); }
+
+    const str &name(int var_id) const { return cvars.at(var_id)->name(); }
+
+    const vec<str> &labels(int var_id) const { return cvars.at(var_id)->labels(); }
+
+    const str &label(int var_id, int value) const { return labels(var_id).at(value); }
+
 private:
-    vec<PMutVarEntry> vars;
-    vec<PVarEntry> cvars;
+    vec<PMutVarDomain> vars;
+    vec<PVarDomain> cvars;
     int n_all_values_ = 0;
 
     friend std::ostream &operator<<(std::ostream &output, const Domain &d);
 
 public:
-    vec<PMutVarEntry>::const_iterator begin() { return vars.begin(); }
+    vec<PMutVarDomain>::const_iterator begin() { return vars.begin(); }
 
-    vec<PMutVarEntry>::const_iterator end() { return vars.end(); }
+    vec<PMutVarDomain>::const_iterator end() { return vars.end(); }
 
-    vec<PVarEntry>::const_iterator begin() const { return cbegin(); }
+    vec<PVarDomain>::const_iterator begin() const { return cbegin(); }
 
-    vec<PVarEntry>::const_iterator end() const { return cend(); }
+    vec<PVarDomain>::const_iterator end() const { return cend(); }
 
-    vec<PVarEntry>::const_iterator cbegin() const { return cvars.begin(); }
+    vec<PVarDomain>::const_iterator cbegin() const { return cvars.begin(); }
 
-    vec<PVarEntry>::const_iterator cend() const { return cvars.end(); }
+    vec<PVarDomain>::const_iterator cend() const { return cvars.end(); }
 
 
-    PVarEntry operator[](size_t idx) const { return vars.at(idx); }
+    PVarDomain operator[](size_t idx) const { return vars.at(idx); }
 
-    const PMutVarEntry &operator[](size_t idx) { return vars.at(idx); }
+    const PMutVarDomain &operator[](size_t idx) { return vars.at(idx); }
 };
 
 std::istream &operator>>(std::istream &input, Domain &d);
