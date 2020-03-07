@@ -14,6 +14,10 @@ void Context::set_option(const str &key, boost::any val) {
     options[key] = val;
 }
 
+bool Context::has_option(const str &key) const {
+    return options.contains(key);
+}
+
 boost::any Context::get_option(const str &key) const {
     auto it = options.find(key);
     CHECK(it != options.end());

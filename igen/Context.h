@@ -24,6 +24,8 @@ public:
 
     void set_option(const str &key, boost::any val);
 
+    bool has_option(const str &key) const;
+
     boost::any get_option(const str &key) const;
 
     template<class T>

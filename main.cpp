@@ -32,9 +32,11 @@ int prog(int argc, char *argv[]) {
     using str = std::string;
     po::options_description desc("Dynamic Interaction Inference for Configurable Software");
     desc.add_options()
-            ("seed,s", po::value<uint64_t>(), "Random seed")
-            ("runner,r", po::value<str>(), "Executor: s/simple")
             ("filestem,F", po::value<str>(), "Filestem")
+            ("target,t", po::value<str>(), "Target")
+            ("runner,r", po::value<str>(), "Select program runner: s/simple")
+            ("simple-runner,S", "Simple runner")
+            ("seed,s", po::value<uint64_t>(), "Random seed")
 
             ("conjdisj,A", "Run the conj/disj algorithm")
             ("c50,C", "Run the ML algorithm")

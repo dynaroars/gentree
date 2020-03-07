@@ -4,7 +4,7 @@ add_library(libigen4
         Domain.cpp Domain.h
         Z3Scope.h
         AlgoDriver.cpp AlgoDriver.h
-        c50/CTree.cpp c50/CTree.h)
+        c50/CTree.cpp c50/CTree.h ProgramRunner.cpp ProgramRunner.h)
 
 target_link_libraries(libigen4
         PRIVATE
