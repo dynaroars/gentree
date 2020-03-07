@@ -35,7 +35,7 @@ int prog(int argc, char *argv[]) {
             ("seed,s", po::value<uint64_t>(), "Random seed")
             ("runner,r", po::value<str>(), "Executor: s/simple")
             ("filestem,F", po::value<str>(), "Filestem")
-            
+
             ("conjdisj,A", "Run the conj/disj algorithm")
             ("c50,C", "Run the ML algorithm")
 
@@ -90,7 +90,7 @@ int prog(int argc, char *argv[]) {
 
     boost::timer::cpu_timer timer;
     BOOST_SCOPE_EXIT(&timer) {
-            LOG(INFO) << timer.format(1);
+            LOG(INFO, "{}", timer.format(1));
         }
     BOOST_SCOPE_EXIT_END
 
@@ -105,9 +105,9 @@ int main(int argc, char *argv[]) {
     try {
         return prog(argc, argv);
     } catch (z3::exception &ex) {
-        LOG(ERROR) << "z3 exception: " << ex;
+        LOG(ERROR, "z3 exception: {}", ex);
     } catch (std::exception &ex) {
-        LOG(ERROR) << ex.what();
+        LOG(ERROR, "exception: {}", ex.what());
     }
     return 0;
 }

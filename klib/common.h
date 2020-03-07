@@ -26,8 +26,6 @@ template<class T> using set = bc::flat_set<T>;
 
 template<class T>
 using intrusive_ref_base_st = boost::intrusive_ref_counter<T, boost::thread_unsafe_counter>;
-template<class T>
-using intrusive_ref_base_mt = boost::intrusive_ref_counter<T, boost::thread_safe_counter>;
 template<class T> using ptr = boost::intrusive_ptr<T>;
 
 using expr = z3::expr;

@@ -30,7 +30,7 @@ void Context::init() {
     str stem = get_option_as<str>("filestem");
     str dom_path = stem + ".dom";
     std::ifstream ifs_dom(dom_path);
-    FCHECK(ifs_dom, "Bad dom input file: {}", dom_path);
+    CHECKF(ifs_dom, "Bad dom input file: {}", dom_path);
     ifs_dom >> (*dom());
 }
 
