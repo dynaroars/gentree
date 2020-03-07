@@ -13,7 +13,7 @@ namespace igen {
 int run_interative_algorithm(const boost::program_options::variables_map &vm) {
     PMutContext ctx = new Context();
     for (const auto &kv : vm) {
-        ctx->set_option(kv.first, kv.second);
+        ctx->set_option(kv.first, kv.second.value());
     }
     ctx->init();
     LOG(INFO, "{}", *ctx->dom());

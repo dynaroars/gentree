@@ -22,6 +22,8 @@ public:
 
     vec<int> &values() { return values_; }
 
+    vec<str> value_labels() const;
+
 private:
     int id_;
     vec<int> values_;

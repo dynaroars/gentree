@@ -23,6 +23,9 @@ public:
 
 private:
     RunnerType type;
+    str target;
+
+    set<str> _run_simple(const PConfig &config) const;
 };
 
 using PProgramRunner = ptr<const ProgramRunner>;

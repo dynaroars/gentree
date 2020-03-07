@@ -13,6 +13,15 @@ Config::Config(PMutContext ctx, int id)
 
 }
 
+vec<str> Config::value_labels() const {
+    vec<str> labels(size_t(dom()->n_vars()));
+    CHECK_EQ(labels.size(), values_.size());
+    for (int i = 0; i < int(labels.size()); ++i) {
+        labels[i] = dom()->label(i, values_[i]);
+    }
+    return labels;
+}
+
 
 std::ostream &operator<<(std::ostream &output, const Config &d) {
     output << "Config " << d.id() << ": ";
