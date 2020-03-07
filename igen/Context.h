@@ -101,6 +101,8 @@ public:
 
     virtual ~Object() = default;
 
+    virtual void cleanup() {};
+
 protected:
     explicit Object(PMutContext ctx) : ctx_(move(ctx)) {};
 

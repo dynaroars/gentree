@@ -44,6 +44,8 @@ public:
 
     void link(const PMutConfig &config, const PMutLocation &loc);
 
+    void cleanup() override;
+
 private:
     vec<PMutLocation> locs_;
     vec<PLocation> clocs_;

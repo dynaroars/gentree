@@ -40,9 +40,9 @@ void Context::init() {
 }
 
 void Context::cleanup() {
-    coverage_store_ = nullptr;
-    program_runner_ = nullptr;
-    dom_ = nullptr;
+    coverage_store_->cleanup(), coverage_store_ = nullptr;
+    program_runner_->cleanup(), program_runner_ = nullptr;
+    dom_->cleanup(), dom_ = nullptr;
 }
 
 

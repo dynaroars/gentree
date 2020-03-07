@@ -77,6 +77,11 @@ std::istream &Domain::parse(std::istream &input) {
     return input;
 }
 
+void Domain::cleanup() {
+    vars.clear();
+    cvars.clear();
+}
+
 
 std::istream &operator>>(std::istream &input, Domain &d) {
     return d.parse(input);

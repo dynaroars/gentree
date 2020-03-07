@@ -63,8 +63,11 @@ public:
         return value == -1 ? STR_VALUE_ANY : labels(var_id).at(size_t(value));
     }
 
+     void cleanup() override;
+
 public:
     vec<ptr<Config>> gen_all_configs() const;
+
     vec<ptr<Config>> gen_all_configs(ptr<const Config> templ) const;
 
 private:
