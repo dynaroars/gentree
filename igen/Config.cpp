@@ -47,7 +47,7 @@ void Config::set_all(const vec<int> &values) {
 std::ostream &operator<<(std::ostream &output, const Config &d) {
     output << "Config " << d.id() << ": ";
     bool first_var = true;
-    for (auto &e : d) {
+    for (const auto &e : d) {
         if (!first_var) output << ", "; else first_var = false;
         output << e.name() << ' ' << e.label();
     }

@@ -75,7 +75,7 @@ std::istream &operator>>(std::istream &input, Domain &d) {
 std::ostream &operator<<(std::ostream &output, const Domain &d) {
     fmt::print(output, "Domain[{}]: ", d.n_vars());
     bool first_var = true;
-    for (const PVarDomain &e : d) {
+    for (const auto &e : d) {
         if (!first_var) output << "; "; else first_var = false;
 
         fmt::print(output, "({}) {} = ", e->n_values(), e->name());

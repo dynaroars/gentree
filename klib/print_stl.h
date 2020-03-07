@@ -12,6 +12,26 @@
 #include <algorithm>
 
 #include <boost/container/container_fwd.hpp>
+#include <boost/intrusive_ptr.hpp>
+
+namespace klib::detail {
+template<typename T>
+struct is_intrusive_ptr : std::false_type {
+};
+template<typename T>
+struct is_intrusive_ptr<boost::intrusive_ptr<T>> : std::true_type {
+};
+template<typename T>
+struct is_intrusive_ptr<const boost::intrusive_ptr<T>> : std::true_type {
+};
+
+template<typename T, typename TChar, typename TCharTraits>
+std::basic_ostream<TChar, TCharTraits> &
+print_intrusive_ptr(std::basic_ostream<TChar, TCharTraits> &stream, const boost::intrusive_ptr<T> &value) {
+    if (value == nullptr) return stream << "nullptr";
+    else return stream << (*value);
+}
+}
 
 // This works similar to ostream_iterator, but doesn't print a delimiter after the final item
 template<typename T, typename TChar = char, typename TCharTraits = std::char_traits<TChar> >
@@ -33,7 +53,7 @@ public:
             else
                 _insertDelim = true;
         }
-        (*_stream) << value;
+        print(value);
         return *this;
     }
 
@@ -50,6 +70,18 @@ public:
     }
 
 private:
+    template<class Q = T>
+    typename std::enable_if<klib::detail::is_intrusive_ptr<Q>::value, void>::type
+    print(const T &value) {
+        klib::detail::print_intrusive_ptr(*_stream, value);
+    }
+
+    template<class Q = T>
+    typename std::enable_if<!klib::detail::is_intrusive_ptr<Q>::value, void>::type
+    print(const T &value) {
+        (*_stream) << value;
+    }
+
     ostream_type *_stream;
     const char_type *_delim;
     bool _insertDelim;
