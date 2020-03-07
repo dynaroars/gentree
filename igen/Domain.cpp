@@ -44,7 +44,11 @@ std::istream &Domain::parse(std::istream &input) {
         //===
         z3::expr zvar = zctx().int_const(name.c_str());
         zsolver().add(0 <= zvar && zvar < n_vals);
-        auto entry = vars.emplace_back(new VarEntry(ctx_));
+
+        PMutVarEntry entry = new VarEntry(ctx_);
+        vars.emplace_back(entry);
+        cvars.emplace_back(entry);
+
         entry->id_ = (int) vars.size() - 1;
         entry->name_ = name;
         entry->labels_ = move(labels);
@@ -56,6 +60,7 @@ std::istream &Domain::parse(std::istream &input) {
         n_all_values_ += n_vals;
     }
 
+    CHECK_EQ(vars.size(), cvars.size());
     return input;
 }
 
