@@ -4,6 +4,7 @@
 
 #include "Config.h"
 #include "Domain.h"
+#include "CoverageStore.h"
 
 namespace igen {
 
@@ -43,7 +44,6 @@ void Config::set_all(const vec<int> &values) {
     }
 }
 
-
 std::ostream &operator<<(std::ostream &output, const Config &d) {
     output << "Config " << d.id() << ": ";
     bool first_var = true;
@@ -52,6 +52,10 @@ std::ostream &operator<<(std::ostream &output, const Config &d) {
         output << e.name() << ' ' << e.label();
     }
     return output;
+}
+
+const ptr<const Location> Config::const_location_iterator::dereference() const {
+    return ctx->cov()->loc(*base_reference());
 }
 
 }

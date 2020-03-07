@@ -7,10 +7,14 @@
 
 #include "Context.h"
 #include "Domain.h"
+#include "Location.h"
+
 
 #include <boost/iterator/iterator_adaptor.hpp>
 
 namespace igen {
+
+class Location;
 
 class Config : public Object {
 public:
@@ -19,6 +23,8 @@ public:
     explicit Config(PMutContext ctx, const vec<int> &values, int id = -1);
 
     int id() const { return id_; }
+
+    void set_id(int id) { CHECK_EQ(id_, -1) << "Config id is already set", id_ = id; }
 
     const vec<int> &values() const { return values_; }
 
@@ -36,9 +42,12 @@ public:
 
     void set_all(const vec<int> &values);
 
+    vec<int> &cov_loc_mut_ids() { return cov_locs_; }
+
 private:
     int id_;
     vec<int> values_;
+    vec<int> cov_locs_; // Location id
 
 public:
     class Entry {
@@ -88,9 +97,36 @@ public:
         PDomain dom;
     };
 
+    class const_location_iterator :
+            public boost::iterator_adaptor<const_location_iterator, vec<int>::const_iterator, // Base type
+                    const ptr<const Location>,         // value_type
+                    boost::use_default,     // difference_type
+                    const ptr<const Location>>       // reference_type
+    {
+    public:
+        const_location_iterator() = delete;
+
+        const_location_iterator(const const_location_iterator &) = default;
+
+    private:
+        friend class Config;                 // allow private constructor
+        friend class boost::iterator_core_access; // allow dereference()
+        const_location_iterator(base_type iter, PContext ctx) : iterator_adaptor(iter), ctx(move(ctx)) {}
+
+        [[nodiscard]] const ptr<const Location> dereference() const;
+
+        base_type iter_begin;
+        PContext ctx;
+    };
+
     const_iterator begin() const { return const_iterator(values_.begin(), values_.begin(), dom()); }
 
     const_iterator end() const { return const_iterator(values_.end(), values_.begin(), dom()); }
+
+public:
+    klib::custom_iterable_container<const_location_iterator> cov_locs() const {
+        return {const_location_iterator(cov_locs_.begin(), ctx()), const_location_iterator(cov_locs_.end(), ctx())};
+    }
 };
 
 using PConfig = ptr<const Config>;
