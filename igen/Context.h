@@ -22,6 +22,10 @@ class ProgramRunner;
 
 void intrusive_ptr_release(ProgramRunner *);
 
+class CoverageStore;
+
+void intrusive_ptr_release(CoverageStore *);
+
 class Context : public intrusive_ref_base_st<Context> {
 public:
     Context();
@@ -47,6 +51,10 @@ public:
 
     const ptr<ProgramRunner> &program_runner();
 
+    ptr<const CoverageStore> cov() const;
+
+    const ptr<CoverageStore> &cov();
+
 private:
     friend class Object;
 
@@ -59,6 +67,7 @@ private:
 
     ptr<Domain> dom_;
     ptr<ProgramRunner> program_runner_;
+    ptr<CoverageStore> coverage_store_;
 };
 
 using PContext = ptr<const Context>;
@@ -83,6 +92,8 @@ public:
     const z3::expr &zfalse() const { return ctx()->z3false; }
 
     ptr<const Domain> dom() const;
+
+    ptr<const CoverageStore> cov() const;
 
 protected:
     explicit Object(PMutContext ctx) : ctx_(move(ctx)) {};

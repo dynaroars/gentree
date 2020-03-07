@@ -5,6 +5,7 @@
 #include "Context.h"
 #include "Domain.h"
 #include "ProgramRunner.h"
+#include "CoverageStore.h"
 
 #include <fstream>
 
@@ -32,6 +33,7 @@ Context::Context() :
 void Context::init() {
     dom_ = new Domain(this);
     program_runner_ = new ProgramRunner(this);
+    coverage_store_ = new CoverageStore(this);
 
     str stem = get_option_as<str>("filestem");
     str dom_path = stem + ".dom";
@@ -41,6 +43,7 @@ void Context::init() {
 }
 
 void Context::cleanup() {
+    coverage_store_ = nullptr;
     program_runner_ = nullptr;
     dom_ = nullptr;
 }
@@ -52,7 +55,13 @@ const ptr<Domain> &Context::dom() { return dom_; }
 
 ptr<const Domain> Object::dom() const { return ctx_->dom(); }
 
+ptr<const CoverageStore> Object::cov() const { return ctx_->cov(); }
+
 ptr<const ProgramRunner> Context::program_runner() const { return program_runner_; }
 
 const ptr<ProgramRunner> &Context::program_runner() { return program_runner_; }
+
+ptr<const CoverageStore> Context::cov() const { return coverage_store_; }
+
+const ptr<CoverageStore> &Context::cov() { return coverage_store_; }
 }
