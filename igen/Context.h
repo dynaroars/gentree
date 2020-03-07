@@ -18,6 +18,10 @@ class Domain;
 
 void intrusive_ptr_release(Domain *);
 
+class ProgramRunner;
+
+void intrusive_ptr_release(ProgramRunner *);
+
 class Context : public intrusive_ref_base_st<Context> {
 public:
     Context();
@@ -36,7 +40,12 @@ public:
     void cleanup();
 
     ptr<const Domain> dom() const;
-    const ptr<Domain>& dom();
+
+    const ptr<Domain> &dom();
+
+    ptr<const ProgramRunner> program_runner() const;
+
+    const ptr<ProgramRunner> &program_runner();
 
 private:
     friend class Object;
@@ -49,6 +58,7 @@ private:
     z3::expr z3false;
 
     ptr<Domain> dom_;
+    ptr<ProgramRunner> program_runner_;
 };
 
 using PContext = ptr<const Context>;

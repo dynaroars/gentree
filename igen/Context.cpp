@@ -4,6 +4,7 @@
 
 #include "Context.h"
 #include "Domain.h"
+#include "ProgramRunner.h"
 
 #include <fstream>
 
@@ -30,6 +31,7 @@ Context::Context() :
 
 void Context::init() {
     dom_ = new Domain(this);
+    program_runner_ = new ProgramRunner(this);
 
     str stem = get_option_as<str>("filestem");
     str dom_path = stem + ".dom";
@@ -39,6 +41,7 @@ void Context::init() {
 }
 
 void Context::cleanup() {
+    program_runner_ = nullptr;
     dom_ = nullptr;
 }
 
@@ -48,4 +51,8 @@ ptr<const Domain> Context::dom() const { return dom_; }
 const ptr<Domain> &Context::dom() { return dom_; }
 
 ptr<const Domain> Object::dom() const { return ctx_->dom(); }
+
+ptr<const ProgramRunner> Context::program_runner() const { return program_runner_; }
+
+const ptr<ProgramRunner> &Context::program_runner() { return program_runner_; }
 }

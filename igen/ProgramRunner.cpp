@@ -30,7 +30,11 @@ ProgramRunner::ProgramRunner(PMutContext _ctx) : Object(move(_ctx)), type(Runner
         str str_type = ctx()->get_option_as<str>("runner");
         type = RunnerType::_from_string_nocase(str_type.c_str());
     }
-    target = ctx()->get_option_as<str>("target");
+    if (ctx()->has_option("target")) {
+        target = ctx()->get_option_as<str>("target");
+    } else {
+        target = ctx()->get_option_as<str>("filestem") + ".exe";
+    }
 }
 
 set<str> ProgramRunner::run(const PConfig &config) const {
@@ -62,6 +66,10 @@ set<str> ProgramRunner::_run_simple(const PConfig &config) const {
     }
 
     return locations;
+}
+
+void intrusive_ptr_release(ProgramRunner *p) {
+    intrusive_ptr_add_ref(p);
 }
 
 }

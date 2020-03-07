@@ -27,7 +27,7 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         set(Boost_USE_STATIC_LIBS ON)
     endif ()
 endif ()
-find_package(Boost REQUIRED COMPONENTS headers program_options timer)
+find_package(Boost REQUIRED COMPONENTS headers program_options timer filesystem)
 
 # ===
 
