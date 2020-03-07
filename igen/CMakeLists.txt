@@ -1,5 +1,10 @@
 add_library(libigen4
-        Context.cpp Context.h Config.cpp Config.h Domain.cpp Domain.h Z3Scope.h AlgoDriver.cpp AlgoDriver.h)
+        Context.cpp Context.h
+        Config.cpp Config.h
+        Domain.cpp Domain.h
+        Z3Scope.h
+        AlgoDriver.cpp AlgoDriver.h
+        c50/CTree.cpp c50/CTree.h)
 
 target_link_libraries(libigen4
         PRIVATE
