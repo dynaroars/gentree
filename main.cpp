@@ -33,7 +33,8 @@ int prog(int argc, char *argv[]) {
     po::options_description desc("Dynamic Interaction Inference for Configurable Software");
     desc.add_options()
             ("filestem,F", po::value<str>(), "Filestem")
-            ("target,t", po::value<str>(), "Target")
+            ("target", po::value<str>(), "Target")
+            ("dom", po::value<str>(), "Dom file")
             ("runner,r", po::value<str>(), "Select program runner: s/simple")
             ("simple-runner,S", "Simple runner")
             ("seed,s", po::value<uint64_t>(), "Random seed")

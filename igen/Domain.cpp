@@ -2,6 +2,7 @@
 // Created by KH on 3/5/2020.
 //
 
+#include <fstream>
 #include "Domain.h"
 #include "Config.h"
 
@@ -19,8 +20,16 @@ void intrusive_ptr_release(Domain *d) {
     intrusive_ptr_add_ref(d);
 }
 
-Domain::Domain(PMutContext ctx) : Object(move(ctx)) {
-
+Domain::Domain(PMutContext _ctx) : Object(move(_ctx)) {
+    str filepath;
+    if (ctx()->has_option("dom")) {
+        filepath = ctx()->get_option_as<str>("dom");
+    } else {
+        filepath = ctx()->get_option_as<str>("filestem") + ".dom";
+    }
+    std::ifstream ifs_dom(filepath);
+    CHECKF(ifs_dom, "Bad dom input file: {}", filepath);
+    ifs_dom >> (*this);
 }
 
 std::istream &Domain::parse(std::istream &input) {
@@ -43,6 +52,7 @@ std::istream &Domain::parse(std::istream &input) {
             labels.push_back(std::move(val));
         }
         int n_vals = (int) labels.size();
+        CHECK_GT(n_vals, 0);
 
         //===
         z3::expr zvar = zctx().int_const(name.c_str());
