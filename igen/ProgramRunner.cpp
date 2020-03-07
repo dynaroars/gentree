@@ -69,7 +69,7 @@ set<str> ProgramRunner::_run_simple(const PConfig &config) const {
 }
 
 void intrusive_ptr_release(ProgramRunner *p) {
-    intrusive_ptr_add_ref(p);
+    boost::sp_adl_block::intrusive_ptr_release(p);
 }
 
 }

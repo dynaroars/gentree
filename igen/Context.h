@@ -29,7 +29,8 @@ void intrusive_ptr_release(CoverageStore *);
 class Context : public intrusive_ref_base_st<Context> {
 public:
     Context();
-    ~Context();
+
+    virtual ~Context();
 
     void set_option(const str &key, boost::any val);
 
@@ -98,9 +99,12 @@ public:
 
     ptr<CoverageStore> cov();
 
+    virtual ~Object() = default;
+
 protected:
     explicit Object(PMutContext ctx) : ctx_(move(ctx)) {};
 
+private:
     PMutContext ctx_;
 };
 

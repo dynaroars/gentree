@@ -48,7 +48,7 @@ void CoverageStore::link(const PMutConfig &config, const PMutLocation &loc) {
     loc->cov_by_mut_ids().push_back(conf_id);
 }
 
-void intrusive_ptr_release(CoverageStore *d) { intrusive_ptr_add_ref(d); }
+void intrusive_ptr_release(CoverageStore *d) { boost::sp_adl_block::intrusive_ptr_release(d); }
 
 
 }

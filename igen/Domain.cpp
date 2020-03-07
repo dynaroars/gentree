@@ -17,7 +17,7 @@ expr VarDomain::eq(int val) const { return zvar_eq_val.at(val); }
 str Domain::STR_VALUE_ANY = "?";
 
 void intrusive_ptr_release(Domain *d) {
-    intrusive_ptr_add_ref(d);
+    boost::sp_adl_block::intrusive_ptr_release(d);
 }
 
 Domain::Domain(PMutContext _ctx) : Object(move(_ctx)) {
@@ -58,7 +58,7 @@ std::istream &Domain::parse(std::istream &input) {
         z3::expr zvar = zctx().int_const(name.c_str());
         zsolver().add(0 <= zvar && zvar < n_vals);
 
-        PMutVarDomain entry = new VarDomain(ctx_);
+        PMutVarDomain entry = new VarDomain(ctx());
         vars.emplace_back(entry);
         cvars.emplace_back(entry);
 
