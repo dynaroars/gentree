@@ -3,6 +3,7 @@
 //
 
 #include "Domain.h"
+#include "Config.h"
 
 namespace igen {
 
@@ -11,6 +12,8 @@ VarDomain::VarDomain(PMutContext ctx) : Object(move(ctx)), zvar(zctx()) {}
 expr VarDomain::eq(int val) const { return zvar_eq_val.at(val); }
 
 //===================================================================================
+
+str Domain::STR_VALUE_ANY = "?";
 
 void intrusive_ptr_release(Domain *d) {
     intrusive_ptr_add_ref(d);
@@ -83,6 +86,13 @@ std::ostream &operator<<(std::ostream &output, const Domain &d) {
         }
     }
     return output;
+}
+
+vec<ptr<Config>> Domain::gen_all_configs(vec<int> fixed) const {
+    CHECK(fixed.empty() || int(fixed.size()) == dom()->n_vars());
+    vec<PMutConfig> configs;
+
+    return configs;
 }
 
 }

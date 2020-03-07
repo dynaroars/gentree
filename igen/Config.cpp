@@ -22,6 +22,11 @@ vec<str> Config::value_labels() const {
     return labels;
 }
 
+void Config::set(int var_id, int value) {
+    CHECK(0 <= var_id && var_id < dom()->n_vars() && -1 <= value && value < dom()->n_values(var_id));
+    values_[var_id] = value;
+}
+
 
 std::ostream &operator<<(std::ostream &output, const Config &d) {
     output << "Config " << d.id() << ": ";

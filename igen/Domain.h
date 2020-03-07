@@ -10,6 +10,8 @@
 
 namespace igen {
 
+class Config;
+
 class VarDomain : public Object {
 private:
     friend class Domain;
@@ -51,13 +53,18 @@ public:
 
     int n_vars() const { return int(vars.size()); }
 
-    int n_values(int var_id) const { return cvars.at(var_id)->n_values(); }
+    int n_values(int var_id) const { return cvars.at(size_t(var_id))->n_values(); }
 
-    const str &name(int var_id) const { return cvars.at(var_id)->name(); }
+    const str &name(int var_id) const { return cvars.at(size_t(var_id))->name(); }
 
-    const vec<str> &labels(int var_id) const { return cvars.at(var_id)->labels(); }
+    const vec<str> &labels(int var_id) const { return cvars.at(size_t(var_id))->labels(); }
 
-    const str &label(int var_id, int value) const { return labels(var_id).at(value); }
+    const str &label(int var_id, int value) const {
+        return value == -1 ? STR_VALUE_ANY : labels(var_id).at(size_t(value));
+    }
+
+public:
+    vec<ptr<Config>> gen_all_configs(vec<int> fixed = {}) const;
 
 private:
     vec<PMutVarDomain> vars;
@@ -65,6 +72,8 @@ private:
     int n_all_values_ = 0;
 
     friend std::ostream &operator<<(std::ostream &output, const Domain &d);
+
+    static str STR_VALUE_ANY;
 
 public:
     vec<PMutVarDomain>::const_iterator begin() { return vars.begin(); }

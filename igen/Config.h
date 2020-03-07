@@ -24,6 +24,10 @@ public:
 
     vec<str> value_labels() const;
 
+    int operator[](int var_id) const { return values_[var_id]; }
+
+    void set(int var_id, int value);
+
 private:
     int id_;
     vec<int> values_;
@@ -43,7 +47,7 @@ public:
         friend class Config;
 
         Entry(const Domain &dom, const int var_id, const int value) : dom_(dom), var_id_(var_id), value_(value) {
-            DCHECK(0 <= var_id && var_id < dom.n_vars() && 0 <= value && value < dom.n_values(var_id));
+            DCHECK(0 <= var_id && var_id < dom.n_vars() && -1 <= value && value < dom.n_values(var_id));
         }
 
         const Domain &dom_;
