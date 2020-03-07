@@ -33,6 +33,9 @@ public:
 
     void cleanup();
 
+    ptr<const Domain> dom() const;
+    const ptr<Domain>& dom();
+
 private:
     friend class Object;
 
@@ -43,7 +46,7 @@ private:
     z3::expr z3true;
     z3::expr z3false;
 
-    ptr<Domain> dom;
+    ptr<Domain> dom_;
 };
 
 using PContext = ptr<const Context>;

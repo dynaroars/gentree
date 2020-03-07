@@ -5,6 +5,7 @@
 #include "AlgoDriver.h"
 
 #include "Context.h"
+#include "Domain.h"
 
 namespace igen {
 
@@ -13,6 +14,7 @@ int run_interative_algorithm(const boost::program_options::variables_map &vm) {
     PMutContext ctx = new Context();
     ctx->set_option("filestem", vm["filestem"].as<str>());
     ctx->init();
+    FLOG(INFO, "{}", *ctx->dom());
     return 0;
 }
 

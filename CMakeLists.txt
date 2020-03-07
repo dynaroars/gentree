@@ -42,7 +42,7 @@ add_executable(igen4
 
 target_link_libraries(igen4 PRIVATE
         Boost::headers Boost::program_options Boost::timer
-        z3::libz3 klib igen4_lib)
+        z3::libz3 klib libigen4)
 
 
 

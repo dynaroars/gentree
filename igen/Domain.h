@@ -27,7 +27,7 @@ private:
 public:
     explicit VarEntry(PMutContext ctx);
 
-    int n_vars() const { return (int) labels_.size(); }
+    int n_values() const { return (int) labels_.size(); }
 
     int id() const { return id_; }
 
@@ -100,7 +100,7 @@ public:
         friend class boost::iterator_core_access; // allow dereference()
         explicit const_iterator(base_type iter) : iterator_adaptor(iter) {}
 
-        PVarEntry dereference() const { return *base_reference(); }
+        [[nodiscard]] PVarEntry dereference() const { return *base_reference(); }
     };
 
     iterator begin() { return iterator(vars.begin()); }
@@ -114,6 +114,10 @@ public:
     const_iterator cbegin() const { return const_iterator(vars.begin()); }
 
     const_iterator cend() const { return const_iterator(vars.end()); }
+
+    PVarEntry operator[](size_t idx) const { return vars.at(idx); }
+
+    const PMutVarEntry &operator[](size_t idx) { return vars.at(idx); }
 };
 
 std::istream &operator>>(std::istream &input, Domain &d);

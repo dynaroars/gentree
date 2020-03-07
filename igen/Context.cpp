@@ -25,18 +25,23 @@ Context::Context() :
 }
 
 void Context::init() {
-    dom = new Domain(this);
+    dom_ = new Domain(this);
 
     str stem = get_option_as<str>("filestem");
     str dom_path = stem + ".dom";
     std::ifstream ifs_dom(dom_path);
     FCHECK(ifs_dom, "Bad dom input file: {}", dom_path);
-    ifs_dom >> (*dom);
+    ifs_dom >> (*dom());
 }
 
 void Context::cleanup() {
-    dom = nullptr;
+    dom_ = nullptr;
 }
 
-ptr<const Domain> Object::dom() const { return ctx_->dom; }
+
+ptr<const Domain> Context::dom() const { return dom_; }
+
+const ptr<Domain> &Context::dom() { return dom_; }
+
+ptr<const Domain> Object::dom() const { return ctx_->dom(); }
 }
