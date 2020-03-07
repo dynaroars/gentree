@@ -14,13 +14,16 @@ namespace igen {
 
 class Config : public Object {
 public:
-    explicit Config(PMutContext ctx);
+    explicit Config(PMutContext ctx, int id = -1);
+
+    int id() const { return id_; }
 
     const vec<int> &values() const { return values_; }
 
     vec<int> &values() { return values_; }
 
 private:
+    int id_;
     vec<int> values_;
 
 public:
@@ -50,7 +53,7 @@ public:
             public boost::iterator_adaptor<const_iterator, vec<int>::const_iterator, // Base type
                     const Entry,         // value_type
                     boost::use_default,     // difference_type
-                    const Entry &>       // reference_type
+                    const Entry>       // reference_type
     {
     public:
         const_iterator() = delete;
@@ -77,7 +80,7 @@ public:
 };
 
 using PConfig = ptr<const Config>;
-using PMutConfig = ptr<const Config>;
+using PMutConfig = ptr<Config>;
 
 std::ostream &operator<<(std::ostream &output, const Config &d);
 

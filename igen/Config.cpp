@@ -8,14 +8,16 @@
 namespace igen {
 
 
-Config::Config(PMutContext ctx) : Object(move(ctx)), values_(size_t(dom()->n_vars())) {
+Config::Config(PMutContext ctx, int id)
+        : Object(move(ctx)), id_(id), values_(size_t(dom()->n_vars())) {
 
 }
 
 
 std::ostream &operator<<(std::ostream &output, const Config &d) {
+    output << "Config " << d.id() << ": ";
     bool first_var = true;
-    for (const Config::Entry &e : d) {
+    for (auto &e : d) {
         if (!first_var) output << ", "; else first_var = false;
         output << e.name() << ' ' << e.label();
     }
