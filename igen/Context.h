@@ -46,29 +46,35 @@ private:
     ptr<Domain> dom;
 };
 
-using PContext = ptr<Context>;
+using PContext = ptr<const Context>;
+using PMutContext = ptr<Context>;
 
 class Object : public intrusive_ref_base_st<Object> {
 public:
-    PContext get_ctx() { return ctx; }
+    PContext ctx() const { return ctx_; }
 
-    z3::context &zctx() { return ctx->z3ctx; }
+    PMutContext ctx() { return ctx_; }
 
-    z3::solver &zsolver() { return ctx->z3solver; }
+    z3::context &zctx() { return ctx()->z3ctx; }
 
-    Z3Scope zscope() { return Z3Scope(&ctx->z3solver); }
+    z3::solver &zsolver() { return ctx()->z3solver; }
 
-    const z3::expr &ztrue() const { return ctx->z3true; }
+    Z3Scope zscope() { return Z3Scope(&ctx()->z3solver); }
 
-    const z3::expr &zfalse() const { return ctx->z3false; }
+    const z3::expr &ztrue() const { return ctx()->z3true; }
+
+    const z3::expr &zfalse() const { return ctx()->z3false; }
 
     ptr<const Domain> dom() const;
 
 protected:
-    explicit Object(PContext ctx) : ctx(move(ctx)) {};
+    explicit Object(PMutContext ctx) : ctx_(move(ctx)) {};
 
-    PContext ctx;
+    PMutContext ctx_;
 };
+
+using PObject = ptr<const Object>;
+using PMutObject = ptr<Object>;
 
 }
 

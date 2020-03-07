@@ -10,7 +10,7 @@ namespace igen {
 
 
 int run_interative_algorithm(const boost::program_options::variables_map &vm) {
-    PContext ctx = new Context();
+    PMutContext ctx = new Context();
     ctx->set_option("filestem", vm["filestem"].as<str>());
     ctx->init();
     return 0;

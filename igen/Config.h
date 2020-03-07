@@ -13,7 +13,8 @@ class Config : public Object {
 
 };
 
-using PConfig = ptr<Config>;
+using PConfig = ptr<const Config>;
+using PMutConfig = ptr<const Config>;
 
 }
 

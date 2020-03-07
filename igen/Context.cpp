@@ -38,5 +38,5 @@ void Context::cleanup() {
     dom = nullptr;
 }
 
-ptr<const Domain> Object::dom() const { return ctx->dom; }
+ptr<const Domain> Object::dom() const { return ctx_->dom; }
 }

@@ -6,7 +6,7 @@
 
 namespace igen {
 
-VarEntry::VarEntry(PContext ctx) : Object(move(ctx)), zvar(zctx()) {}
+VarEntry::VarEntry(PMutContext ctx) : Object(move(ctx)), zvar(zctx()) {}
 
 expr VarEntry::eq(int val) const { return zvar_eq_val.at(val); }
 
@@ -16,7 +16,7 @@ void intrusive_ptr_release(Domain *d) {
     intrusive_ptr_add_ref(d);
 }
 
-Domain::Domain(PContext ctx) : Object(move(ctx)) {
+Domain::Domain(PMutContext ctx) : Object(move(ctx)) {
 
 }
 
@@ -44,7 +44,7 @@ std::istream &Domain::parse(std::istream &input) {
         //===
         z3::expr zvar = zctx().int_const(name.c_str());
         zsolver().add(0 <= zvar && zvar < n_vals);
-        PVarEntry entry = vars.emplace_back(new VarEntry(ctx));
+        auto entry = vars.emplace_back(new VarEntry(ctx_));
         entry->id_ = (int) vars.size() - 1;
         entry->name_ = name;
         entry->labels_ = move(labels);
@@ -62,6 +62,12 @@ std::istream &Domain::parse(std::istream &input) {
 
 std::istream &operator>>(std::istream &input, Domain &d) {
     return d.parse(input);
+}
+
+std::ostream &operator<<(std::ostream &output, const Domain &d) {
+    fmt::print(output, "Domain[{}]: ", d.n_vars());
+
+    return output;
 }
 
 }
