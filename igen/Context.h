@@ -60,6 +60,8 @@ public:
 
     PMutContext ctx() { return ctx_; }
 
+    PMutContext ctx_mut() const { return ctx_; }
+
     z3::context &zctx() { return ctx()->z3ctx; }
 
     z3::solver &zsolver() { return ctx()->z3solver; }

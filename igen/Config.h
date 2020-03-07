@@ -16,6 +16,8 @@ class Config : public Object {
 public:
     explicit Config(PMutContext ctx, int id = -1);
 
+    explicit Config(PMutContext ctx, const vec<int> &values, int id = -1);
+
     int id() const { return id_; }
 
     const vec<int> &values() const { return values_; }
@@ -26,7 +28,13 @@ public:
 
     int operator[](int var_id) const { return values_[var_id]; }
 
+    int get(int var_id) const { return values_[var_id]; }
+
     void set(int var_id, int value);
+
+    void set_all(int value);
+
+    void set_all(const vec<int> &values);
 
 private:
     int id_;

@@ -88,11 +88,32 @@ std::ostream &operator<<(std::ostream &output, const Domain &d) {
     return output;
 }
 
-vec<ptr<Config>> Domain::gen_all_configs(vec<int> fixed) const {
-    CHECK(fixed.empty() || int(fixed.size()) == dom()->n_vars());
+vec<PMutConfig> Domain::gen_all_configs(PConfig templ) const {
     vec<PMutConfig> configs;
-
+    vec<int> values(size_t(dom()->n_vars()));
+    auto recur = [this, &templ, &configs, &values](int var_id, const auto &recur) -> void {
+        if (var_id == dom()->n_vars()) {
+            configs.emplace_back(new Config(ctx_mut(), values));
+            return;
+        }
+        if (templ->get(var_id) != -1) {
+            values[var_id] = templ->get(var_id);
+            recur(var_id + 1, recur);
+            return;
+        }
+        for (int i = 0; i < dom()->n_values(var_id); ++i) {
+            values[var_id] = i;
+            recur(var_id + 1, recur);
+        }
+    };
+    recur(0, recur);
     return configs;
+}
+
+vec<ptr<Config>> Domain::gen_all_configs() const {
+    PMutConfig cfg = new Config(ctx_mut());
+    cfg->set_all(-1);
+    return gen_all_configs(cfg);
 }
 
 }

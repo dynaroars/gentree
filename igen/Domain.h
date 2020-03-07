@@ -64,7 +64,8 @@ public:
     }
 
 public:
-    vec<ptr<Config>> gen_all_configs(vec<int> fixed = {}) const;
+    vec<ptr<Config>> gen_all_configs() const;
+    vec<ptr<Config>> gen_all_configs(ptr<const Config> templ) const;
 
 private:
     vec<PMutVarDomain> vars;
