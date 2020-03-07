@@ -151,11 +151,6 @@ struct delimiters<T, char> {
     static const delimiters_values<char> values;
 };
 template<typename T> const delimiters_values<char> delimiters<T, char>::values = {"{ ", ", ", " }"};
-template<typename T>
-struct delimiters<T, wchar_t> {
-    static const delimiters_values<wchar_t> values;
-};
-template<typename T> const delimiters_values<wchar_t> delimiters<T, wchar_t>::values = {L"{ ", L", ", L" }"};
 
 // Delimiters for set
 template<class Key, class Compare, class AllocatorOrContainer>
@@ -164,27 +159,14 @@ struct delimiters<boost::container::flat_set<Key, Compare, AllocatorOrContainer>
 };
 template<class Key, class Compare, class AllocatorOrContainer> const delimiters_values<char> delimiters<boost::container::flat_set<Key, Compare, AllocatorOrContainer>, char>::values = {
         "[ ", ", ", " ]"};
-template<class Key, class Compare, class AllocatorOrContainer>
-struct delimiters<boost::container::flat_set<Key, Compare, AllocatorOrContainer>, wchar_t> {
-    static const delimiters_values<wchar_t> values;
-};
-template<class Key, class Compare, class AllocatorOrContainer> const delimiters_values<wchar_t> delimiters<boost::container::flat_set<Key, Compare, AllocatorOrContainer>, wchar_t>::values = {
-        L"[ ", L", ", L" ]"};
 
 // Delimiters for pair
 template<typename T1, typename T2>
 struct delimiters<std::pair<T1, T2>, char> {
     static const delimiters_values<char> values;
 };
-template<typename T1, typename T2> const delimiters_values<char> delimiters<std::pair<T1, T2>, char>::values = {"(",
-                                                                                                                ", ",
-                                                                                                                ")"};
-template<typename T1, typename T2>
-struct delimiters<std::pair<T1, T2>, wchar_t> {
-    static const delimiters_values<wchar_t> values;
-};
-template<typename T1, typename T2> const delimiters_values<wchar_t> delimiters<std::pair<T1, T2>, wchar_t>::values = {
-        L"(", L", ", L")"};
+template<typename T1, typename T2> const delimiters_values<char> delimiters<std::pair<T1, T2>, char>::values =
+        {"(", ", ", ")"};
 
 // Functor to print containers. You can use this directly if you want to specificy a non-default delimiters type.
 template<typename T, typename TChar = char, typename TCharTraits = std::char_traits<TChar>, typename TDelimiters = delimiters<T, TChar> >
@@ -225,6 +207,15 @@ typename std::enable_if<is_container<T>::value, std::basic_ostream<TChar, TCharT
 operator<<(std::basic_ostream<TChar, TCharTraits> &stream, const T &container) {
     stream << print_container_helper<T, TChar, TCharTraits>(container);
     return stream;
+}
+
+namespace boost::container {
+template<typename T, typename TChar, typename TCharTraits>
+typename std::enable_if<is_container<T>::value, std::basic_ostream<TChar, TCharTraits> &>::type
+operator<<(std::basic_ostream<TChar, TCharTraits> &stream, const T &container) {
+    stream << print_container_helper<T, TChar, TCharTraits>(container);
+    return stream;
+}
 }
 
 // Prints a pair to the stream using delimiters from delimiters<std::pair<T1, T2>>.
