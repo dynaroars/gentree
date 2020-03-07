@@ -16,6 +16,10 @@ class Config : public Object {
 public:
     explicit Config(PMutContext ctx);
 
+    const vec<int> &values() const { return values_; }
+
+    vec<int> &values() { return values_; }
+
 private:
     vec<int> values_;
 
@@ -66,10 +70,16 @@ public:
         base_type iter_begin;
         PDomain dom;
     };
+
+    const_iterator begin() const { return const_iterator(values_.begin(), values_.begin(), dom()); }
+
+    const_iterator end() const { return const_iterator(values_.end(), values_.begin(), dom()); }
 };
 
 using PConfig = ptr<const Config>;
 using PMutConfig = ptr<const Config>;
+
+std::ostream &operator<<(std::ostream &output, const Config &d);
 
 }
 
