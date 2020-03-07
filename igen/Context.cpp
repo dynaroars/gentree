@@ -11,6 +11,13 @@
 
 namespace igen {
 
+Context::Context() :
+        z3solver(z3ctx), z3true(z3ctx.bool_val(true)), z3false(z3ctx.bool_val(false)) {
+}
+
+Context::~Context() {
+    VLOG(1, "Context destroyed");
+}
 
 void Context::set_option(const str &key, boost::any val) {
     options[key] = val;
@@ -24,10 +31,6 @@ boost::any Context::get_option(const str &key) const {
     auto it = options.find(key);
     CHECK(it != options.end());
     return it->second;
-}
-
-Context::Context() :
-        z3solver(z3ctx), z3true(z3ctx.bool_val(true)), z3false(z3ctx.bool_val(false)) {
 }
 
 void Context::init() {
@@ -51,6 +54,8 @@ ptr<const Domain> Object::dom() const { return ctx_->dom(); }
 
 ptr<const CoverageStore> Object::cov() const { return ctx_->cov(); }
 
+ptr<CoverageStore> Object::cov() { return ctx_->cov(); }
+
 ptr<const ProgramRunner> Context::program_runner() const { return program_runner_; }
 
 const ptr<ProgramRunner> &Context::program_runner() { return program_runner_; }
@@ -58,4 +63,5 @@ const ptr<ProgramRunner> &Context::program_runner() { return program_runner_; }
 ptr<const CoverageStore> Context::cov() const { return coverage_store_; }
 
 const ptr<CoverageStore> &Context::cov() { return coverage_store_; }
+
 }

@@ -20,7 +20,10 @@ public:
 
     int id() const { return id_; }
 
-    void set_id(int id) { CHECK_EQ(id_, -1) << "Location id is already set", id_ = id; }
+    void set_id(int id) {
+        CHECK_EQ(id_, -1) << "Location id is already set";
+        id_ = id;
+    }
 
     const str &name() const { return name_; }
 

@@ -26,7 +26,8 @@ void CoverageStore::register_config(const PMutConfig &config) {
 
 int CoverageStore::register_cov(const PMutConfig &config, const set<str> &loc_names) {
     int n_new_locations = 0;
-    if (config->id() == -1) register_config(config);
+    if (config->id() == -1)
+        register_config(config);
     for (const str &n : loc_names) {
         PMutLocation loc = this->loc_mut(n);
         if (loc == nullptr) {

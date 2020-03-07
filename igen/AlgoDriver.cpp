@@ -7,6 +7,8 @@
 #include "Context.h"
 #include "Domain.h"
 #include "Config.h"
+#include "ProgramRunner.h"
+#include "CoverageStore.h"
 
 #include <klib/print_stl.h>
 
@@ -15,11 +17,21 @@ namespace igen {
 class IterativeAlgorithm : public Object {
 public:
     explicit IterativeAlgorithm(PMutContext ctx) : Object(move(ctx)) {}
+
     ~IterativeAlgorithm() = default;
 
     void run_alg() {
-        auto configs = ctx()->dom()->gen_all_configs();
-        LOG(INFO, "{}", configs);
+        auto configs = dom()->gen_all_configs();
+        for (const auto &c : configs) {
+            auto e = ctx()->program_runner()->run(c);
+            cov()->register_cov(c, e);
+            VLOG(20, "{}  ==>  ", *c) << e;
+            // VLOG_BLOCK(21, {
+            //     for (const auto &x : c->cov_locs()) {
+            //         log << x->name() << ", ";
+            //     }
+            // });
+        }
     }
 
 private:
