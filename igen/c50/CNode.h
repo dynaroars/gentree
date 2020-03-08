@@ -59,13 +59,15 @@ private:
 
 private: // TEMP DATA
     std::array<vec<vec<int>>, 2> freq;
-    vec<double> inf, gain;
+    vec<double> info, gain;
     double base_info, avgain;
     int bestvar;
 
     void calc_freq();
 
     void calc_inf_gain();
+
+    int select_best_var(bool first_pass);
 
     void clear_all_tmp_data();
 

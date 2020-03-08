@@ -36,15 +36,15 @@ void CNode::calc_inf_gain() {
     bestvar = -1;
     double log2ntotal = log2(n_total());
 
-    // Calc inf
-    inf = dom()->create_vec_vars<double>();
+    // Calc info
+    info = dom()->create_vec_vars<double>();
     for (int var_id = 0; var_id < dom()->n_vars(); ++var_id) {
         double sum = 0;
         for (int val = 0; val < dom()->n_values(var_id); ++val) {
             int n = freq[0][var_id][val] + freq[1][var_id][val];
             sum += n * log2(n);
         }
-        inf[var_id] = log2ntotal - sum / n_total();
+        info[var_id] = log2ntotal - sum / n_total();
     }
 
     // Calc base_info
@@ -78,6 +78,30 @@ void CNode::calc_inf_gain() {
     avgain = total_gain / dom()->n_vars();
 }
 
+int CNode::select_best_var(bool first_pass) {
+    bestvar = -1;
+    double bestratio = -1e-4;
+    int bestnbr = dom()->n_all_values();
+
+    for (int var = 0; var < dom()->n_vars(); ++var) {
+        double inf = info[var];
+        if (inf <= 0) {
+            if (first_pass) continue; else inf = 1e-2;
+        }
+        double ratio = gain[var] / inf;
+        int nbr = dom()->n_values(var);
+
+        if (ratio > bestratio
+            || (ratio > 0.999 * bestratio && (nbr < bestnbr || (nbr == bestnbr && gain[var] > gain[var])))) {
+            bestvar = var;
+            bestratio = ratio;
+            bestnbr = nbr;
+        }
+    }
+
+    return bestvar;
+}
+
 bool CNode::evaluate_split() {
     BOOST_SCOPE_EXIT(this_) { this_->clear_all_tmp_data(); }
     BOOST_SCOPE_EXIT_END
@@ -86,6 +110,7 @@ bool CNode::evaluate_split() {
 
     calc_freq();
     calc_inf_gain();
+    if (select_best_var(true) == -1) select_best_var(false);
     VLOG_BLOCK(30, print_tmp_state(log << "\n<" << depth() << ">: " << n_total() << " cases\n"));
 
     return split_by != nullptr;
@@ -93,7 +118,7 @@ bool CNode::evaluate_split() {
 
 void CNode::clear_all_tmp_data() {
     freq[0].clear(), freq[1].clear();
-    inf.clear(), gain.clear();
+    info.clear(), gain.clear();
 }
 
 std::ostream &CNode::print_tmp_state(std::ostream &output, const str &indent) const {
@@ -104,16 +129,17 @@ std::ostream &CNode::print_tmp_state(std::ostream &output, const str &indent) co
             fmt::print(output, "{}{}[{:>4}{:>8}{:>8}]\n", indent, indent,
                        i, freq[0][var->id()][i], freq[1][var->id()][i]);
         }
-        fmt::print(output, "{}{}inf {:.3f}, gain {:.3f}, ratio {:.3f}\n", indent, indent,
-                   inf[var->id()], gain[var->id()], gain[var->id()] / inf[var->id()]);
+        fmt::print(output, "{}{}info {:.3f}, gain {:.3f}, ratio {:.3f}\n", indent, indent,
+                   info[var->id()], gain[var->id()], gain[var->id()] / info[var->id()]);
     }
-    fmt::print(output, "{}{}av gain={:.3f}, best var ", indent, indent, avgain);
+    fmt::print(output, "{}best var ", indent);
     if (bestvar == -1) {
-        output << "N/A\n";
+        output << "N/A";
     } else {
-        fmt::print(output, "{}: inf {:.3f}, gain {:.3f}, ratio {:.3f}\n",
-                   dom()->name(bestvar), inf[bestvar], gain[bestvar], gain[bestvar] / inf[bestvar]);
+        fmt::print(output, "{}: info {:.3f}, gain {:.3f}, ratio {:.3f}",
+                   dom()->name(bestvar), info[bestvar], gain[bestvar], gain[bestvar] / info[bestvar]);
     }
+    fmt::print(output, "    av gain={:.3f}", avgain);
     return output;
 }
 
