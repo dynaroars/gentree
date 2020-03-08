@@ -57,8 +57,10 @@ void CNode::calc_inf_gain() {
 
     // Calc gain
     double total_gain = 0;
+    int n_gain_positive = 0;
     gain = dom()->create_vec_vars<double>();
     for (int var_id = 0; var_id < dom()->n_vars(); ++var_id) {
+        double &g = gain[var_id];
         for (int val = 0; val < dom()->n_values(var_id); ++val) {
             double sum = 0;
             int total = 0;
@@ -68,14 +70,15 @@ void CNode::calc_inf_gain() {
                 total += n;
             }
             sum = total * log2(total) - sum;
-            gain[var_id] += sum;
+            g += sum;
         }
-        gain[var_id] = base_info - gain[var_id] / n_total();
-        total_gain += gain[var_id];
+        g = base_info - g / n_total();
+        if (g > 0)
+            total_gain += g, n_gain_positive++;
     }
 
     // Calc avgain & mdl
-    avgain = total_gain / dom()->n_vars();
+    avgain = total_gain / n_gain_positive;
 }
 
 int CNode::select_best_var(bool first_pass) {

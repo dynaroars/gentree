@@ -28,7 +28,7 @@ void normalize_name(str &s) {
 str get_dom_str(str name) {
     ensure_init();
     normalize_name(name);
-    CHECK(_mapprog().count(name));
+    CHECKF(_mapprog().count(name), "Builtin runner {} not found", name);
     const Program &prog = _mapprog()[name];
     const auto &dom = prog.dom;
     str vars = prog.vars;
@@ -52,7 +52,7 @@ str get_dom_str(str name) {
 std::function<set<str>(const igen::PConfig &config)> get_fn(str name) {
     ensure_init();
     normalize_name(name);
-    CHECK(_mapprog().count(name));
+    CHECKF(_mapprog().count(name), "Builtin runner {} not found", name);
     return _mapprog()[name].fn;
 }
 

@@ -7,9 +7,9 @@
 namespace igen::builtin {
 
 void init() {
-    INIT(complex_1);
+    INIT(c1);
 
-    INIT(simple_1);
+    INIT(s1);
 }
 
 }
