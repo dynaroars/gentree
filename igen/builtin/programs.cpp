@@ -24,9 +24,17 @@ void normalize_name(str &s) {
     boost::replace_all(s, ".exe", "");
 }
 
+void check_name(const str &name) {
+    if (!_mapprog().count(name)) {
+        throw std::runtime_error(fmt::format("Builtin runner {} not found", name));
+    }
+}
+
 str get_dom_str(str name) {
     normalize_name(name);
-    CHECKF(_mapprog().count(name), "Builtin runner {} not found", name);
+    //CHECKF(_mapprog().count(name), "Builtin runner {} not found", name);
+    check_name(name);
+
     const Program &prog = _mapprog()[name];
     const auto &dom = prog.dom;
     str vars = prog.vars;
@@ -49,7 +57,8 @@ str get_dom_str(str name) {
 
 std::function<set<str>(const igen::PConfig &config)> get_fn(str name) {
     normalize_name(name);
-    CHECKF(_mapprog().count(name), "Builtin runner {} not found", name);
+    //CHECKF(_mapprog().count(name), "Builtin runner {} not found", name);
+    check_name(name);
     return _mapprog()[name].fn;
 }
 
