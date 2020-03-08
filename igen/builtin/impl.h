@@ -16,6 +16,7 @@ struct Program {
     str name;
     str vars;
     vec<int> dom;
+    str src;
     std::function<set<str>(const igen::PConfig &config)> fn;
 };
 
@@ -33,7 +34,7 @@ int register_builtin_program(Program p);
 #define FN(name, vars, doms, code)                                                                          \
     namespace igen::builtin {                                                                               \
         int _registered_##name = register_builtin_program({                                                 \
-            #name, EVAL_STR(vars), {doms},                                                                  \
+            #name, EVAL_STR(vars), {doms}, #code,                                                           \
             [](const PConfig &config) -> set<str> {                                                         \
                 const size_t NVARS = NUMARGS(doms);                                                         \
                 std::array<int, NVARS> _array_values;                                                       \

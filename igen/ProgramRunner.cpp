@@ -35,8 +35,10 @@ ProgramRunner::ProgramRunner(PMutContext _ctx) : Object(move(_ctx)), type(Runner
     } else {
         target = ctx()->get_option_as<str>("filestem") + ".exe";
     }
+    LOG(INFO, "Program runner: type {}, target {}", type._to_string(), target);
     if (type == +RunnerType::BuiltIn) {
         builtin_fn = builtin::get_fn(target);
+        LOG(INFO, "Builtin runner source: ") << builtin::get_src(target);
     }
 }
 

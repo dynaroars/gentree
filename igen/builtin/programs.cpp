@@ -62,6 +62,12 @@ std::function<set<str>(const igen::PConfig &config)> get_fn(str name) {
     return _mapprog()[name].fn;
 }
 
+const str &get_src(str name) {
+    normalize_name(name);
+    check_name(name);
+    return _mapprog()[name].src;
+}
+
 int register_builtin_program(Program p) {
     CHECK_EQ(_mapprog().count(p.name), 0);
     _mapprog()[p.name] = std::move(p);

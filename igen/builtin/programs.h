@@ -16,6 +16,8 @@ using BuiltinRunnerFn = std::function<set<str>(const igen::PConfig &config)>;
 
 BuiltinRunnerFn get_fn(str name);
 
+const str &get_src(str name);
+
 }
 
 #endif //IGEN4_PROGRAMS_H

@@ -36,6 +36,7 @@ Domain::Domain(PMutContext _ctx) : Object(move(_ctx)) {
         CHECKF(ifs_dom, "Bad dom input file: {}", filepath);
         ifs_dom >> (*this);
     }
+    LOG(INFO, "Loaded dom {}: ", filepath) << (*this);
 }
 
 std::istream &Domain::parse(std::istream &input) {
