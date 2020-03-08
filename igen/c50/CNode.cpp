@@ -106,14 +106,28 @@ int CNode::select_best_var(bool first_pass) {
 }
 
 void CNode::create_childs() {
+    CHECK(0 <= bestvar && bestvar < dom()->n_vars());
+    int nvalues = dom()->n_values(bestvar);
     for (int hit = 0; hit <= 1; ++hit) {
         auto &c = configs_[hit];
         std::sort(c.begin(), c.end(), [bestvar = bestvar](const auto &a, const auto &b) {
             return a->get(bestvar) < b->get(bestvar);
         });
-        for (int val = 0; val < dom()->n_values(bestvar); ++val) {
+    }
 
+    childs.resize(nvalues);
+    vec<PConfig>::iterator beg[2], end[2] = {miss_configs().begin(), hit_configs().begin()};
+    vec<PConfig>::iterator real_end[2] = {miss_configs().end(), hit_configs().end()};
+    for (int val = 0; val < nvalues; ++val) {
+        for (int hit = 0; hit <= 1; ++hit) {
+            beg[hit] = end[hit];
+            while (end[hit] != real_end[hit] && (*end[hit])->value(bestvar) == val)
+                end[hit]++;
         }
+
+        boost::sub_range<vec<PConfig>> miss_conf = {beg[0], end[0]};
+        boost::sub_range<vec<PConfig>> hit_conf = {beg[1], end[1]};
+        childs[val] = new CNode(tree, this, {miss_conf, hit_conf});
     }
 }
 

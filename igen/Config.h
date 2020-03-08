@@ -39,6 +39,8 @@ public:
 
     int get(int var_id) const { return values_[var_id]; }
 
+    int value(int var_id) const { return values_[var_id]; }
+
     void set(int var_id, int value);
 
     void set_all(int value);
