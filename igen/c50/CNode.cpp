@@ -103,7 +103,15 @@ int CNode::select_best_var(bool first_pass) {
 }
 
 void CNode::create_childs() {
+    for (int hit = 0; hit <= 1; ++hit) {
+        auto &c = configs_[hit];
+        std::sort(c.begin(), c.end(), [bestvar = bestvar](const auto &a, const auto &b) {
+            return a->get(bestvar) < b->get(bestvar);
+        });
+        for (int val = 0; val < dom()->n_values(bestvar); ++val) {
 
+        }
+    }
 }
 
 bool CNode::evaluate_split() {
