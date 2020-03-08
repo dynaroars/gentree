@@ -19,9 +19,9 @@ void CTree::prepare_data_for_loc(const PLocation &loc) {
     for (const auto &c : cov()->configs()) {
         if (it != it_end && *it == c->id()) {
             ++it;
-            hit_configs.emplace_back(c);
+            hit_configs().emplace_back(c);
         } else {
-            miss_configs.emplace_back(c);
+            miss_configs().emplace_back(c);
         }
     }
 }

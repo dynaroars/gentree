@@ -18,9 +18,16 @@ public:
 
     void prepare_data_for_loc(const PLocation &loc);
 
+    vec<PConfig> &miss_configs() { return configs_[0]; }
+
+    vec<PConfig> &hit_configs() { return configs_[1]; }
+
+    const vec<PConfig> &miss_configs() const { return configs_[0]; }
+
+    const vec<PConfig> &hit_configs() const { return configs_[1]; }
+
 private:
-    vec<PConfig> hit_configs;
-    vec<PConfig> miss_configs;
+    std::array<vec<PConfig>, 2> configs_;
 };
 
 using PCTree = ptr<const CTree>;

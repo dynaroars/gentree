@@ -4,7 +4,7 @@ add_library(libigen4
         Domain.cpp Domain.h
         Z3Scope.h
         IterativeAlgorithm.cpp IterativeAlgorithm.h
-        c50/CTree.cpp c50/CTree.h ProgramRunner.cpp ProgramRunner.h CoverageStore.cpp CoverageStore.h Location.cpp Location.h)
+        c50/CTree.cpp c50/CTree.h ProgramRunner.cpp ProgramRunner.h CoverageStore.cpp CoverageStore.h Location.cpp Location.h c50/CNode.cpp c50/CNode.h)
 
 target_link_libraries(libigen4
         PRIVATE
