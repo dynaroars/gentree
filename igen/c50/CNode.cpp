@@ -95,7 +95,7 @@ void CNode::calc_inf_gain() {
     }
 
     avgain /= possible;
-    mdl = log2(possible) / tree->n_cases_;
+    mdl = log2(possible) / int(hit_configs().size() + miss_configs().size());
     mingain = avgain * tree->avgain_wt_ + mdl * tree->mdl_wt_;
 }
 
