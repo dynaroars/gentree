@@ -29,6 +29,8 @@ public:
 
     const vec<PConfig> &hit_configs() const { return configs_[1]; }
 
+    z3::expr build_zexpr() const;
+
 private:
     std::array<vec<PConfig>, 2> configs_;
 

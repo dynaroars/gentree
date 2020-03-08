@@ -37,6 +37,9 @@ public:
         PMutCTree tree = new CTree(ctx());
         tree->prepare_data_for_loc(cov()->loc("L1"));
         tree->build_tree();
+        z3::expr e = tree->build_zexpr();
+        e = e.simplify();
+        LOG(INFO, "EXPR = \n") << e;
     }
 
 private:

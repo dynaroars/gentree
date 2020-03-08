@@ -57,15 +57,28 @@ public:
 
     const ptr<CoverageStore> &cov();
 
+public:
+    z3::context &zctx() { return z3ctx_; }
+
+    z3::solver &zsolver() { return z3solver_; }
+
+    Z3Scope zscope() { return Z3Scope(&z3solver_); }
+
+    const z3::expr &ztrue() const { return z3true_; }
+
+    const z3::expr &zfalse() const { return z3false_; }
+
+    const z3::expr &zbool(bool b) const { return b ? z3true_ : z3false_; }
+
 private:
     friend class Object;
 
     map<str, boost::any> options;
 
-    z3::context z3ctx;
-    z3::solver z3solver;
-    z3::expr z3true;
-    z3::expr z3false;
+    z3::context z3ctx_;
+    z3::solver z3solver_;
+    z3::expr z3true_;
+    z3::expr z3false_;
 
     ptr<Domain> dom_;
     ptr<ProgramRunner> program_runner_;
@@ -83,15 +96,15 @@ public:
 
     PMutContext ctx_mut() const { return ctx_; }
 
-    z3::context &zctx() { return ctx()->z3ctx; }
+    z3::context &zctx() { return ctx()->z3ctx_; }
 
-    z3::solver &zsolver() { return ctx()->z3solver; }
+    z3::solver &zsolver() { return ctx()->z3solver_; }
 
-    Z3Scope zscope() { return Z3Scope(&ctx()->z3solver); }
+    Z3Scope zscope() { return Z3Scope(&ctx()->z3solver_); }
 
-    const z3::expr &ztrue() const { return ctx()->z3true; }
+    const z3::expr &ztrue() const { return ctx()->z3true_; }
 
-    const z3::expr &zfalse() const { return ctx()->z3false; }
+    const z3::expr &zfalse() const { return ctx()->z3false_; }
 
     ptr<const Domain> dom() const;
 

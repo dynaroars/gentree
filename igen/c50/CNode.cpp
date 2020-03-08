@@ -232,4 +232,18 @@ bool CNode::leaf_value() const {
 }
 
 
+z3::expr CNode::build_zexpr() const {
+    if (is_leaf()) {
+        return tree->ctx()->zbool(leaf_value());
+    }
+    z3::expr_vector res(tree->ctx_mut()->zctx());
+    res.resize(unsigned(childs.size()));
+    CHECK(bestvar != -1 && int(childs.size()) == dom(bestvar)->n_values());
+    for (int val = 0; val < int(childs.size()); ++val) {
+        z3::expr e = dom(bestvar)->eq(val) && childs[val]->build_zexpr();
+        res.set(val, e);
+    }
+    return z3::mk_or(res);
+}
+
 }

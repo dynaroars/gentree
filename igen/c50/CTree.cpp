@@ -52,4 +52,9 @@ void CTree::build_tree() {
     root_->evaluate_split();
 }
 
+z3::expr CTree::build_zexpr() const {
+    CHECK_NE(root_, nullptr);
+    return root_->build_zexpr();
+}
+
 }

@@ -12,7 +12,7 @@
 namespace igen {
 
 Context::Context() :
-        z3solver(z3ctx), z3true(z3ctx.bool_val(true)), z3false(z3ctx.bool_val(false)) {
+        z3solver_(z3ctx_), z3true_(z3ctx_.bool_val(true)), z3false_(z3ctx_.bool_val(false)) {
 }
 
 Context::~Context() {

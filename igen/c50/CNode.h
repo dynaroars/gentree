@@ -45,6 +45,8 @@ public:
 public:
     bool evaluate_split();
 
+    z3::expr build_zexpr() const;
+
 private:
     CTree *tree;
     CNode *parent;
