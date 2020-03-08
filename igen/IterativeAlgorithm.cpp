@@ -2,7 +2,7 @@
 // Created by KH on 3/5/2020.
 //
 
-#include "AlgoDriver.h"
+#include "IterativeAlgorithm.h"
 
 #include "Context.h"
 #include "Domain.h"
