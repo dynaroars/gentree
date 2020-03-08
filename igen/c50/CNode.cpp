@@ -13,6 +13,8 @@ namespace igen {
 
 static const double Epsilon = 1E-4;
 
+static const int V_LOG_BUILD = 100;
+
 CNode::CNode(CTree *tree, CNode *parent, std::array<boost::sub_range<vec<PConfig>>, 2> configs) :
         tree(tree), parent(parent), configs_(std::move(configs)) {
     depth_ = (parent ? parent->depth() + 1 : 0);
@@ -109,6 +111,7 @@ void CNode::calc_inf_gain() {
 
 int CNode::select_best_var(bool first_pass) {
     bestvar = -1;
+    find_pass = first_pass ? 1 : 2;
     double bestratio = -1000;
     int bestnbr = dom()->n_all_values();
 
@@ -169,8 +172,8 @@ bool CNode::evaluate_split() {
     BOOST_SCOPE_EXIT(this_) { this_->clear_all_tmp_data(); }
     BOOST_SCOPE_EXIT_END
     if (is_leaf()) {
-        GVLOG(30) << "\n<" << depth() << ">: " << n_total() << " cases\n    "
-                  << (leaf_value() ? "HIT" : "MISS");
+        GVLOG(V_LOG_BUILD) << "\n<" << depth() << ">: " << n_total() << " cases\n    "
+                           << (leaf_value() ? "HIT" : "MISS");
         return false;
     }
 
@@ -178,7 +181,7 @@ bool CNode::evaluate_split() {
     calc_inf_gain();
     if (select_best_var(true) == -1) select_best_var(false);
     CHECK_NE(bestvar, -1);
-    VLOG_BLOCK(30, print_tmp_state(log << "\n<" << depth() << ">: " << n_total() << " cases\n"));
+    VLOG_BLOCK(V_LOG_BUILD, print_tmp_state(log << "\n<" << depth() << ">: " << n_total() << " cases\n"));
 
     split_by = dom()->vars().at(bestvar);
     create_childs();
@@ -214,8 +217,9 @@ std::ostream &CNode::print_tmp_state(std::ostream &output, const str &indent) co
     if (bestvar == -1) {
         output << "N/A\n";
     } else {
-        fmt::print(output, "{}: info {:.3f}, gain {:.3f}, val {:.3f}\n",
-                   dom()->name(bestvar), info[bestvar], gain[bestvar], gain[bestvar] / info[bestvar]);
+        fmt::print(output, "{}: info {:.3f}, gain {:.3f}, val {:.3f}{}",
+                   dom()->name(bestvar), info[bestvar], gain[bestvar], gain[bestvar] / info[bestvar],
+                   find_pass == 1 ? "\n" : ", second-pass\n");
     }
     return output;
 }

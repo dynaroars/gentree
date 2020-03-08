@@ -66,7 +66,7 @@ private: // TEMP DATA
     vec<double> info, gain;
     int possible;
     double base_info, avgain, mdl, mingain;
-    int bestvar;
+    int bestvar, find_pass;
 
     void calc_freq();
 
