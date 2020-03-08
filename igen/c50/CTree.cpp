@@ -25,6 +25,26 @@ void CTree::prepare_data_for_loc(const PLocation &loc) {
         }
     }
     default_hit_ = hit_configs() > miss_configs();
+    n_cases_ = (int) cov()->configs().size();
+
+    // PREPARE VALS
+    multi_val_ = true;
+    for (const auto &c : *dom()) {
+        multi_val_ = (c->n_values() >= 0.3 * (n_cases_ + 1));
+    }
+
+    // MIN THRES
+    if ((n_cases_ + 1) / 2 <= 500) {
+        avgain_wt_ = 1.0;
+        mdl_wt_ = 0.0;
+    } else if ((n_cases_ + 1) / 2 >= 1000) {
+        avgain_wt_ = 0.0;
+        mdl_wt_ = 0.9;
+    } else {
+        double frac = ((n_cases_ + 1) / 2 - 500) / 500.0;
+        avgain_wt_ = 1 - frac;
+        mdl_wt_ = 0.9 * frac;
+    }
 }
 
 void CTree::build_tree() {

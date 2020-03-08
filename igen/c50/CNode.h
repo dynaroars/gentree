@@ -57,11 +57,13 @@ private:
     friend class CTree;
 
     PDomain dom() const;
+    PVarDomain dom(int var_id) const;
 
 private: // TEMP DATA
     std::array<vec<vec<int>>, 2> freq;
     vec<double> info, gain;
-    double base_info, avgain;
+    int possible;
+    double base_info, avgain, mdl, mingain;
     int bestvar;
 
     void calc_freq();

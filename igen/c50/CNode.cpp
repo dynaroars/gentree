@@ -11,6 +11,8 @@
 namespace igen {
 
 
+static const double Epsilon = 1E-4;
+
 CNode::CNode(CTree *tree, CNode *parent, std::array<boost::sub_range<vec<PConfig>>, 2> configs) :
         tree(tree), parent(parent), configs_(std::move(configs)) {
     depth_ = (parent ? parent->depth() + 1 : 0);
@@ -18,6 +20,10 @@ CNode::CNode(CTree *tree, CNode *parent, std::array<boost::sub_range<vec<PConfig
 
 PDomain CNode::dom() const {
     return tree->ctx()->dom();
+}
+
+PVarDomain CNode::dom(int var_id) const {
+    return dom()->vars()[var_id];
 }
 
 void CNode::calc_freq() {
@@ -57,7 +63,6 @@ void CNode::calc_inf_gain() {
 
     // Calc gain
     double total_gain = 0;
-    int n_gain_positive = 0;
     gain = dom()->create_vec_vars<double>();
     for (int var_id = 0; var_id < dom()->n_vars(); ++var_id) {
         double &g = gain[var_id];
@@ -73,31 +78,48 @@ void CNode::calc_inf_gain() {
             g += sum;
         }
         g = base_info - g / n_total();
-        if (g > 0)
-            total_gain += g, n_gain_positive++;
+        total_gain += g;
     }
 
     // Calc avgain & mdl
-    avgain = total_gain / n_gain_positive;
+    avgain = 0;
+    possible = 0;
+    for (int var = 0; var < dom()->n_vars(); ++var) {
+        if (gain[var] >= Epsilon &&
+            (tree->multi_val_ || dom(var)->n_values() < 0.3 * (tree->n_cases_ + 1))) {
+            possible++;
+            avgain += gain[var];
+        } else {
+            //Gain[Att] = None;
+        }
+    }
+
+    avgain /= possible;
+    mdl = log2(possible) / tree->n_cases_;
+    mingain = avgain * tree->avgain_wt_ + mdl * tree->mdl_wt_;
 }
 
 int CNode::select_best_var(bool first_pass) {
     bestvar = -1;
-    double bestratio = -1e-4;
+    double bestratio = -1000;
     int bestnbr = dom()->n_all_values();
 
     for (int var = 0; var < dom()->n_vars(); ++var) {
         double inf = info[var];
-        if (inf <= 0) {
-            if (first_pass) continue; else inf = 1e-2;
+
+        if (first_pass) {
+            if (gain[var] < 0.999 * mingain || inf <= 0) continue;
+        } else {
+            if (inf <= 0) inf = Epsilon;
         }
-        double ratio = gain[var] / inf;
+
+        double val = gain[var] / inf;
         int nbr = dom()->n_values(var);
 
-        if (ratio > bestratio
-            || (ratio > 0.999 * bestratio && (nbr < bestnbr || (nbr == bestnbr && gain[var] > gain[var])))) {
+        if (val > bestratio
+            || (val > 0.999 * bestratio && (nbr < bestnbr || (nbr == bestnbr && gain[var] > gain[var])))) {
             bestvar = var;
-            bestratio = ratio;
+            bestratio = val;
             bestnbr = nbr;
         }
     }
@@ -169,17 +191,18 @@ std::ostream &CNode::print_tmp_state(std::ostream &output, const str &indent) co
             fmt::print(output, "{}{}[{:>4}{:>8}{:>8}]\n", indent, indent,
                        i, freq[0][var->id()][i], freq[1][var->id()][i]);
         }
-        fmt::print(output, "{}{}info {:.3f}, gain {:.3f}, ratio {:.3f}\n", indent, indent,
+        fmt::print(output, "{}{}info {:.3f}, gain {:.3f}, val {:.3f}\n", indent, indent,
                    info[var->id()], gain[var->id()], gain[var->id()] / info[var->id()]);
     }
+    fmt::print(output, "{}av gain={:.3f}, MDL ({}) = {:.3f}, min={:.3f}\n",
+               indent, avgain, possible, mdl, mingain);
     fmt::print(output, "{}best var ", indent);
     if (bestvar == -1) {
-        output << "N/A";
+        output << "N/A\n";
     } else {
-        fmt::print(output, "{}: info {:.3f}, gain {:.3f}, ratio {:.3f}",
+        fmt::print(output, "{}: info {:.3f}, gain {:.3f}, val {:.3f}\n",
                    dom()->name(bestvar), info[bestvar], gain[bestvar], gain[bestvar] / info[bestvar]);
     }
-    fmt::print(output, "    av gain={:.3f}", avgain);
     return output;
 }
 
@@ -189,5 +212,6 @@ bool CNode::leaf_value() const {
         return tree->default_hit_;
     return !hit_configs().empty();
 }
+
 
 }

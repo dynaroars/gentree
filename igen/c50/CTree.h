@@ -35,6 +35,9 @@ private:
     PMutCNode root_;
 
     bool default_hit_;
+    bool multi_val_;
+    int n_cases_;
+    double avgain_wt_, mdl_wt_;
 
     friend class CNode;
 };
