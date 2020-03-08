@@ -28,7 +28,7 @@ void CTree::prepare_data_for_loc(const PLocation &loc) {
 }
 
 void CTree::build_tree() {
-    root_.reset(new CNode(this, nullptr, {miss_configs(), hit_configs()}));
+    root_ = new CNode(this, nullptr, {miss_configs(), hit_configs()});
     root_->evaluate_split();
 }
 

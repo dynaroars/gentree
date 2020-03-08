@@ -32,7 +32,7 @@ public:
 private:
     std::array<vec<PConfig>, 2> configs_;
 
-    std::unique_ptr<CNode> root_;
+    PMutCNode root_;
 
     bool default_hit_;
 

@@ -14,9 +14,10 @@ class CTree;
 
 class CNode;
 
-using PCNode = std::unique_ptr<CNode>;
+using PCNode = ptr<const CNode>;
+using PMutCNode = ptr<CNode>;
 
-class CNode {
+class CNode : public intrusive_ref_base_st<CNode> {
 public:
     CNode(CTree *tree, CNode *parent, std::array<boost::sub_range<vec<PConfig>>, 2> configs);
 
@@ -51,7 +52,7 @@ private:
     std::array<boost::sub_range<vec<PConfig>>, 2> configs_;
 
     PVarDomain split_by;
-    vec<PCNode> childs;
+    vec<PMutCNode> childs;
 
     friend class CTree;
 
