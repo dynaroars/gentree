@@ -31,6 +31,8 @@ public:
 
     const PConfig &config(int id) const { return cconfigs_.at(id); }
 
+    const vec<PConfig> &configs() const { return cconfigs_; }
+
     int n_locs() const { return int(locs_.size()); }
 
     int n_configs() const { return int(configs_.size()); }

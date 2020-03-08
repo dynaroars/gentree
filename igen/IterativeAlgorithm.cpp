@@ -11,6 +11,7 @@
 #include "CoverageStore.h"
 
 #include <klib/print_stl.h>
+#include <igen/c50/CTree.h>
 
 namespace igen {
 
@@ -32,6 +33,9 @@ public:
             //     }
             // });
         }
+
+        PMutCTree tree = new CTree(ctx());
+        tree->prepare_data_for_loc(cov()->loc("L1"));
     }
 
 private:

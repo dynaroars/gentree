@@ -29,6 +29,8 @@ public:
 
     vec<int> &cov_by_mut_ids() { return cov_by_; }
 
+    const vec<int> &cov_by_ids() const { return cov_by_; }
+
 private:
     str name_;
     int id_;
