@@ -161,6 +161,8 @@ void CNode::clear_all_tmp_data() {
 
 std::ostream &CNode::print_tmp_state(std::ostream &output, const str &indent) const {
     for (const auto &var : dom()->vars()) {
+        if (info[var->id()] < 0 || gain[var->id()] < 0)
+            continue;
         output << indent << "Var " << var->name() << ": \n";
         fmt::print(output, "{}{}[{:>4}{:>8}{:>8}]\n", indent, indent, "Val", "MISS", "HIT");
         for (int i = 0; i < var->n_values(); ++i) {
