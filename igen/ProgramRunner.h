@@ -13,7 +13,7 @@
 
 namespace igen {
 
-BETTER_ENUM(RunnerType, int, Invalid, Simple)
+BETTER_ENUM(RunnerType, int, Invalid, Simple, BuiltIn)
 
 class ProgramRunner : public Object {
 public:
@@ -26,6 +26,7 @@ private:
     str target;
 
     set<str> _run_simple(const PConfig &config) const;
+    set<str> _run_builtin(const PConfig &config) const;
 };
 
 using PProgramRunner = ptr<const ProgramRunner>;
