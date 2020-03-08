@@ -20,8 +20,6 @@ struct Program {
 };
 
 int register_builtin_program(Program p);
-
-void init();
 }
 
 #define VARS(...) __VA_ARGS__
@@ -32,27 +30,26 @@ void init();
 
 #define EVAL_STR(...) #__VA_ARGS__
 
-#define FN(name, vars, doms, code)                                                                              \
-    namespace igen::builtin {                                                                                   \
-        void _register_##name() {                                                                               \
-            register_builtin_program({                                                                          \
-                #name, EVAL_STR(vars), {doms},                                                                  \
-                [](const PConfig &config) -> set<str> {                                                         \
-                    const size_t NVARS = NUMARGS(doms);                                                         \
-                    std::array<int, NVARS> _array_values;                                                       \
-                    const auto &_vector_values = config->values();                                              \
-                    CHECK_EQ(_vector_values.size(), _array_values.size());                                      \
-                    std::copy(_vector_values.begin(), _vector_values.begin() + NVARS, _array_values.begin());   \
-                                                                                                                \
-                    set<str> _set_locs;                                                                         \
-                    auto[vars] = _array_values;                                                                 \
-                    { code; }                                                                                   \
-                    return _set_locs;                                                                           \
-                }                                                                                               \
-            });                                                                                                 \
-        }                                                                                                       \
+#define FN(name, vars, doms, code)                                                                          \
+    namespace igen::builtin {                                                                               \
+        int _registered_##name = register_builtin_program({                                                 \
+            #name, EVAL_STR(vars), {doms},                                                                  \
+            [](const PConfig &config) -> set<str> {                                                         \
+                const size_t NVARS = NUMARGS(doms);                                                         \
+                std::array<int, NVARS> _array_values;                                                       \
+                const auto &_vector_values = config->values();                                              \
+                CHECK_EQ(_vector_values.size(), _array_values.size());                                      \
+                std::copy(_vector_values.begin(), _vector_values.begin() + NVARS, _array_values.begin());   \
+                                                                                                            \
+                set<str> _set_locs;                                                                         \
+                auto[vars] = _array_values;                                                                 \
+                { code; }                                                                                   \
+                return _set_locs;                                                                           \
+            }                                                                                               \
+        });                                                                                                 \
     }
 
-#define INIT(name) void _register_##name(); _register_##name();
+#define FN_MODULE(name) namespace igen::builtin { void _fnmodule_##name() {} }
+#define FN_MODULE_USE(name) namespace igen::builtin { void _fnmodule_##name(); void _initfn_##name() { _fnmodule_##name(); } }
 
 #endif //IGEN4_IMPL_H

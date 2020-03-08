@@ -4,6 +4,8 @@
 
 #include "impl.h"
 
+FN_MODULE(fn_1)
+
 FN(c1,
    VARS(s, t, u, v, x, y, z),
    DOMS(2, 2, 2, 2, 2, 2, 5), {
