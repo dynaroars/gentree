@@ -51,17 +51,19 @@ public:
 
     int n_all_values() const { return n_all_values_; }
 
-    int n_vars() const { return int(vars.size()); }
+    int n_vars() const { return int(vars_.size()); }
 
-    int n_values(int var_id) const { return cvars.at(size_t(var_id))->n_values(); }
+    int n_values(int var_id) const { return cvars_.at(size_t(var_id))->n_values(); }
 
-    const str &name(int var_id) const { return cvars.at(size_t(var_id))->name(); }
+    const str &name(int var_id) const { return cvars_.at(size_t(var_id))->name(); }
 
-    const vec<str> &labels(int var_id) const { return cvars.at(size_t(var_id))->labels(); }
+    const vec<str> &labels(int var_id) const { return cvars_.at(size_t(var_id))->labels(); }
 
     const str &label(int var_id, int value) const {
         return value == -1 ? STR_VALUE_ANY : labels(var_id).at(size_t(value));
     }
+
+    const vec<PMutVarDomain> &vars() const { return vars_; }
 
     void cleanup() override;
 
@@ -82,8 +84,8 @@ public:
     }
 
 private:
-    vec<PMutVarDomain> vars;
-    vec<PVarDomain> cvars;
+    vec<PMutVarDomain> vars_;
+    vec<PVarDomain> cvars_;
     int n_all_values_ = 0;
 
     friend std::ostream &operator<<(std::ostream &output, const Domain &d);
@@ -91,22 +93,22 @@ private:
     static str STR_VALUE_ANY;
 
 public:
-    vec<PMutVarDomain>::const_iterator begin() { return vars.begin(); }
+    vec<PMutVarDomain>::const_iterator begin() { return vars_.begin(); }
 
-    vec<PMutVarDomain>::const_iterator end() { return vars.end(); }
+    vec<PMutVarDomain>::const_iterator end() { return vars_.end(); }
 
     vec<PVarDomain>::const_iterator begin() const { return cbegin(); }
 
     vec<PVarDomain>::const_iterator end() const { return cend(); }
 
-    vec<PVarDomain>::const_iterator cbegin() const { return cvars.begin(); }
+    vec<PVarDomain>::const_iterator cbegin() const { return cvars_.begin(); }
 
-    vec<PVarDomain>::const_iterator cend() const { return cvars.end(); }
+    vec<PVarDomain>::const_iterator cend() const { return cvars_.end(); }
 
 
-    PVarDomain operator[](size_t idx) const { return vars.at(idx); }
+    PVarDomain operator[](size_t idx) const { return vars_.at(idx); }
 
-    const PMutVarDomain &operator[](size_t idx) { return vars.at(idx); }
+    const PMutVarDomain &operator[](size_t idx) { return vars_.at(idx); }
 };
 
 std::istream &operator>>(std::istream &input, Domain &d);

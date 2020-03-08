@@ -9,6 +9,7 @@
 #include <igen/Context.h>
 #include <igen/Location.h>
 #include <igen/Config.h>
+#include "CNode.h"
 
 namespace igen {
 
@@ -17,6 +18,8 @@ public:
     explicit CTree(PMutContext ctx);
 
     void prepare_data_for_loc(const PLocation &loc);
+
+    void build_tree();
 
     vec<PConfig> &miss_configs() { return configs_[0]; }
 
@@ -28,6 +31,8 @@ public:
 
 private:
     std::array<vec<PConfig>, 2> configs_;
+
+    std::unique_ptr<CNode> root_;
 };
 
 using PCTree = ptr<const CTree>;

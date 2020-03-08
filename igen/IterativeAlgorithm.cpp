@@ -26,7 +26,7 @@ public:
         for (const auto &c : configs) {
             auto e = ctx()->program_runner()->run(c);
             cov()->register_cov(c, e);
-            VLOG(20, "{}  ==>  ", *c) << e;
+            //VLOG(20, "{}  ==>  ", *c) << e;
             // VLOG_BLOCK(21, {
             //     for (const auto &x : c->cov_locs()) {
             //         log << x->name() << ", ";
@@ -36,6 +36,7 @@ public:
 
         PMutCTree tree = new CTree(ctx());
         tree->prepare_data_for_loc(cov()->loc("L1"));
+        tree->build_tree();
     }
 
 private:

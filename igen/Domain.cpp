@@ -59,10 +59,10 @@ std::istream &Domain::parse(std::istream &input) {
         zsolver().add(0 <= zvar && zvar < n_vals);
 
         PMutVarDomain entry = new VarDomain(ctx());
-        vars.emplace_back(entry);
-        cvars.emplace_back(entry);
+        vars_.emplace_back(entry);
+        cvars_.emplace_back(entry);
 
-        entry->id_ = (int) vars.size() - 1;
+        entry->id_ = (int) vars_.size() - 1;
         entry->name_ = name;
         entry->labels_ = move(labels);
 
@@ -73,13 +73,13 @@ std::istream &Domain::parse(std::istream &input) {
         n_all_values_ += n_vals;
     }
 
-    CHECK_EQ(vars.size(), cvars.size());
+    CHECK_EQ(vars_.size(), cvars_.size());
     return input;
 }
 
 void Domain::cleanup() {
-    vars.clear();
-    cvars.clear();
+    vars_.clear();
+    cvars_.clear();
 }
 
 

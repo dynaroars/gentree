@@ -1,7 +1,7 @@
 add_library(klib
         common.h
         logging.h
-        HashUtil.cpp HashUtil.h print_stl.h custom_container.h)
+        HashUtil.cpp HashUtil.h print_stl.h custom_container.h math.h)
 
 target_link_libraries(klib
         PRIVATE
