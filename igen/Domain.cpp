@@ -3,6 +3,7 @@
 //
 
 #include <fstream>
+#include <igen/builtin/programs.h>
 #include "Domain.h"
 #include "Config.h"
 
@@ -27,9 +28,14 @@ Domain::Domain(PMutContext _ctx) : Object(move(_ctx)) {
     } else {
         filepath = ctx()->get_option_as<str>("filestem") + ".dom";
     }
-    std::ifstream ifs_dom(filepath);
-    CHECKF(ifs_dom, "Bad dom input file: {}", filepath);
-    ifs_dom >> (*this);
+    if (filepath.at(0) == '@') {
+        std::stringstream ss(builtin::get_dom_str(filepath));
+        ss >> (*this);
+    } else {
+        std::ifstream ifs_dom(filepath);
+        CHECKF(ifs_dom, "Bad dom input file: {}", filepath);
+        ifs_dom >> (*this);
+    }
 }
 
 std::istream &Domain::parse(std::istream &input) {

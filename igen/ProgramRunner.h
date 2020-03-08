@@ -10,6 +10,7 @@
 
 #include <boost/container/flat_set.hpp>
 #include <klib/enum.h>
+#include <igen/builtin/programs.h>
 
 namespace igen {
 
@@ -24,6 +25,7 @@ public:
 private:
     RunnerType type;
     str target;
+    builtin::BuiltinRunnerFn builtin_fn;
 
     set<str> _run_simple(const PConfig &config) const;
     set<str> _run_builtin(const PConfig &config) const;

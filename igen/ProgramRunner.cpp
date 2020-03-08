@@ -35,6 +35,9 @@ ProgramRunner::ProgramRunner(PMutContext _ctx) : Object(move(_ctx)), type(Runner
     } else {
         target = ctx()->get_option_as<str>("filestem") + ".exe";
     }
+    if (type == +RunnerType::BuiltIn) {
+        builtin_fn = builtin::get_fn(target);
+    }
 }
 
 set<str> ProgramRunner::run(const PConfig &config) const {
@@ -71,14 +74,7 @@ set<str> ProgramRunner::_run_simple(const PConfig &config) const {
 }
 
 set<str> ProgramRunner::_run_builtin(const PConfig &config) const {
-    set<str> ret;
-    const auto &V = config->values();
-    int s, t, u, v, x, y, z;
-    std::tie(s, t, u, v, x, y, z) = std::make_tuple(V[0], V[1], V[2], V[3], V[4], V[5], V[6]);
-    if (((s || t) && (u || (!v && z == 2))) || (x && z >= 3) || (t && (u || (0 < z && z <= 2))))
-        ret.insert("L1");
-    //ret.insert("LTr");
-    return ret;
+    return builtin_fn(config);
 }
 
 void intrusive_ptr_release(ProgramRunner *p) {
