@@ -71,6 +71,8 @@ private: // TEMP DATA
 
     void clear_all_tmp_data();
 
+    void create_childs();
+
     std::ostream &print_tmp_state(std::ostream &output, const str &indent = "    ") const;
 };
 

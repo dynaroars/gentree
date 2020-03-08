@@ -102,19 +102,32 @@ int CNode::select_best_var(bool first_pass) {
     return bestvar;
 }
 
+void CNode::create_childs() {
+
+}
+
 bool CNode::evaluate_split() {
     BOOST_SCOPE_EXIT(this_) { this_->clear_all_tmp_data(); }
     BOOST_SCOPE_EXIT_END
-    if (is_leaf())
+    if (is_leaf()) {
+        GVLOG(30) << "\n<" << depth() << ">: " << n_total() << " cases\n    "
+                  << (leaf_value() ? "HIT" : "MISS");
         return false;
+    }
 
     calc_freq();
     calc_inf_gain();
     if (select_best_var(true) == -1) select_best_var(false);
     VLOG_BLOCK(30, print_tmp_state(log << "\n<" << depth() << ">: " << n_total() << " cases\n"));
 
+    split_by = dom()->vars().at(bestvar);
+    create_childs();
+    for (auto &c : childs)
+        c->evaluate_split();
+
     return split_by != nullptr;
 }
+
 
 void CNode::clear_all_tmp_data() {
     freq[0].clear(), freq[1].clear();
