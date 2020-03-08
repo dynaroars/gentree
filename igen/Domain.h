@@ -63,12 +63,23 @@ public:
         return value == -1 ? STR_VALUE_ANY : labels(var_id).at(size_t(value));
     }
 
-     void cleanup() override;
+    void cleanup() override;
 
 public:
     vec<ptr<Config>> gen_all_configs() const;
 
     vec<ptr<Config>> gen_all_configs(ptr<const Config> templ) const;
+
+    template<typename T>
+    vec<T> create_vec_vars() const { return vec<T>(n_vars()); }
+
+    template<typename T>
+    vec<vec<T>> create_vec_vars_values() const {
+        auto res = vec<vec<T>>(n_vars());
+        for (int i = 0; i < n_vars(); ++i)
+            res[i].resize(n_values(i));
+        return res;
+    }
 
 private:
     vec<PMutVarDomain> vars;
