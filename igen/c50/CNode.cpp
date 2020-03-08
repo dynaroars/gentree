@@ -117,4 +117,11 @@ std::ostream &CNode::print_tmp_state(std::ostream &output, const str &indent) co
     return output;
 }
 
+bool CNode::leaf_value() const {
+    CHECK(is_leaf());
+    if (hit_configs().empty() && miss_configs().empty())
+        return tree->default_hit_;
+    return !hit_configs().empty();
+}
+
 }

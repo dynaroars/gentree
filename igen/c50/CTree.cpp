@@ -24,6 +24,7 @@ void CTree::prepare_data_for_loc(const PLocation &loc) {
             miss_configs().emplace_back(c);
         }
     }
+    default_hit_ = hit_configs() > miss_configs();
 }
 
 void CTree::build_tree() {

@@ -33,6 +33,10 @@ private:
     std::array<vec<PConfig>, 2> configs_;
 
     std::unique_ptr<CNode> root_;
+
+    bool default_hit_;
+
+    friend class CNode;
 };
 
 using PCTree = ptr<const CTree>;

@@ -37,10 +37,7 @@ public:
     [[nodiscard]] bool is_leaf() const { return hit_configs().empty() || miss_configs().empty(); }
 
     // Return true => HIT, false => MISS
-    [[nodiscard]] bool leaf_value() const {
-        CHECK(is_leaf());
-        return !hit_configs().empty();
-    }
+    [[nodiscard]] bool leaf_value() const;
 
     int depth() const { return depth_; }
 
