@@ -53,10 +53,12 @@ private:
 
     PVarDomain split_by;
     vec<PMutCNode> childs;
+    vec<bool> tested_vars_;
 
     friend class CTree;
 
     PDomain dom() const;
+
     PVarDomain dom(int var_id) const;
 
 private: // TEMP DATA

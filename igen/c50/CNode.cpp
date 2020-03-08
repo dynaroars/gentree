@@ -16,6 +16,11 @@ static const double Epsilon = 1E-4;
 CNode::CNode(CTree *tree, CNode *parent, std::array<boost::sub_range<vec<PConfig>>, 2> configs) :
         tree(tree), parent(parent), configs_(std::move(configs)) {
     depth_ = (parent ? parent->depth() + 1 : 0);
+    if (parent) {
+        tested_vars_ = parent->tested_vars_;
+    } else {
+        tested_vars_ = dom()->create_vec_vars<bool>();
+    }
 }
 
 PDomain CNode::dom() const {
@@ -45,6 +50,7 @@ void CNode::calc_inf_gain() {
     // Calc info
     info = dom()->create_vec_vars<double>();
     for (int var_id = 0; var_id < dom()->n_vars(); ++var_id) {
+        if (tested_vars_[var_id]) continue;
         double sum = 0;
         for (int val = 0; val < dom()->n_values(var_id); ++val) {
             int n = freq[0][var_id][val] + freq[1][var_id][val];
@@ -65,6 +71,7 @@ void CNode::calc_inf_gain() {
     double total_gain = 0;
     gain = dom()->create_vec_vars<double>();
     for (int var_id = 0; var_id < dom()->n_vars(); ++var_id) {
+        if (tested_vars_[var_id]) continue;
         double &g = gain[var_id];
         for (int val = 0; val < dom()->n_values(var_id); ++val) {
             double sum = 0;
@@ -85,6 +92,7 @@ void CNode::calc_inf_gain() {
     avgain = 0;
     possible = 0;
     for (int var = 0; var < dom()->n_vars(); ++var) {
+        if (tested_vars_[var]) continue;
         if (gain[var] >= Epsilon &&
             (tree->multi_val_ || dom(var)->n_values() < 0.3 * (tree->n_cases_ + 1))) {
             possible++;
@@ -105,6 +113,8 @@ int CNode::select_best_var(bool first_pass) {
     int bestnbr = dom()->n_all_values();
 
     for (int var = 0; var < dom()->n_vars(); ++var) {
+        if (tested_vars_[var]) continue;
+
         double inf = info[var];
 
         if (first_pass) {
@@ -137,7 +147,9 @@ void CNode::create_childs() {
         });
     }
 
+    tested_vars_[bestvar] = true;
     childs.resize(nvalues);
+
     vec<PConfig>::iterator beg[2], end[2] = {miss_configs().begin(), hit_configs().begin()};
     vec<PConfig>::iterator real_end[2] = {miss_configs().end(), hit_configs().end()};
     for (int val = 0; val < nvalues; ++val) {
@@ -165,6 +177,7 @@ bool CNode::evaluate_split() {
     calc_freq();
     calc_inf_gain();
     if (select_best_var(true) == -1) select_best_var(false);
+    CHECK_NE(bestvar, -1);
     VLOG_BLOCK(30, print_tmp_state(log << "\n<" << depth() << ">: " << n_total() << " cases\n"));
 
     split_by = dom()->vars().at(bestvar);
@@ -183,8 +196,9 @@ void CNode::clear_all_tmp_data() {
 
 std::ostream &CNode::print_tmp_state(std::ostream &output, const str &indent) const {
     for (const auto &var : dom()->vars()) {
-        if (info[var->id()] < 0 || gain[var->id()] < 0)
-            continue;
+        // if (info[var->id()] < 0 || gain[var->id()] < 0)
+        //     continue;
+        if (tested_vars_[var->id()]) continue;
         output << indent << "Var " << var->name() << ": \n";
         fmt::print(output, "{}{}[{:>4}{:>8}{:>8}]\n", indent, indent, "Val", "MISS", "HIT");
         for (int i = 0; i < var->n_values(); ++i) {
