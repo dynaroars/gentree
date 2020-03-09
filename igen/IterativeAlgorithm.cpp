@@ -42,6 +42,15 @@ public:
         //z3::params simpl_params(ctx()->zctx());
         //simpl_params.set("rewrite_patterns", true);
         e = e.simplify();
+
+        z3::tactic tactic(ctx_mut()->zctx(), "ctx-solver-simplify");
+        tactic = z3::try_for(tactic, 60000);
+        z3::goal goal(ctx_mut()->zctx());
+        goal.add(e);
+        z3::apply_result tatic_result = tactic.apply(goal);
+        z3::goal result_goal = tatic_result[0];
+        e = result_goal.as_expr();
+
         LOG(INFO, "EXPR AFTER = \n") << e;
         //LOG(INFO, "SOLVER = \n") << ctx()->zsolver();
         for (const auto &c : cov()->configs()) {
