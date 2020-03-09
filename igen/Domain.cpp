@@ -11,8 +11,6 @@ namespace igen {
 
 VarDomain::VarDomain(PMutContext ctx) : Object(move(ctx)), zvar_(zctx()) {}
 
-expr VarDomain::eq(int val) const { return zvar_eq_val.at(val); }
-
 //===================================================================================
 
 str Domain::STR_VALUE_ANY = "?";
@@ -62,8 +60,9 @@ std::istream &Domain::parse(std::istream &input) {
         CHECK_GT(n_vals, 0);
 
         //===
-        z3::expr zvar = zctx().int_const(name.c_str());
-        zsolver().add(0 <= zvar && zvar < n_vals);
+        z3::expr zvar = (n_vals == 2) ? zctx().bool_const(name.c_str()) : zctx().int_const(name.c_str());
+        if (n_vals != 2)
+            zsolver().add(0 <= zvar && zvar < n_vals);
 
         PMutVarDomain entry = new VarDomain(ctx());
         vars_.emplace_back(entry);
@@ -75,8 +74,11 @@ std::istream &Domain::parse(std::istream &input) {
         entry->zvar_ = zvar;
 
         entry->zvar_eq_val.reserve(n_vals);
-        for (int i = 0; i < n_vals; i++)
-            entry->zvar_eq_val.push_back(zvar == i);
+        for (int i = 0; i < n_vals; i++) {
+            expr ex_val = (n_vals == 2) ? ctx()->zbool(i) : ctx()->zctx().int_val(i);
+            entry->zvals_.push_back(ex_val);
+            entry->zvar_eq_val.push_back(zvar == ex_val);
+        }
 
         n_all_values_ += n_vals;
     }

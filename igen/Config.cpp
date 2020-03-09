@@ -49,8 +49,8 @@ bool Config::eval(z3::expr e) const {
     z3::expr_vector sub_to(zctx);
     sub_to.resize(unsigned(dom()->n_vars()));
     for (int i = 0; i < dom()->n_vars(); ++i) {
-        auto int_val = zctx.int_val(value(i));
-        sub_to.set(i, int_val);
+        auto expr_val = dom()->vars()[i]->zval(value(i));
+        sub_to.set(i, expr_val);
     }
     z3::expr sub_res = e.substitute(dom()->vars_expr_vector(), sub_to).simplify();
     CHECK(sub_res.kind() == Z3_APP_AST);

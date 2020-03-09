@@ -23,6 +23,7 @@ private:
 private:
     expr zvar_;
     vec <expr> zvar_eq_val;
+    vec <expr> zvals_;
 
 public:
     explicit VarDomain(PMutContext ctx);
@@ -33,12 +34,17 @@ public:
 
     const str &name() const { return name_; };
 
-    const vec <str> &labels() const { return labels_; };
+    const vec <str> &labels() const { return labels_; }
 
-    expr eq(int val) const;
+    const expr &eq(int val) const { return zvar_eq_val.at(size_t(val)); };
+
+    const expr &val(int v) const { return zvals_.at(size_t(v)); }
 
     const expr &zvar() const { return zvar_; }
 
+    const vec <expr> &zvals() const { return zvals_; }
+
+    const expr &zval(int v) const { return zvals_[size_t(v)]; }
 };
 
 using PVarDomain = ptr<const VarDomain>;
