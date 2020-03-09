@@ -38,8 +38,11 @@ public:
         tree->prepare_data_for_loc(cov()->loc("L1"));
         tree->build_tree();
         z3::expr e = tree->build_zexpr();
-        e = e.simplify();
+        z3::params simpl_params(ctx()->zctx());
+        simpl_params.set("rewrite_patterns", true);
+        e = e.simplify(simpl_params);
         LOG(INFO, "EXPR = \n") << e;
+        //LOG(INFO, "SOLVER = \n") << ctx()->zsolver();
     }
 
 private:

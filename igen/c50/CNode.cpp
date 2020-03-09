@@ -236,14 +236,29 @@ z3::expr CNode::build_zexpr() const {
     if (is_leaf()) {
         return tree->ctx()->zbool(leaf_value());
     }
-    z3::expr_vector res(tree->ctx_mut()->zctx());
-    res.resize(unsigned(childs.size()));
     CHECK(bestvar != -1 && int(childs.size()) == dom(bestvar)->n_values());
+
+    z3::expr res(tree->ctx_mut()->zctx()), e = res;
+    bool empty_res = true;
+
     for (int val = 0; val < int(childs.size()); ++val) {
-        z3::expr e = dom(bestvar)->eq(val) && childs[val]->build_zexpr();
-        res.set(val, e);
+        bool need_or = false;
+        if (childs[val]->is_leaf()) {
+            if (childs[val]->leaf_value()) {
+                e = dom(bestvar)->eq(val);
+                need_or = true;
+            }
+        } else {
+            e = dom(bestvar)->eq(val) && childs[val]->build_zexpr();
+            need_or = true;
+        }
+        if (need_or) {
+            if (empty_res) res = e, empty_res = false;
+            else res = res || e;
+        }
     }
-    return z3::mk_or(res);
+    CHECK(!empty_res);
+    return res;
 }
 
 }
