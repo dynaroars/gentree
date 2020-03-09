@@ -39,9 +39,9 @@ public:
         tree->build_tree();
         z3::expr e = tree->build_zexpr(CTree::DisjOfConj);
         LOG(INFO, "EXPR BEFORE = \n") << e;
-        z3::params simpl_params(ctx()->zctx());
-        simpl_params.set("rewrite_patterns", true);
-        e = e.simplify(simpl_params);
+        //z3::params simpl_params(ctx()->zctx());
+        //simpl_params.set("rewrite_patterns", true);
+        e = e.simplify();
         LOG(INFO, "EXPR AFTER = \n") << e;
         //LOG(INFO, "SOLVER = \n") << ctx()->zsolver();
         for (const auto &c : cov()->configs()) {
