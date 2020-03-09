@@ -15,6 +15,11 @@ namespace igen {
 
 class CTree : public Object {
 public:
+    enum ExprStrat {
+        FreeMix,
+        DisjOfConj
+    };
+
     explicit CTree(PMutContext ctx);
 
     void prepare_data_for_loc(const PLocation &loc);
@@ -29,7 +34,7 @@ public:
 
     const vec<PConfig> &hit_configs() const { return configs_[1]; }
 
-    z3::expr build_zexpr() const;
+    z3::expr build_zexpr(ExprStrat strat) const;
 
 private:
     std::array<vec<PConfig>, 2> configs_;

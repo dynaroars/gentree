@@ -37,11 +37,12 @@ public:
         PMutCTree tree = new CTree(ctx());
         tree->prepare_data_for_loc(cov()->loc("L1"));
         tree->build_tree();
-        z3::expr e = tree->build_zexpr();
+        z3::expr e = tree->build_zexpr(CTree::DisjOfConj);
+        LOG(INFO, "EXPR BEFORE = \n") << e;
         z3::params simpl_params(ctx()->zctx());
         simpl_params.set("rewrite_patterns", true);
         e = e.simplify(simpl_params);
-        LOG(INFO, "EXPR = \n") << e;
+        LOG(INFO, "EXPR AFTER = \n") << e;
         //LOG(INFO, "SOLVER = \n") << ctx()->zsolver();
         for (const auto &c : cov()->configs()) {
             bool val = c->eval(e);

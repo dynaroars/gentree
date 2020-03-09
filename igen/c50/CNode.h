@@ -45,7 +45,9 @@ public:
 public:
     bool evaluate_split();
 
-    z3::expr build_zexpr() const;
+    z3::expr build_zexpr_mixed() const;
+
+    void build_zexpr_disj_conj(z3::expr_vector &vec_res, const expr &cur_expr) const;
 
 private:
     CTree *tree;

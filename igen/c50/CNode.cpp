@@ -232,7 +232,7 @@ bool CNode::leaf_value() const {
 }
 
 
-z3::expr CNode::build_zexpr() const {
+z3::expr CNode::build_zexpr_mixed() const {
     if (is_leaf()) {
         return tree->ctx()->zbool(leaf_value());
     }
@@ -249,7 +249,7 @@ z3::expr CNode::build_zexpr() const {
                 need_or = true;
             }
         } else {
-            e = dom(bestvar)->eq(val) && childs[val]->build_zexpr();
+            e = dom(bestvar)->eq(val) && childs[val]->build_zexpr_mixed();
             need_or = true;
         }
         if (need_or) {
@@ -259,6 +259,19 @@ z3::expr CNode::build_zexpr() const {
     }
     CHECK(!empty_res);
     return res;
+}
+
+void CNode::build_zexpr_disj_conj(z3::expr_vector &vec_res, const expr &cur_expr) const {
+    if (is_leaf() && leaf_value()) {
+        vec_res.push_back(cur_expr);
+        return;
+    }
+    for (int val = 0; val < int(childs.size()); ++val) {
+        expr next_expr = depth_ == 0 ?
+                         dom(bestvar)->eq(val) :
+                         cur_expr && dom(bestvar)->eq(val);
+        childs[val]->build_zexpr_disj_conj(vec_res, next_expr);
+    }
 }
 
 }

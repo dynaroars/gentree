@@ -52,9 +52,19 @@ void CTree::build_tree() {
     root_->evaluate_split();
 }
 
-z3::expr CTree::build_zexpr() const {
+z3::expr CTree::build_zexpr(ExprStrat strat) const {
     CHECK_NE(root_, nullptr);
-    return root_->build_zexpr();
+    switch (strat) {
+        case FreeMix:
+            return root_->build_zexpr_mixed();
+        case DisjOfConj: {
+            z3::expr_vector res(ctx_mut()->zctx());
+            root_->build_zexpr_disj_conj(res, ctx()->ztrue());
+            return z3::mk_or(res);
+        }
+        default:
+            CHECK(0);
+    }
 }
 
 }
