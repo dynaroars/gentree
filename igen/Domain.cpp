@@ -19,7 +19,8 @@ void intrusive_ptr_release(Domain *d) {
     boost::sp_adl_block::intrusive_ptr_release(d);
 }
 
-Domain::Domain(PMutContext _ctx) : Object(move(_ctx)), vars_expr_vector_(ctx()->zctx()) {
+Domain::Domain(PMutContext _ctx)
+        : Object(move(_ctx)), vars_expr_vector_(ctx()->zctx()), expr_all_asserts_(ctx()->zctx()) {
     str filepath;
     if (ctx()->has_option("dom")) {
         filepath = ctx()->get_option_as<str>("dom");
@@ -43,6 +44,7 @@ std::istream &Domain::parse(std::istream &input) {
     n_all_values_ = 0;
 
     std::string line;
+    bool assigned_expr_all_asserts = false;
     while (std::getline(input, line)) {
         std::stringstream ss(line);
         str name;
@@ -61,8 +63,12 @@ std::istream &Domain::parse(std::istream &input) {
 
         //===
         z3::expr zvar = (n_vals == 2) ? zctx().bool_const(name.c_str()) : zctx().int_const(name.c_str());
-        if (n_vals != 2)
-            zsolver().add(0 <= zvar && zvar < n_vals);
+        if (n_vals != 2) {
+            expr e = 0 <= zvar && zvar < n_vals;
+            zsolver().add(e);
+            if (assigned_expr_all_asserts) expr_all_asserts_ = expr_all_asserts_ && e;
+            else expr_all_asserts_ = e, assigned_expr_all_asserts = true;
+        }
 
         PMutVarDomain entry = new VarDomain(ctx());
         vars_.emplace_back(entry);

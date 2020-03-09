@@ -70,6 +70,8 @@ public:
 
     const z3::expr &zbool(bool b) const { return b ? z3true_ : z3false_; }
 
+    expr zctx_solver_simplify(const expr &e) const;
+
 private:
     friend class Object;
 

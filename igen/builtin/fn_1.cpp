@@ -33,3 +33,10 @@ FN(s3,
        if ((a && b) || c)
            LOC("L1");
    })
+
+FN(s4,
+   VARS(a, b, c),
+   DOMS(2, 2, 2), {
+       if (a || b || c)
+           LOC("L1");
+   })
