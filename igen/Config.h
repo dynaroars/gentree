@@ -49,6 +49,10 @@ public:
 
     vec<int> &cov_loc_mut_ids() { return cov_locs_; }
 
+    bool eval(z3::expr e) const;
+
+    bool cov_loc(const str &loc_name) const;
+
 private:
     int id_;
     vec<int> values_;

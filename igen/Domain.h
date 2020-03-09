@@ -18,11 +18,11 @@ private:
 
     int id_;
     str name_;
-    vec<std::string> labels_;
+    vec <std::string> labels_;
 
 private:
-    expr zvar;
-    vec<expr> zvar_eq_val;
+    expr zvar_;
+    vec <expr> zvar_eq_val;
 
 public:
     explicit VarDomain(PMutContext ctx);
@@ -33,9 +33,12 @@ public:
 
     const str &name() const { return name_; };
 
-    const vec<str> &labels() const { return labels_; };
+    const vec <str> &labels() const { return labels_; };
 
     expr eq(int val) const;
+
+    const expr &zvar() const { return zvar_; }
+
 };
 
 using PVarDomain = ptr<const VarDomain>;
@@ -57,26 +60,28 @@ public:
 
     const str &name(int var_id) const { return cvars_.at(size_t(var_id))->name(); }
 
-    const vec<str> &labels(int var_id) const { return cvars_.at(size_t(var_id))->labels(); }
+    const vec <str> &labels(int var_id) const { return cvars_.at(size_t(var_id))->labels(); }
 
     const str &label(int var_id, int value) const {
         return value == -1 ? STR_VALUE_ANY : labels(var_id).at(size_t(value));
     }
 
-    const vec<PMutVarDomain> &vars() const { return vars_; }
+    const vec <PMutVarDomain> &vars() const { return vars_; }
+
+    const z3::expr_vector &vars_expr_vector() const { return vars_expr_vector_; }
 
     void cleanup() override;
 
 public:
-    vec<ptr<Config>> gen_all_configs() const;
+    vec <ptr<Config>> gen_all_configs() const;
 
-    vec<ptr<Config>> gen_all_configs(ptr<const Config> templ) const;
-
-    template<typename T>
-    vec<T> create_vec_vars() const { return vec<T>(n_vars()); }
+    vec <ptr<Config>> gen_all_configs(ptr<const Config> templ) const;
 
     template<typename T>
-    vec<vec<T>> create_vec_vars_values() const {
+    vec <T> create_vec_vars() const { return vec<T>(n_vars()); }
+
+    template<typename T>
+    vec <vec<T>> create_vec_vars_values() const {
         auto res = vec<vec<T>>(n_vars());
         for (int i = 0; i < n_vars(); ++i)
             res[i].resize(n_values(i));
@@ -84,9 +89,10 @@ public:
     }
 
 private:
-    vec<PMutVarDomain> vars_;
-    vec<PVarDomain> cvars_;
+    vec <PMutVarDomain> vars_;
+    vec <PVarDomain> cvars_;
     int n_all_values_ = 0;
+    z3::expr_vector vars_expr_vector_;
 
     friend std::ostream &operator<<(std::ostream &output, const Domain &d);
 

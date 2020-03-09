@@ -9,7 +9,7 @@
 
 namespace igen {
 
-VarDomain::VarDomain(PMutContext ctx) : Object(move(ctx)), zvar(zctx()) {}
+VarDomain::VarDomain(PMutContext ctx) : Object(move(ctx)), zvar_(zctx()) {}
 
 expr VarDomain::eq(int val) const { return zvar_eq_val.at(val); }
 
@@ -21,7 +21,7 @@ void intrusive_ptr_release(Domain *d) {
     boost::sp_adl_block::intrusive_ptr_release(d);
 }
 
-Domain::Domain(PMutContext _ctx) : Object(move(_ctx)) {
+Domain::Domain(PMutContext _ctx) : Object(move(_ctx)), vars_expr_vector_(ctx()->zctx()) {
     str filepath;
     if (ctx()->has_option("dom")) {
         filepath = ctx()->get_option_as<str>("dom");
@@ -72,12 +72,19 @@ std::istream &Domain::parse(std::istream &input) {
         entry->id_ = (int) vars_.size() - 1;
         entry->name_ = name;
         entry->labels_ = move(labels);
+        entry->zvar_ = zvar;
 
         entry->zvar_eq_val.reserve(n_vals);
         for (int i = 0; i < n_vals; i++)
             entry->zvar_eq_val.push_back(zvar == i);
 
         n_all_values_ += n_vals;
+    }
+
+    vars_expr_vector_.resize(unsigned(vars_.size()));
+    for (int i = 0; i < n_vars(); ++i) {
+        auto ref = vars_[i]->zvar();
+        vars_expr_vector_.set(i, ref);
     }
 
     CHECK_EQ(vars_.size(), cvars_.size());

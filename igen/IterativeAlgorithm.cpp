@@ -43,6 +43,13 @@ public:
         e = e.simplify(simpl_params);
         LOG(INFO, "EXPR = \n") << e;
         //LOG(INFO, "SOLVER = \n") << ctx()->zsolver();
+        for (const auto &c : cov()->configs()) {
+            bool val = c->eval(e);
+            //LOG(INFO, "{} ==> {}", *c, val);
+            int should_be = c->cov_loc("L1");
+            CHECK_EQ(val, should_be);
+        }
+        LOG(INFO, "Verified expr with {} configs", cov()->n_configs());
     }
 
 private:
