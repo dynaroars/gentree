@@ -19,3 +19,17 @@ FN(s1,
        if ((a || b) && (c || d))
            LOC("L1");
    })
+
+FN(s2,
+   VARS(a, b, c),
+   DOMS(2, 2, 2), {
+       if (a && b && c)
+           LOC("L1");
+   })
+
+FN(s3,
+   VARS(a, b, c),
+   DOMS(2, 2, 2), {
+       if ((a && b) || c)
+           LOC("L1");
+   })
