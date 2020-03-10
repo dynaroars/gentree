@@ -48,3 +48,29 @@ FN(s4,
        if (a || b || c)
            LOC("L1");
    })
+
+
+FN(ex,
+   VARS(s, t, u, v, x, y, z),
+   DOMS(2, 2, 2, 2, 2, 2, 5), {
+       int max_z = 3;
+       if (x && y) {
+           LOC("L0"); //x & y
+           if (!(0 < z && z < max_z)) {
+               LOC("L1"); //x & y & (z=0|3|4)
+           }
+       } else {
+           LOC("L2"); // !x|!y
+           LOC("L2a"); // !x|!y
+       }
+
+       LOC("L3"); // true
+       if (u && v) {
+           LOC("L4"); //u&v
+           if (s || t) {
+               LOC("L5");  // (s|t) & (u&v)
+           }
+       }
+       if ((s || t) && (u || v))
+           LOC("L5");
+   })

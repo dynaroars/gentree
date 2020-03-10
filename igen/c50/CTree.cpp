@@ -25,7 +25,7 @@ void CTree::prepare_data_for_loc(const PLocation &loc) {
             miss_configs().emplace_back(c);
         }
     }
-    default_hit_ = hit_configs() > miss_configs();
+    default_hit_ = hit_configs().size() > miss_configs().size();
     n_cases_ = (int) cov()->configs().size();
 
     // PREPARE VALS

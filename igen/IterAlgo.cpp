@@ -73,7 +73,10 @@ public:
         set<hash128_t> set_conf_hash;
 
         auto configs = dom()->gen_one_convering_configs();
-        VLOG(10, "gen & run one convering configs");
+        int n_one_covering = int(configs.size());
+        auto seed_configs = get_seed_configs();
+        vec_move_append(configs, seed_configs);
+        VLOG(10, "Run initial configs (n_one_covering = {})", n_one_covering);
         for (const auto &c : configs) {
             auto e = ctx()->program_runner()->run(c);
             cov()->register_cov(c, e);
@@ -154,6 +157,16 @@ public:
         } else if (ctx()->has_option("alg-test")) {
             run_alg_test();
         }
+    }
+
+    vec<PMutConfig> get_seed_configs() const {
+        vec<PMutConfig> ret;
+        if (ctx()->has_option("seed-configs")) {
+            vec<str> vs = ctx()->get_option_as<vec<str>>("seed-configs");
+            for (const auto &s : vs)
+                ret.emplace_back(new Config(ctx_mut(), s));
+        }
+        return ret;
     }
 
 private:

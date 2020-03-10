@@ -22,6 +22,8 @@ public:
 
     explicit Config(PMutContext ctx, const vec<int> &values, int id = -1);
 
+    explicit Config(PMutContext ctx, const str &str_values, int id = -1);
+
     explicit Config(const ptr<const Config> &c);
 
     explicit Config(const ptr<Config> &c);
