@@ -21,7 +21,8 @@ public:
 
     ~IterativeAlgorithm() override = default;
 
-    void run_alg() {
+    void run_alg_full() {
+        str loc = ctx()->get_option_as<str>("loc");
         auto configs = dom()->gen_all_configs();
         for (const auto &c : configs) {
             auto e = ctx()->program_runner()->run(c);
@@ -35,7 +36,7 @@ public:
         }
 
         PMutCTree tree = new CTree(ctx());
-        tree->prepare_data_for_loc(cov()->loc("L1"));
+        tree->prepare_data_for_loc(cov()->loc(loc));
         tree->build_tree();
         LOG(INFO, "DECISION TREE = \n") << (*tree);
         z3::expr e = tree->build_zexpr(CTree::DisjOfConj);
@@ -52,6 +53,18 @@ public:
             CHECK_EQ(val, should_be);
         }
         LOG(INFO, "Verified expr with {} configs", cov()->n_configs());
+    }
+
+    void run_alg_test() {
+
+    }
+
+    void run_alg() {
+        if (ctx()->has_option("full")) {
+            run_alg_full();
+        } else if (ctx()->has_option("alg-test")) {
+            run_alg_test();
+        }
     }
 
 private:

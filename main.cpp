@@ -41,6 +41,9 @@ int prog(int argc, char *argv[]) {
 
             ("conjdisj,A", "Run the conj/disj algorithm")
             ("c50,C", "Run the ML algorithm")
+            ("full", "Run with full configs")
+            ("alg-test", "Run test algo")
+            ("loc", po::value<str>(), "Interested location")
 
             ("vmodule,V", po::value<str>(), "Verbose logging. eg -V mapreduce=2,file=1,gfs*=3")
             ("verbose,v", po::value<int>(), "Verbose level")
