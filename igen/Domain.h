@@ -74,7 +74,9 @@ public:
         return value == -1 ? STR_VALUE_ANY : labels(var_id).at(size_t(value));
     }
 
-    const vec <PMutVarDomain> &vars() const { return vars_; }
+    const vec <PVarDomain> &vars() const { return cvars_; }
+
+    const PVarDomain &var(int i) const { return cvars_[size_t(i)]; }
 
     const z3::expr_vector &vars_expr_vector() const { return vars_expr_vector_; }
 
@@ -86,6 +88,8 @@ public:
     vec <ptr<Config>> gen_all_configs() const;
 
     vec <ptr<Config>> gen_all_configs(ptr<const Config> templ) const;
+
+    vec <ptr<Config>> gen_one_convering_configs() const;
 
     template<typename T>
     vec <T> create_vec_vars() const { return vec<T>(n_vars()); }

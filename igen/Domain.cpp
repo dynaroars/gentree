@@ -7,6 +7,11 @@
 #include "Domain.h"
 #include "Config.h"
 
+#include <boost/container/flat_set.hpp>
+#include <boost/iterator/counting_iterator.hpp>
+
+#include <klib/random.h>
+
 namespace igen {
 
 VarDomain::VarDomain(PMutContext ctx) : Object(move(ctx)), zvar_(zctx()) {}
@@ -152,6 +157,35 @@ vec<ptr<Config>> Domain::gen_all_configs() const {
     PMutConfig cfg = new Config(ctx_mut());
     cfg->set_all(-1);
     return gen_all_configs(cfg);
+}
+
+vec<PMutConfig> Domain::gen_one_convering_configs() const {
+    vec<PMutConfig> ret;
+
+    vec<set<int>> SetVAL;
+    for (int i = 0; i < n_vars(); i++) {
+        SetVAL.emplace_back(boost::counting_iterator<int>(0), boost::counting_iterator<int>(n_values(i)));
+    }
+
+    int n_finished = 0;
+    while (n_finished < n_vars()) {
+        PMutConfig conf = new Config(ctx_mut());
+        for (int i = 0; i < n_vars(); i++) {
+            set<int> &st = SetVAL[i];
+            if (!st.empty()) {
+                auto it = Rand.get(st);
+                conf->set(i, *it);
+                st.erase(it);
+                if (st.empty())
+                    n_finished++;
+            } else {
+                conf->set(i, Rand.get(n_values(i)));
+            }
+        }
+        ret.emplace_back(move(conf));
+    }
+
+    return ret;
 }
 
 }

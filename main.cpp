@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include <klib/common.h>
+#include <klib/random.h>
 #include <z3++.h>
 
 #include <boost/program_options/options_description.hpp>
@@ -93,6 +94,13 @@ int prog(int argc, char *argv[]) {
     }
 
     init_glog(argc, argv);
+
+    if (vm.count("seed")) {
+        uint64_t s = vm["seed"].as<uint64_t>();
+        std::seed_seq sseq{uint32_t(s), uint32_t(s >> 32u)};
+        igen::Rand.seed(sseq);
+        LOG(INFO, "Use random seed: {}", s);
+    }
 
     boost::timer::cpu_timer timer;
     BOOST_SCOPE_EXIT(&timer) {
