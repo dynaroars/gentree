@@ -66,7 +66,7 @@ public:
         }
 
         PMutCTree tree = new CTree(ctx());
-        for (int iteration = 0; iteration < 10; ++iteration) {
+        for (int iteration = 0; iteration < 1; ++iteration) {
             LOG(INFO, "{:=^80}", fmt::format("  Iteration {}  ", iteration));
 
             tree->cleanup();
@@ -77,6 +77,12 @@ public:
             e = ctx()->zctx_solver_simplify(e);
             LOG(INFO, "EXPR AFTER = \n") << e;
 
+            LOG(INFO, "n_min_cases_in_one_leaf = {}", tree->n_min_cases_in_one_leaf());
+            vec<PConfig> tpls = tree->gather_small_leaves(tree->n_min_cases_in_one_leaf());
+            LOG_BLOCK(INFO, {
+                log << "Tpls = \n";
+                for (const auto &c : tpls) log << *c << "\n";
+            });
 
             for (const auto &c : cov()->configs()) {
                 bool val = c->eval(e);

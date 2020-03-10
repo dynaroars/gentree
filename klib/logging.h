@@ -37,7 +37,7 @@
 #define CHECKF(cond, f, ...) CHECK(cond) << fmt::format(f, ##__VA_ARGS__)
 
 #define LOG_BLOCK(level, code) do { \
-        std::stringstream log; {code;} GLOG(LEVEL) << log.rdbuf(); \
+        std::stringstream log; {code;} GLOG(level) << log.rdbuf(); \
     } while(0)
 #define LOG_IF_BLOCK(level, condition, code) do { \
         if (condition) { std::stringstream log; {code;} GLOG(level) << log.rdbuf(); }\

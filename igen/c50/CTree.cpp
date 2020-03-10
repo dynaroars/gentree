@@ -89,4 +89,15 @@ std::ostream &operator<<(std::ostream &output, const CTree &t) {
     return t.print_tree(output);
 }
 
+// =====================================================================================================================
+
+vec<PConfig> CTree::gather_small_leaves(int max_confs) const {
+    CHECK(root_ != nullptr);
+    vec<PConfig> res;
+    PMutConfig curtmpl = new Config(ctx_mut());
+    curtmpl->set_all(-1);
+    root_->gather_small_leaves(res, max_confs, curtmpl);
+    return res;
+}
+
 }

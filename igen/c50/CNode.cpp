@@ -172,8 +172,10 @@ bool CNode::evaluate_split() {
     BOOST_SCOPE_EXIT(this_) { this_->clear_all_tmp_data(); }
     BOOST_SCOPE_EXIT_END
     if (is_leaf()) {
+        CHECK(n_hits() == 0 || n_misses() == 0); // Same config lead to 2 different result?
         GVLOG(V_LOG_BUILD) << "\n<" << depth() << ">: " << n_total() << " cases\n    "
                            << (leaf_value() ? "HIT" : "MISS");
+        min_cases_in_one_leaf = n_total();
         return false;
     }
 
@@ -185,8 +187,12 @@ bool CNode::evaluate_split() {
 
     split_by = dom()->vars().at(bestvar);
     create_childs();
-    for (auto &c : childs)
+
+    min_cases_in_one_leaf = std::numeric_limits<int>::max();
+    for (auto &c : childs) {
         c->evaluate_split();
+        min_cases_in_one_leaf = std::min(min_cases_in_one_leaf, c->min_cases_in_one_leaf);
+    }
 
     return split_by != nullptr;
 }
@@ -298,6 +304,23 @@ void CNode::print_node(std::ostream &output, str &prefix) const {
         n->print_node(output, prefix);
     }
     prefix.resize(prefix.size() - 4);
+}
+
+// =====================================================================================================================
+
+void CNode::gather_small_leaves(vec<PConfig> &res, int max_confs, const PMutConfig &curtpl) const {
+    if (is_leaf()) {
+        if (n_total() <= max_confs)
+            res.emplace_back(new Config(curtpl));
+        return;
+    }
+    CHECK_NE(bestvar, -1);
+    for (int v = 0; v < n_childs(); ++v) {
+        CHECK(curtpl->get(bestvar) == -1);
+        curtpl->set(bestvar, v);
+        childs[v]->gather_small_leaves(res, max_confs, curtpl);
+        curtpl->set(bestvar, -1);
+    }
 }
 
 }

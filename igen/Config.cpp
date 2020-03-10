@@ -17,6 +17,12 @@ Config::Config(PMutContext ctx, const vec<int> &values, int id) : Config(move(ct
     set_all(values);
 }
 
+Config::Config(const PConfig &c) : Config(c->ctx_mut(), c->values()) {
+}
+
+Config::Config(const PMutConfig &c) : Config(c->ctx_mut(), c->values()) {
+}
+
 vec<str> Config::value_labels() const {
     vec<str> labels(size_t(dom()->n_vars()));
     CHECK_EQ(labels.size(), values_.size());
@@ -24,11 +30,6 @@ vec<str> Config::value_labels() const {
         labels[i] = dom()->label(i, values_[i]);
     }
     return labels;
-}
-
-void Config::set(int var_id, int value) {
-    CHECK(0 <= var_id && var_id < dom()->n_vars() && -1 <= value && value < dom()->n_values(var_id));
-    values_[var_id] = value;
 }
 
 void Config::set_all(int value) {

@@ -22,6 +22,10 @@ public:
 
     explicit Config(PMutContext ctx, const vec<int> &values, int id = -1);
 
+    explicit Config(const ptr<const Config> &c);
+
+    explicit Config(const ptr<Config> &c);
+
     int id() const { return id_; }
 
     void set_id(int id) {
@@ -41,7 +45,10 @@ public:
 
     int value(int var_id) const { return values_[var_id]; }
 
-    void set(int var_id, int value);
+    void set(int var_id, int value) {
+        CHECK(0 <= var_id && var_id < dom()->n_vars() && -1 <= value && value < dom()->n_values(var_id));
+        values_[var_id] = value;
+    }
 
     void set_all(int value);
 

@@ -69,6 +69,11 @@ private:
 
     PVarDomain dom(int var_id) const;
 
+private: // For gen CEX
+    int min_cases_in_one_leaf;
+
+    void gather_small_leaves(vec<PConfig> &res, int max_confs, const PMutConfig &curtpl) const;
+
 private: // TEMP DATA
     std::array<vec<vec<int>>, 2> freq;
     vec<double> info, gain;
