@@ -15,6 +15,7 @@ CTree::CTree(PMutContext ctx) : Object(move(ctx)) {
 
 void CTree::prepare_data_for_loc(const PLocation &loc) {
     CHECK_NE(loc->id(), -1);
+    CHECK(root_ == nullptr);
     auto it = loc->cov_by_ids().begin(), it_end = loc->cov_by_ids().end();
     for (const auto &c : cov()->configs()) {
         if (it != it_end && *it == c->id()) {
@@ -50,6 +51,15 @@ void CTree::prepare_data_for_loc(const PLocation &loc) {
 void CTree::build_tree() {
     root_ = new CNode(this, nullptr, {miss_configs(), hit_configs()});
     root_->evaluate_split();
+}
+
+void CTree::cleanup() {
+    configs_ = {};
+    root_ = {};
+    default_hit_ = {};
+    multi_val_ = {};
+    n_cases_ = {};
+    avgain_wt_ = {}, mdl_wt_ = {};
 }
 
 z3::expr CTree::build_zexpr(ExprStrat strat) const {

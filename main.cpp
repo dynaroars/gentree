@@ -15,7 +15,7 @@
 
 #include <glog/raw_logging.h>
 
-#include <igen/IterativeAlgorithm.h>
+#include <igen/IterAlgo.h>
 
 namespace po = boost::program_options;
 

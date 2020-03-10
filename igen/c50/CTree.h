@@ -38,6 +38,8 @@ public:
 
     std::ostream &print_tree(std::ostream &output) const;
 
+    void cleanup() override;
+
 private:
     std::array<vec<PConfig>, 2> configs_;
 

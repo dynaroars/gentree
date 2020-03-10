@@ -2,7 +2,7 @@
 // Created by KH on 3/5/2020.
 //
 
-#include "IterativeAlgorithm.h"
+#include "IterAlgo.h"
 
 #include "Context.h"
 #include "Domain.h"
@@ -63,6 +63,28 @@ public:
             auto e = ctx()->program_runner()->run(c);
             cov()->register_cov(c, e);
             VLOG(20, "{}  ==>  ", *c) << e;
+        }
+
+        PMutCTree tree = new CTree(ctx());
+        for (int iteration = 0; iteration < 10; ++iteration) {
+            LOG(INFO, "{:=^80}", fmt::format("  Iteration {}  ", iteration));
+
+            tree->cleanup();
+            tree->prepare_data_for_loc(cov()->loc(loc));
+            tree->build_tree();
+            LOG(INFO, "DECISION TREE = \n") << (*tree);
+            z3::expr e = tree->build_zexpr(CTree::DisjOfConj);
+            e = ctx()->zctx_solver_simplify(e);
+            LOG(INFO, "EXPR AFTER = \n") << e;
+
+
+            for (const auto &c : cov()->configs()) {
+                bool val = c->eval(e);
+                //LOG(INFO, "{} ==> {}", *c, val);
+                int should_be = c->cov_loc("L1");
+                CHECK_EQ(val, should_be);
+            }
+            LOG(INFO, "Verified expr with {} configs", cov()->n_configs());
         }
     }
 
