@@ -37,8 +37,9 @@ public:
         PMutCTree tree = new CTree(ctx());
         tree->prepare_data_for_loc(cov()->loc("L1"));
         tree->build_tree();
+        LOG(INFO, "DECISION TREE = \n") << (*tree);
         z3::expr e = tree->build_zexpr(CTree::DisjOfConj);
-        LOG(INFO, "EXPR BEFORE = \n") << e;
+        LOG(INFO, "EXPR BEFORE = \n") << e.simplify();
         //z3::params simpl_params(ctx()->zctx());
         //simpl_params.set("rewrite_patterns", true);
         e = ctx()->zctx_solver_simplify(e);

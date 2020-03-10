@@ -274,4 +274,30 @@ void CNode::build_zexpr_disj_conj(z3::expr_vector &vec_res, const expr &cur_expr
     }
 }
 
+void CNode::print_node(std::ostream &output, str &prefix) const {
+    if (is_leaf()) {
+        output << (leaf_value() ? "HIT" : "MISS") << " (" << n_total() << ")\n";
+        return;
+    }
+    CHECK_NE(bestvar, -1);
+    CHECK_GE(n_childs(), 2);
+    const str &var_name = dom(bestvar)->name();
+
+    prefix.append(":   ");
+    for (int v = 0; v < n_childs(); ++v) {
+        if (v == n_childs() - 1) prefix.at(prefix.size() - 4) = ' ';
+
+        const PMutCNode n = childs[v];
+        if (v == 0) {
+            if (prefix.size() >= 8)
+                output << std::string_view(prefix.data(), prefix.size() - 8) << ":...";
+        } else {
+            output << std::string_view(prefix.data(), prefix.size() - 4);
+        }
+        output << var_name << " = " << dom(bestvar)->label(v) << (n->is_leaf() ? ": " : ":\n");
+        n->print_node(output, prefix);
+    }
+    prefix.resize(prefix.size() - 4);
+}
+
 }

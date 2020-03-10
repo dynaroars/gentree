@@ -36,6 +36,8 @@ public:
 
     z3::expr build_zexpr(ExprStrat strat) const;
 
+    std::ostream &print_tree(std::ostream &output) const;
+
 private:
     std::array<vec<PConfig>, 2> configs_;
 
@@ -51,6 +53,8 @@ private:
 
 using PCTree = ptr<const CTree>;
 using PMutCTree = ptr<CTree>;
+
+std::ostream &operator<<(std::ostream &output, const CTree &t);
 
 }
 

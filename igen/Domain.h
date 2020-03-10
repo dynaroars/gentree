@@ -36,6 +36,8 @@ public:
 
     const vec <str> &labels() const { return labels_; }
 
+    const str &label(int v) const { return labels_.at(size_t(v)); }
+
     const expr &eq(int val) const { return zvar_eq_val.at(size_t(val)); };
 
     const expr &val(int v) const { return zvals_.at(size_t(v)); }

@@ -65,6 +65,18 @@ z3::expr CTree::build_zexpr(ExprStrat strat) const {
         default:
             CHECK(0);
     }
+    abort();
+}
+
+std::ostream &CTree::print_tree(std::ostream &output) const {
+    CHECK(root_ != nullptr);
+    str prefix;
+    root_->print_node(output, prefix);
+    return output;
+}
+
+std::ostream &operator<<(std::ostream &output, const CTree &t) {
+    return t.print_tree(output);
 }
 
 }

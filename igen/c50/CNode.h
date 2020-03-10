@@ -42,12 +42,16 @@ public:
 
     int depth() const { return depth_; }
 
-public:
+    int n_childs() const { return int(childs.size()); }
+
+private:
     bool evaluate_split();
 
     z3::expr build_zexpr_mixed() const;
 
     void build_zexpr_disj_conj(z3::expr_vector &vec_res, const expr &cur_expr) const;
+
+    void print_node(std::ostream &output, str &prefix) const;
 
 private:
     CTree *tree;

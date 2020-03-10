@@ -83,7 +83,8 @@ std::istream &Domain::parse(std::istream &input) {
         for (int i = 0; i < n_vals; i++) {
             expr ex_val = (n_vals == 2) ? ctx()->zbool(i) : ctx()->zctx().int_val(i);
             entry->zvals_.push_back(ex_val);
-            entry->zvar_eq_val.push_back(zvar == ex_val);
+            expr e = (n_vals == 2 ? (i ? zvar : !zvar) : (zvar == ex_val));
+            entry->zvar_eq_val.push_back(e);
         }
 
         n_all_values_ += n_vals;
