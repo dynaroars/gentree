@@ -145,6 +145,10 @@ public:
             LOG(INFO, "VERIFY error {}/{} ( {:.1f}% )",
                 n_wrongs, all_configs.size(),
                 (n_wrongs * 100.0) / double(all_configs.size()));
+            if (n_wrongs == 0 && N_ROUNDS - iteration > 2) {
+                N_ROUNDS = iteration + 2 + 1;
+                LOG(WARNING, "Early cut to {} interations", N_ROUNDS);
+            }
             // ==== END TEST ============
         }
 
