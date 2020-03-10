@@ -18,7 +18,7 @@ VarDomain::VarDomain(PMutContext ctx) : Object(move(ctx)), zvar_(zctx()) {}
 
 //===================================================================================
 
-str Domain::STR_VALUE_ANY = "?";
+str Domain::STR_VALUE_ANY = "*";
 
 void intrusive_ptr_release(Domain *d) {
     boost::sp_adl_block::intrusive_ptr_release(d);
@@ -131,7 +131,19 @@ std::ostream &operator<<(std::ostream &output, const Domain &d) {
     return output;
 }
 
-vec<PMutConfig> Domain::gen_all_configs(PConfig templ) const {
+vec<ptr<Config>> Domain::gen_all_configs() const {
+    PMutConfig cfg = new Config(ctx_mut());
+    cfg->set_all(-1);
+    return gen_all_configs(cfg);
+}
+
+vec<ptr<Config>> Domain::gen_one_convering_configs() const {
+    PMutConfig cfg = new Config(ctx_mut());
+    cfg->set_all(-1);
+    return gen_one_convering_configs(cfg);
+}
+
+vec<PMutConfig> Domain::gen_all_configs(const PConfig &templ) const {
     vec<PMutConfig> configs;
     vec<int> values(size_t(dom()->n_vars()));
     auto recur = [this, &templ, &configs, &values](int var_id, const auto &recur) -> void {
@@ -153,18 +165,16 @@ vec<PMutConfig> Domain::gen_all_configs(PConfig templ) const {
     return configs;
 }
 
-vec<ptr<Config>> Domain::gen_all_configs() const {
-    PMutConfig cfg = new Config(ctx_mut());
-    cfg->set_all(-1);
-    return gen_all_configs(cfg);
-}
-
-vec<PMutConfig> Domain::gen_one_convering_configs() const {
+vec<PMutConfig> Domain::gen_one_convering_configs(const PConfig &templ) const {
     vec<PMutConfig> ret;
 
     vec<set<int>> SetVAL;
     for (int i = 0; i < n_vars(); i++) {
-        SetVAL.emplace_back(boost::counting_iterator<int>(0), boost::counting_iterator<int>(n_values(i)));
+        if (templ->get(i) == -1) {
+            SetVAL.emplace_back(boost::counting_iterator<int>(0), boost::counting_iterator<int>(n_values(i)));
+        } else {
+            SetVAL.emplace_back(set<int>{templ->get(i)});
+        }
     }
 
     int n_finished = 0;

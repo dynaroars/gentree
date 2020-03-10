@@ -2,7 +2,7 @@ add_library(klib
         common.h
         logging.h
         hash.cpp hash.h print_stl.h custom_container.h math.h random.cpp
-        MurmurHash3.h MurmurHash3.cpp)
+        MurmurHash3.h MurmurHash3.cpp vecutils.h)
 
 target_link_libraries(klib
         PRIVATE

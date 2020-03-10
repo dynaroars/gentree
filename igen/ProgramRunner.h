@@ -22,12 +22,18 @@ public:
 
     set<str> run(const PConfig &config) const;
 
+    void reset_n_runs(int val = 0) { n_runs_ = val; }
+
+    int n_runs() const { return n_runs_; };
+
 private:
     RunnerType type;
     str target;
     builtin::BuiltinRunnerFn builtin_fn;
+    mutable int n_runs_ = 0;
 
     set<str> _run_simple(const PConfig &config) const;
+
     set<str> _run_builtin(const PConfig &config) const;
 };
 

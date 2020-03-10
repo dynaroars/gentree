@@ -87,9 +87,11 @@ public:
 public:
     vec <ptr<Config>> gen_all_configs() const;
 
-    vec <ptr<Config>> gen_all_configs(ptr<const Config> templ) const;
+    vec <ptr<Config>> gen_all_configs(const ptr<const Config> &templ) const;
 
     vec <ptr<Config>> gen_one_convering_configs() const;
+
+    vec <ptr<Config>> gen_one_convering_configs(const ptr<const Config> &templ) const;
 
     template<typename T>
     vec <T> create_vec_vars() const { return vec<T>(n_vars()); }

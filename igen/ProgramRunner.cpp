@@ -43,6 +43,7 @@ ProgramRunner::ProgramRunner(PMutContext _ctx) : Object(move(_ctx)), type(Runner
 }
 
 set<str> ProgramRunner::run(const PConfig &config) const {
+    n_runs_++;
     switch (type) {
         case RunnerType::Simple:
             return _run_simple(config);

@@ -45,6 +45,7 @@ int prog(int argc, char *argv[]) {
             ("full", "Run with full configs")
             ("alg-test", "Run test algo")
             ("loc", po::value<str>(), "Interested location")
+            ("rounds,R", po::value<int>(), "Number of iterations")
 
             ("vmodule,V", po::value<str>(), "Verbose logging. eg -V mapreduce=2,file=1,gfs*=3")
             ("verbose,v", po::value<int>(), "Verbose level")
