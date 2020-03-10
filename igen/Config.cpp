@@ -65,6 +65,13 @@ bool Config::cov_loc(const str &loc_name) const {
     return std::binary_search(cov_locs_.begin(), cov_locs_.end(), loc->id());
 }
 
+hash128_t Config::hash_128(bool bypass_cache) const {
+    if (!bypass_cache && cached_hash_ != hash128_empty)
+        return cached_hash_;
+
+    return cached_hash_ = calc_hash_128(values());
+}
+
 std::ostream &operator<<(std::ostream &output, const Config &d) {
     output << "Config " << d.id() << ": ";
     bool first_var = true;

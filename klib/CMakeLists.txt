@@ -1,7 +1,8 @@
 add_library(klib
         common.h
         logging.h
-        HashUtil.cpp HashUtil.h print_stl.h custom_container.h math.h random.cpp)
+        hash.cpp hash.h print_stl.h custom_container.h math.h random.cpp
+        MurmurHash3.h MurmurHash3.cpp)
 
 target_link_libraries(klib
         PRIVATE

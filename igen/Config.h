@@ -8,7 +8,7 @@
 #include "Context.h"
 #include "Domain.h"
 #include "Location.h"
-
+#include <klib/hash.h>
 
 #include <boost/iterator/iterator_adaptor.hpp>
 
@@ -53,10 +53,14 @@ public:
 
     bool cov_loc(const str &loc_name) const;
 
+    hash128_t hash_128(bool bypass_cache = false) const;
+
 private:
     int id_;
     vec<int> values_;
     vec<int> cov_locs_; // Location id
+
+    mutable hash128_t cached_hash_ = hash128_empty;
 
 public:
     class Entry {

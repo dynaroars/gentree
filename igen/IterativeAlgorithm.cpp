@@ -56,7 +56,14 @@ public:
     }
 
     void run_alg_test() {
-
+        str loc = ctx()->get_option_as<str>("loc");
+        auto configs = dom()->gen_one_convering_configs();
+        VLOG(10, "gen & run one convering configs");
+        for (const auto &c : configs) {
+            auto e = ctx()->program_runner()->run(c);
+            cov()->register_cov(c, e);
+            VLOG(20, "{}  ==>  ", *c) << e;
+        }
     }
 
     void run_alg() {
