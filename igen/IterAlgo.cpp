@@ -127,9 +127,17 @@ public:
                 if (++cex_tried == 2) break;
             }
             LOG(INFO, "Skipped {} duplicated configs", skipped);
-            if (cex.empty()) {
+            while (cex.empty()) {
                 LOG(WARNING, "Can't gen cex, try random configs");
-                cex = dom()->gen_one_convering_configs();
+                const auto &vp = dom()->gen_one_convering_configs();
+                for (auto &c : vp) {
+                    if (set_conf_hash.insert(c->hash_128()).second)
+                        cex.emplace_back(move(c));
+                }
+                if (++cex_tried == 30) {
+                    LOG(ERROR, "Can't gen cex anymore");
+                    goto end_alg;
+                }
             }
 
 //            LOG_BLOCK(INFO, {
@@ -160,17 +168,29 @@ public:
 
             // ==== TEST=================
             int n_wrongs = 0;
-            for (const auto &c : all_configs) n_wrongs += (c->eval(e) != c->id());
+            vec<PConfig> vwrongs;
+            for (const auto &c : all_configs) {
+                bool wr = (c->eval(e) != c->id());
+                n_wrongs += wr;
+                if (wr && vwrongs.size() < 10) vwrongs.push_back(c);
+            }
             LOG(INFO, "VERIFY error {}/{} ( {:.1f}% )",
                 n_wrongs, all_configs.size(),
                 (n_wrongs * 100.0) / double(all_configs.size()));
-            if (n_wrongs == 0 && N_ROUNDS - iteration > 2) {
-                N_ROUNDS = iteration + 2 + 1;
-                LOG(WARNING, "Early cut to {} interations", N_ROUNDS);
+            if (n_wrongs <= 10) {
+                LOG_BLOCK(INFO, {
+                    log << "Wrong configs:\n";
+                    for (const auto &c : vwrongs) log << *c << '\n';
+                });
             }
+//            if (n_wrongs == 0 && N_ROUNDS - iteration > 5) {
+//                N_ROUNDS = iteration + 5 + 1;
+//                LOG(WARNING, "Early cut to {} interations", N_ROUNDS);
+//            }
             // ==== END TEST ============
         }
 
+        end_alg:
         LOG(INFO, "Runner n_runs = {}", ctx()->program_runner()->n_runs());
     }
 
