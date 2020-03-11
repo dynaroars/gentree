@@ -28,7 +28,7 @@ hash128_t calc_hash_128(const boost::dynamic_bitset<> &bs) {
 template<typename T>
 hash128_t calc_hash_128(const std::vector<T> &vec) {
     uint64_t res[2];
-    MurmurHash3_x64_128(vec.data(), int(vec.size() * sizeof(int32_t)), HASH_SEED, &res);
+    MurmurHash3_x64_128(vec.data(), int(vec.size() * sizeof(T)), HASH_SEED, &res);
     return {res[0], res[1]};
 }
 
