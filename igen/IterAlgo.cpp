@@ -98,12 +98,12 @@ public:
 
             //LOG(INFO, "n_min_cases_in_one_leaf = {}", tree->n_min_cases_in_one_leaf());
             vec<PMutConfig> cex;
-            int lim_gather = tree->n_min_cases_in_one_leaf();
+            int lim_gather = tree->n_min_cases_in_one_leaf(), prev_lim_gather = -1;
             int skipped = 0;
             while (cex.empty()) {
-                vec<PConfig> tpls = tree->gather_small_leaves(lim_gather);
+                vec<PConfig> tpls = tree->gather_small_leaves(prev_lim_gather + 1, lim_gather);
                 LOG_BLOCK(INFO, {
-                    log << "Tpls = \n";
+                    fmt::print(log, "Tpls =  (lim {} -> {})\n", prev_lim_gather + 1, lim_gather);
                     for (const auto &c : tpls) log << *c << "\n";
                 });
 
@@ -117,6 +117,7 @@ public:
                             cex.emplace_back(move(c));
                     }
                 }
+                prev_lim_gather = lim_gather;
                 lim_gather *= 2;
                 CHECK_LE(lim_gather, int(1e9));
             }

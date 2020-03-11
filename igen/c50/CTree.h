@@ -43,7 +43,7 @@ public:
 public: // For gen CEX
     int n_min_cases_in_one_leaf() const { return root_->min_cases_in_one_leaf; };
 
-    vec<PConfig> gather_small_leaves(int max_confs) const;
+    vec<PConfig> gather_small_leaves(int min_confs, int max_confs) const;
 
 private:
     std::array<vec<PConfig>, 2> configs_;

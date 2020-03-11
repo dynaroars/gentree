@@ -308,9 +308,9 @@ void CNode::print_node(std::ostream &output, str &prefix) const {
 
 // =====================================================================================================================
 
-void CNode::gather_small_leaves(vec<PConfig> &res, int max_confs, const PMutConfig &curtpl) const {
+void CNode::gather_small_leaves(vec<PConfig> &res, int min_confs, int max_confs, const PMutConfig &curtpl) const {
     if (is_leaf()) {
-        if (n_total() <= max_confs)
+        if (min_confs <= n_total() && n_total() <= max_confs)
             res.emplace_back(new Config(curtpl));
         return;
     }
@@ -318,7 +318,7 @@ void CNode::gather_small_leaves(vec<PConfig> &res, int max_confs, const PMutConf
     for (int v = 0; v < n_childs(); ++v) {
         CHECK(curtpl->get(bestvar) == -1);
         curtpl->set(bestvar, v);
-        childs[v]->gather_small_leaves(res, max_confs, curtpl);
+        childs[v]->gather_small_leaves(res, min_confs, max_confs, curtpl);
         curtpl->set(bestvar, -1);
     }
 }
