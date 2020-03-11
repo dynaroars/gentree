@@ -60,7 +60,11 @@ public:
         str loc = ctx()->get_option_as<str>("loc");
 
         //=== TEST ALL CONF =================================================================
-        auto all_configs = dom()->gen_all_configs();
+        PMutConfig ALL_CONF_TPL = new Config(ctx_mut());
+        ALL_CONF_TPL->set_all(-1);
+        for (int i = 8; i < dom()->n_vars(); i++)
+            ALL_CONF_TPL->set(i, 0);
+        auto all_configs = dom()->gen_all_configs(ALL_CONF_TPL);
         //vec<bool> all_configs_res;
         for (int i = 0; i < int(all_configs.size()); ++i) {
             auto e = ctx()->program_runner()->run(all_configs[i]);
