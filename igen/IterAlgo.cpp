@@ -97,33 +97,40 @@ public:
 
 
             //LOG(INFO, "n_min_cases_in_one_leaf = {}", tree->n_min_cases_in_one_leaf());
-            vec<PConfig> tpls = tree->gather_small_leaves(tree->n_min_cases_in_one_leaf());
-            LOG_BLOCK(INFO, {
-                log << "Tpls = \n";
-                for (const auto &c : tpls) log << *c << "\n";
-            });
-
             vec<PMutConfig> cex;
-            for (const auto &t : tpls) {
-                vec<PMutConfig> vp = dom()->gen_one_convering_configs(t);
-                vec_move_append(cex, vp);
+            int lim_gather = tree->n_min_cases_in_one_leaf();
+            int skipped = 0;
+            while (cex.empty()) {
+                vec<PConfig> tpls = tree->gather_small_leaves(lim_gather);
+                LOG_BLOCK(INFO, {
+                    log << "Tpls = \n";
+                    for (const auto &c : tpls) log << *c << "\n";
+                });
+
+                for (const auto &t : tpls) {
+                    vec<PMutConfig> vp = dom()->gen_one_convering_configs(t);
+                    //vec_move_append(cex, vp);
+                    for (auto &c : vp) {
+                        if (!set_conf_hash.insert(c->hash_128()).second)
+                            skipped++;
+                        else
+                            cex.emplace_back(move(c));
+                    }
+                }
+                lim_gather *= 2;
+                CHECK_LE(lim_gather, int(1e9));
             }
+            LOG(INFO, "Skipped {} duplicated configs", skipped);
 //            LOG_BLOCK(INFO, {
 //                log << "New CEXs = \n";
 //                for (const auto &c : cex) log << *c << "\n";
 //            });
 
-            int skipped = 0;
             for (const auto &c : cex) {
-                if (!set_conf_hash.insert(c->hash_128()).second) {
-                    skipped++;
-                    continue;
-                }
                 auto e = ctx()->program_runner()->run(c);
                 cov()->register_cov(c, e);
                 VLOG(20, "{}  ==>  ", *c) << e;
             }
-            LOG(INFO, "Skipped {} duplicated configs", skipped);
 
 
 
