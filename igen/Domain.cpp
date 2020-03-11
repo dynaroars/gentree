@@ -169,20 +169,24 @@ vec<PMutConfig> Domain::gen_one_convering_configs(const PConfig &templ) const {
     vec<PMutConfig> ret;
 
     vec<set<int>> SetVAL;
+    int n_finished = 0;
     for (int i = 0; i < n_vars(); i++) {
         if (templ->get(i) == -1) {
             SetVAL.emplace_back(boost::counting_iterator<int>(0), boost::counting_iterator<int>(n_values(i)));
         } else {
-            SetVAL.emplace_back(set<int>{templ->get(i)});
+            SetVAL.emplace_back();
+            n_finished++;
         }
     }
 
-    int n_finished = 0;
     while (n_finished < n_vars()) {
         PMutConfig conf = new Config(ctx_mut());
         for (int i = 0; i < n_vars(); i++) {
             set<int> &st = SetVAL[i];
-            if (!st.empty()) {
+            int tmplval = templ->values()[i];
+            if (tmplval != -1) {
+                conf->set(i, tmplval);
+            } else if (!st.empty()) {
                 auto it = Rand.get(st);
                 conf->set(i, *it);
                 st.erase(it);
