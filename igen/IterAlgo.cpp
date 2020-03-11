@@ -99,7 +99,7 @@ public:
             //LOG(INFO, "n_min_cases_in_one_leaf = {}", tree->n_min_cases_in_one_leaf());
             vec<PMutConfig> cex;
             int lim_gather = tree->n_min_cases_in_one_leaf(), prev_lim_gather = -1;
-            int skipped = 0;
+            int skipped = 0, cex_tried = 0;
             while (cex.empty()) {
                 vec<PConfig> tpls = tree->gather_small_leaves(prev_lim_gather + 1, lim_gather);
                 LOG_BLOCK(INFO, {
@@ -120,8 +120,14 @@ public:
                 prev_lim_gather = lim_gather;
                 lim_gather *= 2;
                 CHECK_LE(lim_gather, int(1e9));
+                if (++cex_tried == 2) break;
             }
             LOG(INFO, "Skipped {} duplicated configs", skipped);
+            if (cex.empty()) {
+                LOG(WARNING, "Can't gen cex, try random configs");
+                cex = dom()->gen_one_convering_configs();
+            }
+
 //            LOG_BLOCK(INFO, {
 //                log << "New CEXs = \n";
 //                for (const auto &c : cex) log << *c << "\n";
@@ -143,8 +149,9 @@ public:
             tree->build_tree();
             LOG(INFO, "DECISION TREE = \n") << (*tree);
             z3::expr e = tree->build_zexpr(CTree::DisjOfConj);
-            e = ctx()->zctx_solver_simplify(e);
-            LOG(INFO, "EXPR AFTER = \n") << e;
+            e = e.simplify();
+            //e = ctx()->zctx_solver_simplify(e);
+            //LOG(INFO, "EXPR AFTER = \n") << e;
 
 
             // ==== TEST=================
