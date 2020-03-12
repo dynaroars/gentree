@@ -237,8 +237,8 @@ public:
             n_min_cases_in_one_leaf = std::min(n_min_cases_in_one_leaf, tree->n_min_cases_in_one_leaf());
 
             int lim_gather = tree->n_min_cases_in_one_leaf(), prev_lim_gather = -1;
-            int skipped = 0, cex_tried = 0;
-            while (cex.empty()) {
+            int skipped = 0, cex_tried = 0, n_gene = 0;
+            while (n_gene == 0) {
                 vec<PConfig> tpls = tree->gather_small_leaves(prev_lim_gather + 1, lim_gather);
                 VLOG_BLOCK(40, {
                     fmt::print(log, "Tpls =  (lim {} -> {})\n", prev_lim_gather + 1, lim_gather);
@@ -247,7 +247,7 @@ public:
 
                 for (const auto &t : tpls) {
                     for (auto &c : dom()->gen_one_convering_configs(t)) {
-                        if (set_conf_hash.insert(c->hash_128()).second) cex.emplace_back(move(c));
+                        if (set_conf_hash.insert(c->hash_128()).second) cex.emplace_back(move(c)), n_gene++;
                         else skipped++;
                     }
                 }
