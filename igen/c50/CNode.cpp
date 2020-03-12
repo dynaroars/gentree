@@ -333,7 +333,7 @@ std::pair<bool, int> CNode::test_add_config(const PConfig &conf, bool val) {
 
 void CNode::gather_small_leaves(vec<PConfig> &res, int min_confs, int max_confs, const PMutConfig &curtpl) const {
     if (is_leaf()) {
-        if (min_confs <= n_total() && n_total() <= max_confs)
+        if (min_confs <= min_cases_in_one_leaf && min_cases_in_one_leaf <= max_confs)
             res.emplace_back(new Config(curtpl));
         return;
     }

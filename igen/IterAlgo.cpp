@@ -269,10 +269,10 @@ public:
         }
 
         LOG(INFO, "Generated {} cex", cex.size());
-        LOG_BLOCK(INFO, {
-            log << "CEX:\n";
-            for (const auto &c : cex) log << *c << '\n';
-        });
+//        LOG_BLOCK(INFO, {
+//            log << "CEX:\n";
+//            for (const auto &c : cex) log << *c << '\n';
+//        });
         if (cex.empty()) return false;
 
         for (const auto &c : cex) run_config(c);
