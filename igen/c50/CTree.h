@@ -38,6 +38,8 @@ public:
 
     std::ostream &print_tree(std::ostream &output) const;
 
+    std::pair<bool, int> test_config(const PConfig &conf) const;
+
     void cleanup() override;
 
 public: // For gen CEX

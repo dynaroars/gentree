@@ -170,7 +170,11 @@ public:
             int n_wrongs = 0;
             vec<PConfig> vwrongs;
             for (const auto &c : all_configs) {
-                bool wr = (c->eval(e) != c->id());
+                bool c_eval = c->eval(e);
+                bool truth = c->id();
+                bool tree_eval = tree->test_config(c).first;
+                CHECK_EQ(c_eval, tree_eval);
+                bool wr = (c_eval != truth);
                 n_wrongs += wr;
                 if (wr && vwrongs.size() < 10) vwrongs.push_back(c);
             }
@@ -194,8 +198,56 @@ public:
         LOG(INFO, "Runner n_runs = {}", ctx()->program_runner()->n_runs());
     }
 
+
+    set<hash128_t> set_conf_hash;
+    map<hash128_t, PLocation> map_loc_hash;
+    struct LocData {
+        PMutCTree tree;
+    };
+    vec<LocData> vec_loc_data;
+
+    void alg_test_1_iteration() {
+        vec_loc_data.resize(size_t(cov()->n_locs()));
+        for (const PLocation &loc : cov()->locs()) {
+            PLocation &mloc = map_loc_hash[loc->digest_cov_by_hash()];
+            if (mloc == nullptr) {
+                mloc = loc;
+                VLOG(20, "Process loc {}", loc->name());
+            } else {
+                VLOG(21, "Duplicated loc {} (<=> {})", loc->name(), mloc->name());
+            }
+
+
+        }
+    }
+
     void run_alg_test_1() {
 
+        auto init_configs = dom()->gen_one_convering_configs();
+        {
+            int n_one_covering = int(init_configs.size());
+            auto seed_configs = get_seed_configs();
+            int n_seed_configs = int(seed_configs.size());
+            vec_move_append(init_configs, seed_configs);
+            VLOG(10, "Run initial configs (n_one_covering = {}, n_seed_configs = {})", n_one_covering, n_seed_configs);
+        }
+
+        for (const auto &c : init_configs) run_config(c);
+
+        int N_ROUNDS = ctx()->get_option_as<int>("rounds");
+        for (int iteration = 0; iteration < N_ROUNDS; ++iteration) {
+            LOG(INFO, "{:=^80}", fmt::format("  Iteration {}  ", iteration));
+            alg_test_1_iteration();
+        }
+
+    }
+
+    void run_config(const PMutConfig &c) {
+        auto e = ctx()->program_runner()->run(c);
+        cov()->register_cov(c, e);
+        bool insert_new = set_conf_hash.insert(c->hash_128()).second;
+        DCHECK(insert_new);
+        VLOG(50, "{}  ==>  ", *c) << e;
     }
 
     void run_alg() {

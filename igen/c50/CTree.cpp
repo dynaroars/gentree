@@ -62,6 +62,11 @@ void CTree::cleanup() {
     avgain_wt_ = {}, mdl_wt_ = {};
 }
 
+std::pair<bool, int> CTree::test_config(const PConfig &conf) const {
+    CHECK_NE(root_, nullptr);
+    return root_->test_config(conf);
+}
+
 z3::expr CTree::build_zexpr(ExprStrat strat) const {
     CHECK_NE(root_, nullptr);
     switch (strat) {

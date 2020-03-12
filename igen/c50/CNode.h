@@ -53,6 +53,8 @@ private:
 
     void print_node(std::ostream &output, str &prefix) const;
 
+    std::pair<bool, int> test_config(const PConfig &conf) const;
+
 private:
     CTree *tree;
     CNode *parent;
@@ -79,7 +81,7 @@ private: // TEMP DATA
     vec<double> info, gain;
     int possible;
     double base_info, avgain, mdl, mingain;
-    int bestvar, find_pass;
+    int splitvar, find_pass;
 
     void calc_freq();
 

@@ -46,7 +46,7 @@ void CNode::calc_freq() {
 }
 
 void CNode::calc_inf_gain() {
-    bestvar = -1;
+    splitvar = -1;
     double log2ntotal = log2(n_total());
 
     // Calc info
@@ -110,7 +110,7 @@ void CNode::calc_inf_gain() {
 }
 
 int CNode::select_best_var(bool first_pass) {
-    bestvar = -1;
+    splitvar = -1;
     find_pass = first_pass ? 1 : 2;
     double bestratio = -1000;
     int bestnbr = dom()->n_all_values();
@@ -131,26 +131,26 @@ int CNode::select_best_var(bool first_pass) {
 
         if (val > bestratio
             || (val > 0.999 * bestratio && (nbr < bestnbr || (nbr == bestnbr && gain[var] > gain[var])))) {
-            bestvar = var;
+            splitvar = var;
             bestratio = val;
             bestnbr = nbr;
         }
     }
 
-    return bestvar;
+    return splitvar;
 }
 
 void CNode::create_childs() {
-    CHECK(0 <= bestvar && bestvar < dom()->n_vars());
-    int nvalues = dom()->n_values(bestvar);
+    CHECK(0 <= splitvar && splitvar < dom()->n_vars());
+    int nvalues = dom()->n_values(splitvar);
     for (int hit = 0; hit <= 1; ++hit) {
         auto &c = configs_[hit];
-        std::sort(c.begin(), c.end(), [bestvar = bestvar](const auto &a, const auto &b) {
+        std::sort(c.begin(), c.end(), [bestvar = splitvar](const auto &a, const auto &b) {
             return a->get(bestvar) < b->get(bestvar);
         });
     }
 
-    tested_vars_[bestvar] = true;
+    tested_vars_[splitvar] = true;
     childs.resize(nvalues);
 
     vec<PConfig>::iterator beg[2], end[2] = {miss_configs().begin(), hit_configs().begin()};
@@ -158,7 +158,7 @@ void CNode::create_childs() {
     for (int val = 0; val < nvalues; ++val) {
         for (int hit = 0; hit <= 1; ++hit) {
             beg[hit] = end[hit];
-            while (end[hit] != real_end[hit] && (*end[hit])->value(bestvar) == val)
+            while (end[hit] != real_end[hit] && (*end[hit])->value(splitvar) == val)
                 end[hit]++;
         }
 
@@ -182,10 +182,10 @@ bool CNode::evaluate_split() {
     calc_freq();
     calc_inf_gain();
     if (select_best_var(true) == -1) select_best_var(false);
-    CHECK_NE(bestvar, -1);
+    CHECK_NE(splitvar, -1);
     VLOG_BLOCK(V_LOG_BUILD, print_tmp_state(log << "\n<" << depth() << ">: " << n_total() << " cases\n"));
 
-    split_by = dom()->vars().at(bestvar);
+    split_by = dom()->vars().at(splitvar);
     create_childs();
 
     min_cases_in_one_leaf = std::numeric_limits<int>::max();
@@ -220,11 +220,11 @@ std::ostream &CNode::print_tmp_state(std::ostream &output, const str &indent) co
     fmt::print(output, "{}av gain={:.3f}, MDL ({}) = {:.3f}, min={:.3f}\n",
                indent, avgain, possible, mdl, mingain);
     fmt::print(output, "{}best var ", indent);
-    if (bestvar == -1) {
+    if (splitvar == -1) {
         output << "N/A\n";
     } else {
         fmt::print(output, "{}: info {:.3f}, gain {:.3f}, val {:.3f}{}",
-                   dom()->name(bestvar), info[bestvar], gain[bestvar], gain[bestvar] / info[bestvar],
+                   dom()->name(splitvar), info[splitvar], gain[splitvar], gain[splitvar] / info[splitvar],
                    find_pass == 1 ? "\n" : ", second-pass\n");
     }
     return output;
@@ -242,7 +242,7 @@ z3::expr CNode::build_zexpr_mixed() const {
     if (is_leaf()) {
         return tree->ctx()->zbool(leaf_value());
     }
-    CHECK(bestvar != -1 && int(childs.size()) == dom(bestvar)->n_values());
+    CHECK(splitvar != -1 && int(childs.size()) == dom(splitvar)->n_values());
 
     z3::expr res(tree->ctx_mut()->zctx()), e = res;
     bool empty_res = true;
@@ -251,11 +251,11 @@ z3::expr CNode::build_zexpr_mixed() const {
         bool need_or = false;
         if (childs[val]->is_leaf()) {
             if (childs[val]->leaf_value()) {
-                e = dom(bestvar)->eq(val);
+                e = dom(splitvar)->eq(val);
                 need_or = true;
             }
         } else {
-            e = dom(bestvar)->eq(val) && childs[val]->build_zexpr_mixed();
+            e = dom(splitvar)->eq(val) && childs[val]->build_zexpr_mixed();
             need_or = true;
         }
         if (need_or) {
@@ -274,8 +274,8 @@ void CNode::build_zexpr_disj_conj(z3::expr_vector &vec_res, const expr &cur_expr
     }
     for (int val = 0; val < int(childs.size()); ++val) {
         expr next_expr = depth_ == 0 ?
-                         dom(bestvar)->eq(val) :
-                         cur_expr && dom(bestvar)->eq(val);
+                         dom(splitvar)->eq(val) :
+                         cur_expr && dom(splitvar)->eq(val);
         childs[val]->build_zexpr_disj_conj(vec_res, next_expr);
     }
 }
@@ -285,9 +285,9 @@ void CNode::print_node(std::ostream &output, str &prefix) const {
         output << (leaf_value() ? "HIT" : "MISS") << " (" << n_total() << ")\n";
         return;
     }
-    CHECK_NE(bestvar, -1);
+    CHECK_NE(splitvar, -1);
     CHECK_GE(n_childs(), 2);
-    const str &var_name = dom(bestvar)->name();
+    const str &var_name = dom(splitvar)->name();
 
     prefix.append(":   ");
     for (int v = 0; v < n_childs(); ++v) {
@@ -300,10 +300,16 @@ void CNode::print_node(std::ostream &output, str &prefix) const {
         } else {
             output << std::string_view(prefix.data(), prefix.size() - 4);
         }
-        output << var_name << " = " << dom(bestvar)->label(v) << (n->is_leaf() ? ": " : ":\n");
+        output << var_name << " = " << dom(splitvar)->label(v) << (n->is_leaf() ? ": " : ":\n");
         n->print_node(output, prefix);
     }
     prefix.resize(prefix.size() - 4);
+}
+
+std::pair<bool, int> CNode::test_config(const PConfig &conf) const {
+    if (is_leaf()) return {leaf_value(), n_total()};
+    CHECK_NE(splitvar, -1);
+    return childs.at(size_t(conf->get(splitvar)))->test_config(conf);
 }
 
 // =====================================================================================================================
@@ -314,12 +320,12 @@ void CNode::gather_small_leaves(vec<PConfig> &res, int min_confs, int max_confs,
             res.emplace_back(new Config(curtpl));
         return;
     }
-    CHECK_NE(bestvar, -1);
+    CHECK_NE(splitvar, -1);
     for (int v = 0; v < n_childs(); ++v) {
-        CHECK(curtpl->get(bestvar) == -1);
-        curtpl->set(bestvar, v);
+        CHECK(curtpl->get(splitvar) == -1);
+        curtpl->set(splitvar, v);
         childs[v]->gather_small_leaves(res, min_confs, max_confs, curtpl);
-        curtpl->set(bestvar, -1);
+        curtpl->set(splitvar, -1);
     }
 }
 

@@ -19,6 +19,8 @@ public:
 
     const PMutLocation &loc_mut(int id) const { return locs_.at(id); }
 
+    const vec<PLocation> &locs() const { return clocs_; }
+
     PLocation loc(const str &name) const {
         auto it = map_name_loc_.find(name);
         return (it == map_name_loc_.end()) ? nullptr : it->second;
