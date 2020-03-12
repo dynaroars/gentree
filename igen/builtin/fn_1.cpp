@@ -120,8 +120,8 @@ FN(ex_simple,
 
 
 FN(ex_2,
-   VARS(s, t, u, v, x, y, z, a, b, c, e, f, g, h),
-   DOMS(2, 2, 2, 2, 2, 2, 5, 2, 2, 2, 2, 2, 2, 2), {
+   VARS(s, t, u, v, x, y, z, a, b, c, d, e, f, g, h),
+   DOMS(2, 2, 2, 2, 2, 2, 5, 2, 2, 2, 2, 2, 2, 2, 2), {
        int max_z = 3;
        if (x && y) {
            LOC("L0"); //x & y
