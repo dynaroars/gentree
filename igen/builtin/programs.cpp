@@ -9,6 +9,7 @@
 
 
 FN_MODULE_USE(fn_1)
+FN_MODULE_USE(fn_2)
 
 
 namespace igen::builtin {
