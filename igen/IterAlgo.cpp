@@ -304,8 +304,17 @@ public:
 
         VLOG(20, "n_rebuilds = {}, n_new_locs = {}, n_min_cases_in_one_leaf = {}",
              n_rebuilds, n_new_locs, n_min_cases_in_one_leaf);
-        return n_rebuilds > 0 || n_new_locs > 0 || n_min_cases_in_one_leaf <= 2;
+        bool need_term = n_rebuilds == 0 && n_new_locs == 0 && n_min_cases_in_one_leaf > 0;
+        LOG(WARNING, "need_term = TRUE, terminate_counter = {}", terminate_counter);
+        if (need_term) {
+            if (++terminate_counter == 10) return false;
+        } else {
+            terminate_counter = 0;
+        }
+        return true;
     }
+
+    int terminate_counter;
 
     void run_alg_test_1() {
 
