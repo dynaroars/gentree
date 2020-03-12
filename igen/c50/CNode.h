@@ -55,6 +55,8 @@ private:
 
     std::pair<bool, int> test_config(const PConfig &conf) const;
 
+    std::pair<bool, int> test_add_config(const PConfig &conf, bool val);
+
 private:
     CTree *tree;
     CNode *parent;

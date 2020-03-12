@@ -312,6 +312,23 @@ std::pair<bool, int> CNode::test_config(const PConfig &conf) const {
     return childs.at(size_t(conf->get(splitvar)))->test_config(conf);
 }
 
+std::pair<bool, int> CNode::test_add_config(const PConfig &conf, bool val) {
+    if (is_leaf()) {
+        bool leaf_val = leaf_value();
+        if (leaf_val == val) {
+            min_cases_in_one_leaf++;
+        }
+        return {leaf_val, n_total()};
+    }
+    CHECK_NE(splitvar, -1);
+    auto res = childs.at(size_t(conf->get(splitvar)))->test_add_config(conf, val);
+    min_cases_in_one_leaf = std::numeric_limits<int>::max();
+    for (auto &c : childs) {
+        min_cases_in_one_leaf = std::min(min_cases_in_one_leaf, c->min_cases_in_one_leaf);
+    }
+    return res;
+}
+
 // =====================================================================================================================
 
 void CNode::gather_small_leaves(vec<PConfig> &res, int min_confs, int max_confs, const PMutConfig &curtpl) const {

@@ -67,6 +67,11 @@ std::pair<bool, int> CTree::test_config(const PConfig &conf) const {
     return root_->test_config(conf);
 }
 
+std::pair<bool, int> CTree::test_add_config(const PConfig &conf, bool val) {
+    CHECK_NE(root_, nullptr);
+    return root_->test_add_config(conf, val);
+}
+
 z3::expr CTree::build_zexpr(ExprStrat strat) const {
     CHECK_NE(root_, nullptr);
     switch (strat) {

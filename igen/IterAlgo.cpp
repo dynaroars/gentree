@@ -285,12 +285,12 @@ public:
             for (const PLocation &loc : cov()->locs()) {
                 if (loc->id() >= int(vec_loc_data.size())) break;
                 TREE_DATA(loc->id());
-                PCTree used_tree = tree != nullptr ? tree : shared_tree;
-                if (used_tree == nullptr) continue;
+                if (tree == nullptr && shared_tree == nullptr) continue;
 
-                bool tree_eval = used_tree->test_config(c).first;
                 bool new_truth = false;
                 if (it != cov_ids.end() && *it == loc->id()) new_truth = true, ++it;
+                bool tree_eval = (tree != nullptr ?
+                                  tree->test_add_config(c, new_truth).first : shared_tree->test_config(c).first);
 
                 tree_need_rebuild = (tree_eval != new_truth);
                 if (tree_need_rebuild) {
