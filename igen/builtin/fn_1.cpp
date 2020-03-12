@@ -117,3 +117,49 @@ FN(ex_simple,
            }
        }
    })
+
+
+FN(ex_2,
+   VARS(s, t, u, v, x, y, z, a, b, c, e, f, g, h),
+   DOMS(2, 2, 2, 2, 2, 2, 5, 2, 2, 2, 2, 2, 2, 2), {
+       int max_z = 3;
+       if (x && y) {
+           LOC("L0"); //x & y
+           if (!(0 < z && z < max_z)) {
+               LOC("L1"); //x & y & (z=0|3|4)
+           }
+       } else {
+           LOC("L2"); // !x|!y
+           LOC("L2a"); // !x|!y
+       }
+
+       LOC("L3"); // true
+       if (u && v) {
+           LOC("L4"); //u&v
+           if (s || t) {
+               LOC("L5");  // (s|t) & (u&v)
+           }
+       }
+
+
+       /////
+       if ((s || t) && (y || z)) {
+           LOC("L6");
+       }
+
+       if (x && (s || t) && (y || z)) {
+           LOC("L7");
+           LOC("L7a");
+       }
+
+       if ((u || v)) {
+           LOC("L8");
+           if (x || y) {
+               LOC("L9");
+           }
+           if (x && y) {
+               LOC("L10");
+               LOC("L10");
+           }
+       }
+   })

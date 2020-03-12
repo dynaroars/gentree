@@ -199,26 +199,112 @@ public:
     }
 
 
-    set<hash128_t> set_conf_hash;
+    set<hash128_t> set_conf_hash, set_ran_conf_hash;
     map<hash128_t, PLocation> map_loc_hash;
     struct LocData {
         PMutCTree tree;
+        PCTree shared_tree;
+        bool tree_need_rebuild;
     };
     vec<LocData> vec_loc_data;
+#define TREE_DATA(id) auto &[tree, shared_tree, tree_need_rebuild] = vec_loc_data.at(size_t(id))
 
-    void alg_test_1_iteration() {
+    bool alg_test_1_iteration([[maybe_unused]] int iter) {
         vec_loc_data.resize(size_t(cov()->n_locs()));
+
+        vec<PMutConfig> cex;
+        int n_min_cases_in_one_leaf = std::numeric_limits<int>::max();
+        map_loc_hash.clear();
         for (const PLocation &loc : cov()->locs()) {
             PLocation &mloc = map_loc_hash[loc->digest_cov_by_hash()];
+            TREE_DATA(loc->id());
+
             if (mloc == nullptr) {
+                shared_tree = nullptr;
                 mloc = loc;
-                VLOG(20, "Process loc {}", loc->name());
+                VLOG(20, "Process loc {}: {}", loc->id(), loc->name());
             } else {
-                VLOG(21, "Duplicated loc {} (<=> {})", loc->name(), mloc->name());
+                tree = nullptr;
+                shared_tree = vec_loc_data.at(size_t(mloc->id())).tree;
+                VLOG(21, "Duplicated loc {}: {} (<=> {}: {})", loc->id(), loc->name(), mloc->id(), mloc->name());
+                continue;
             }
 
+            if (tree == nullptr) {
+                tree = new CTree(ctx()), tree->prepare_data_for_loc(loc), tree->build_tree();
+                VLOG(30, "NEW DECISION TREE (n_min_cases = {}) = \n", tree->n_min_cases_in_one_leaf()) << (*tree);
+            }
+            n_min_cases_in_one_leaf = std::min(n_min_cases_in_one_leaf, tree->n_min_cases_in_one_leaf());
 
+            int lim_gather = tree->n_min_cases_in_one_leaf(), prev_lim_gather = -1;
+            int skipped = 0, cex_tried = 0;
+            while (cex.empty()) {
+                vec<PConfig> tpls = tree->gather_small_leaves(prev_lim_gather + 1, lim_gather);
+                VLOG_BLOCK(40, {
+                    fmt::print(log, "Tpls =  (lim {} -> {})\n", prev_lim_gather + 1, lim_gather);
+                    for (const auto &c : tpls) log << *c << "\n";
+                });
+
+                for (const auto &t : tpls) {
+                    for (auto &c : dom()->gen_one_convering_configs(t)) {
+                        if (set_conf_hash.insert(c->hash_128()).second) cex.emplace_back(move(c));
+                        else skipped++;
+                    }
+                }
+                prev_lim_gather = lim_gather;
+                lim_gather *= 2;
+                if (++cex_tried == 2) break;
+            }
+            VLOG_IF(25, skipped, "Skipped {} duplicated configs", skipped);
         }
+
+        int cex_rand_tried = 0;
+        while (cex.empty()) {
+            LOG(WARNING, "Can't gen cex, try random configs");
+            const auto &vp = dom()->gen_one_convering_configs();
+            for (auto &c : vp) {
+                if (set_conf_hash.insert(c->hash_128()).second) cex.emplace_back(move(c));
+            }
+            if (++cex_rand_tried == 30) break;
+        }
+
+        LOG(INFO, "Generated {} cex", cex.size());
+        LOG_BLOCK(INFO, {
+            log << "CEX:\n";
+            for (const auto &c : cex) log << *c << '\n';
+        });
+        if (cex.empty()) return false;
+
+        for (const auto &c : cex) run_config(c);
+
+        int n_new_locs = cov()->n_locs() - int(vec_loc_data.size());
+        int n_rebuilds = 0;
+        for (const PMutConfig &c : cex) {
+            const vec<int> cov_ids = c->cov_loc_ids();
+            auto it = cov_ids.begin();
+            for (const PLocation &loc : cov()->locs()) {
+                if (loc->id() >= int(vec_loc_data.size())) break;
+                TREE_DATA(loc->id());
+                PCTree used_tree = tree != nullptr ? tree : shared_tree;
+                if (used_tree == nullptr) continue;
+
+                bool tree_eval = used_tree->test_config(c).first;
+                bool new_truth = false;
+                if (it != cov_ids.end() && *it == loc->id()) new_truth = true, ++it;
+
+                tree_need_rebuild = (tree_eval != new_truth);
+                if (tree_need_rebuild) {
+                    n_rebuilds++;
+                    tree = nullptr, shared_tree = nullptr;
+                    VLOG(20, "Need rebuild loc {}", loc->name());
+                    continue;
+                }
+            }
+        }
+
+        VLOG(20, "n_rebuilds = {}, n_new_locs = {}, n_min_cases_in_one_leaf = {}",
+             n_rebuilds, n_new_locs, n_min_cases_in_one_leaf);
+        return n_rebuilds > 0 || n_new_locs > 0 || n_min_cases_in_one_leaf <= 2;
     }
 
     void run_alg_test_1() {
@@ -232,21 +318,44 @@ public:
             VLOG(10, "Run initial configs (n_one_covering = {}, n_seed_configs = {})", n_one_covering, n_seed_configs);
         }
 
-        for (const auto &c : init_configs) run_config(c);
+        for (const auto &c : init_configs) set_conf_hash.insert(c->hash_128()), run_config(c);
 
         int N_ROUNDS = ctx()->get_option_as<int>("rounds");
-        for (int iteration = 0; iteration < N_ROUNDS; ++iteration) {
-            LOG(INFO, "{:=^80}", fmt::format("  Iteration {}  ", iteration));
-            alg_test_1_iteration();
+        for (int iter = 1; iter <= N_ROUNDS; ++iter) {
+            LOG(INFO, "{:=^80}", fmt::format("  Iteration {}  ", iter));
+            if (!alg_test_1_iteration(iter)) {
+                LOG(WARNING, "Early break at iteration {}", iter);
+                break;
+            }
         }
-
+        LOG(INFO, "{:=^80}", "  FINAL RESULT  ");
+        map_loc_hash.clear();
+        for (const PLocation &loc : cov()->locs()) {
+            std::stringstream log;
+            TREE_DATA(loc->id());
+            PLocation &mloc = map_loc_hash[loc->digest_cov_by_hash()];
+            fmt::print(log, "{:>5}: {:<16}  ==>  ", loc->id(), loc->name());
+            if (mloc == nullptr) {
+                CHECK_NE(tree, nullptr);
+                mloc = loc;
+                z3::expr e = tree->build_zexpr(CTree::DisjOfConj);
+                e = e.simplify();
+                e = ctx()->zctx_solver_simplify(e);
+                log << e;
+            } else {
+                CHECK_NE(shared_tree, nullptr);
+                fmt::print(log, "{}: {}", mloc->id(), mloc->name());
+            }
+            GLOG(INFO) << log.rdbuf();
+        }
+        LOG(INFO, "Runner n_runs = {}", ctx()->program_runner()->n_runs());
     }
 
     void run_config(const PMutConfig &c) {
         auto e = ctx()->program_runner()->run(c);
         cov()->register_cov(c, e);
-        bool insert_new = set_conf_hash.insert(c->hash_128()).second;
-        DCHECK(insert_new);
+        bool insert_new = set_ran_conf_hash.insert(c->hash_128()).second;
+        CHECK(insert_new);
         VLOG(50, "{}  ==>  ", *c) << e;
     }
 
