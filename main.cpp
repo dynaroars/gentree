@@ -44,7 +44,7 @@ int prog(int argc, char *argv[]) {
             ("conjdisj,A", "Run the conj/disj algorithm")
             ("c50,5", "Run the ML algorithm")
             ("full", "Run with full configs")
-            ("alg-test,T", "Run test algo")
+            ("alg-test,T", po::value<int>()->default_value(0), "Run test algo")
             ("loc,X", po::value<str>(), "Interested location")
             ("rounds,R", po::value<int>(), "Number of iterations")
             ("seed-configs,C", po::value<std::vector<str>>()->default_value(std::vector<str>(), "none"), "Seed configs")

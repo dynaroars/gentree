@@ -55,10 +55,8 @@ void CoverageStore::link(const PMutConfig &config, const PMutLocation &loc) {
     CHECK(conf_id != -1 && loc_id != -1);
     DCHECK(0 <= conf_id && conf_id < n_configs() && 0 <= loc_id && loc_id < n_locs());
 
-    CHECK(config->cov_loc_mut_ids().empty() || config->cov_loc_mut_ids().back() < loc_id);
-    config->cov_loc_mut_ids().push_back(loc_id);
-    CHECK(loc->cov_by_mut_ids().empty() || loc->cov_by_mut_ids().back() < conf_id);
-    loc->cov_by_mut_ids().push_back(conf_id);
+    config->add_cov_loc_id(loc_id);
+    loc->add_cov_by_conf_id(conf_id);
 }
 
 void CoverageStore::cleanup() {

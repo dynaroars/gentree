@@ -56,7 +56,7 @@ public:
         LOG(INFO, "Verified expr with {} configs", cov()->n_configs());
     }
 
-    void run_alg_test() {
+    void run_alg_test_0() {
         str loc = ctx()->get_option_as<str>("loc");
 
         //=== TEST ALL CONF =================================================================
@@ -194,11 +194,23 @@ public:
         LOG(INFO, "Runner n_runs = {}", ctx()->program_runner()->n_runs());
     }
 
+    void run_alg_test_1() {
+
+    }
+
     void run_alg() {
         if (ctx()->has_option("full")) {
             run_alg_full();
         } else if (ctx()->has_option("alg-test")) {
-            run_alg_test();
+            int v = ctx()->get_option_as<int>("alg-test");
+            switch (v) {
+                case 0:
+                    return run_alg_test_0();
+                case 1:
+                    return run_alg_test_1();
+                default:
+                    CHECK(0);
+            }
         }
     }
 

@@ -85,6 +85,11 @@ hash128_t Config::hash_128(bool bypass_cache) const {
     return cached_hash_ = calc_hash_128(values());
 }
 
+void Config::add_cov_loc_id(int loc_id) {
+    CHECK(cov_loc_mut_ids().empty() || cov_loc_mut_ids().back() < loc_id);
+    cov_loc_mut_ids().push_back(loc_id);
+}
+
 std::ostream &operator<<(std::ostream &output, const Config &d) {
     output << "Config " << d.id() << ": ";
     bool first_var = true;

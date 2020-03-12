@@ -13,13 +13,13 @@ namespace igen {
 
 class StreamHash {
 public:
-    StreamHash(hash128_t IV, uint64_t counter) : KEY(std::move(IV)), counter(counter) {}
+    StreamHash(hash128_t IV, uint32_t counter) : KEY(std::move(IV)), counter(counter) {}
 
-    StreamHash() : StreamHash({0xdbafd606665ff759ULL, 0x6d2636fbaebfa7caULL}, 0x4483d4518cf4b479ULL) {}
+    StreamHash() : StreamHash({0xdbafd606665ff759ULL, 0x6d2636fbaebfa7caULL}, 0x4483d451) {}
 
     void add(int val) {
         for (int i = 0; i < ROUNDS; i++) {
-            R(KEY.first, KEY.second, (counter << 16u) ^ uint32_t(val));
+            R(KEY.first, KEY.second, (uint64_t(counter) << 32u) ^ uint32_t(val));
             R(VAL.first, VAL.second, KEY.second);
             counter++;
         }
@@ -27,7 +27,8 @@ public:
 
     [[nodiscard]] hash128_t digest() const {
         hash128_t ret = VAL, tkey = KEY;
-        uint64_t X = ROL(counter, 16);
+        uint64_t X = (uint64_t(counter) << 32u) | counter;
+        X = ROR(X, 16);
         for (int i = 0; i < FINAL_ROUNDS; i++) {
             R(tkey.first, tkey.second, X ^ uint64_t(i));
             R(ret.first, ret.second, tkey.second);
@@ -54,7 +55,7 @@ private:
 private:
     hash128_t KEY;
     hash128_t VAL;
-    uint64_t counter;
+    uint32_t counter;
 };
 
 }

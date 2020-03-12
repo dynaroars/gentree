@@ -9,6 +9,7 @@
 
 #include <boost/iterator/iterator_adaptor.hpp>
 #include <klib/custom_container.h>
+#include <klib/StreamHash.h>
 
 namespace igen {
 
@@ -31,11 +32,16 @@ public:
 
     const vec<int> &cov_by_ids() const { return cov_by_; }
 
+    void add_cov_by_conf_id(int conf_id);
+
+    hash128_t digest_cov_by_hash() const { return cov_by_hash_.digest(); }
+
 private:
     str name_;
     int id_;
 
     vec<int> cov_by_; // Config Id
+    StreamHash cov_by_hash_;
 
 public:
     class const_config_iterator :
@@ -54,7 +60,7 @@ public:
         friend class boost::iterator_core_access; // allow dereference()
         const_config_iterator(base_type iter, PContext ctx) : iterator_adaptor(iter), ctx(move(ctx)) {}
 
-        [[nodiscard]] const ptr<const Config> dereference() const;
+        [[nodiscard]] ptr<const Config> dereference() const;
 
         base_type iter_begin;
         PContext ctx;
