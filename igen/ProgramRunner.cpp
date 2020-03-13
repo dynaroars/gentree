@@ -117,6 +117,10 @@ void ProgramRunner::cleanup() {
     gcov_runner_.reset();
 }
 
+void ProgramRunner::init() {
+    if (gcov_runner_ != nullptr) gcov_runner_->init();
+}
+
 void intrusive_ptr_release(ProgramRunner *p) {
     boost::sp_adl_block::intrusive_ptr_release(p);
 }

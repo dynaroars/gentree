@@ -16,6 +16,8 @@ class GCovRunner : public Object {
 public:
     GCovRunner(PMutContext ctx);
 
+    void init();
+
     void parse(const str &filename);
 
     void parse(const str &filename, map<str, str> &varmap);
@@ -39,6 +41,8 @@ private:
         vec<str> args;
     };
     vec<CmdEntry> cmds;
+
+    vec<std::pair<str, str>> cp_replace_folder_cmds;
 };
 
 }

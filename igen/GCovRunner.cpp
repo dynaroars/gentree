@@ -123,11 +123,14 @@ void GCovRunner::parse(const str &filename, map<str, str> &varmap) {
             cmds.push_back({Cmd::CleanDir, readargs(ss)});
         } else if (cmd == "touch") {
             cmds.push_back({Cmd::Touch, readargs(ss)});
+        } else if (cmd == "cp_replace_folder") {
+            const auto &a = readargs(ss);
+            if (a.size() != 2) throw std::runtime_error(fmt::format("invalid cp_replace_foldercommand: {}", a));
+            cp_replace_folder_cmds.emplace_back(a[0], a[1]);
         } else {
             throw std::runtime_error(fmt::format("invalid command: {}", cmd));
         }
     }
-    f_gcov_gcda_file = f_gcov_wd + "/" + f_gcov_prog_name + ".gcda";
 }
 
 void GCovRunner::exec(const vec<str> &config_values) {
@@ -230,6 +233,43 @@ set<str> GCovRunner::collect_cov() {
 
 void GCovRunner::clean_cov() {
     std::filesystem::remove(f_gcov_gcda_file);
+}
+
+static void recursive_copy(const boost::filesystem::path &src, const boost::filesystem::path &dst) {
+    namespace fs = boost::filesystem;
+    CHECK(fs::is_directory(src) && fs::is_directory(dst));
+
+    for (fs::directory_entry &src_item : fs::directory_iterator(src)) {
+        fs::path new_ds = dst / src_item.path().filename();
+        if (fs::is_directory(src_item.path())) {
+            fs::create_directories(new_ds);
+            recursive_copy(src_item.path(), new_ds);
+        } else if (fs::is_regular_file(src_item)) {
+            fs::copy(src_item, new_ds);
+        } else if (fs::is_symlink(src_item)) {
+            fs::copy_symlink(src_item, new_ds);
+        }
+    }
+}
+
+void GCovRunner::init() {
+    namespace fs = boost::filesystem;
+    const str allowed_prefix = "/mnt/ramdisk/";
+
+    CHECK(boost::algorithm::starts_with(f_gcov_wd, allowed_prefix));
+    f_gcov_gcda_file = f_gcov_wd + "/" + f_gcov_prog_name + ".gcda";
+
+    CHECK(boost::algorithm::starts_with(f_wd, allowed_prefix));
+    fs::create_directories(f_wd);
+
+    for (const auto &p : cp_replace_folder_cmds) {
+        CHECK(boost::algorithm::starts_with(p.second, allowed_prefix));
+        fs::remove_all(p.second);
+        fs::create_directories(p.second);
+        recursive_copy(p.first, p.second);
+    }
+
+    VLOG(1, "GCovRunner inited");
 }
 
 

@@ -24,6 +24,8 @@ class ProgramRunner : public Object {
 public:
     explicit ProgramRunner(PMutContext ctx);
 
+    void init();
+
     set<str> run(const PConfig &config) const;
 
     void reset_n_runs(int val = 0) { n_runs_ = val; }

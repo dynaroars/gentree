@@ -35,7 +35,7 @@ boost::any Context::get_option(const str &key) const {
 
 void Context::init() {
     dom_ = new Domain(this);
-    program_runner_ = new ProgramRunner(this);
+    program_runner_ = new ProgramRunner(this), program_runner_->init();
     coverage_store_ = new CoverageStore(this);
 }
 
