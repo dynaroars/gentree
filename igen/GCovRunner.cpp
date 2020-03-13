@@ -115,6 +115,8 @@ void GCovRunner::parse(const str &filename, map<str, str> &varmap) {
             f_gcov_wd = readval(ss);
         } else if (cmd == "gcov_bin") {
             f_gcov_bin = readval(ss);
+        } else if (cmd == "loc_trim_prefix") {
+            f_loc_trim_prefix = readval(ss);
         } else if (cmd == "run") {
             cmds.push_back({Cmd::Run, readargs(ss)});
         } else if (cmd == "cleandir") {
@@ -125,6 +127,7 @@ void GCovRunner::parse(const str &filename, map<str, str> &varmap) {
             throw std::runtime_error(fmt::format("invalid command: {}", cmd));
         }
     }
+    f_gcov_gcda_file = f_gcov_wd + "/" + f_gcov_prog_name + ".gcda";
 }
 
 void GCovRunner::exec(const vec<str> &config_values) {
@@ -137,7 +140,7 @@ void GCovRunner::exec(const vec<str> &config_values) {
                     if (s == "{}") vec_append(run_arg, config_values);
                     else run_arg.emplace_back(s);
                 }
-                VLOG(60, "Run: {} {}", f_bin, fmt::join(run_arg, " "));
+                VLOG(100, "Run: {} {}", f_bin, fmt::join(run_arg, " "));
 
                 bp::ipstream out, err;
                 bp::child proc_child(f_bin, bp::args(run_arg), bp::start_dir(f_wd), bp::env(bp_env),
@@ -164,6 +167,15 @@ void GCovRunner::exec(const vec<str> &config_values) {
     }
 }
 
+static std::string read_stream_to_str(std::istream &in) {
+    std::string ret;
+    char buffer[4096];
+    while (in.read(buffer, sizeof(buffer)))
+        ret.append(buffer, sizeof(buffer));
+    ret.append(buffer, in.gcount());
+    return ret;
+}
+
 set<str> GCovRunner::collect_cov() {
     vec<str> run_arg = {"-it", f_gcov_prog_name};
 
@@ -172,14 +184,17 @@ set<str> GCovRunner::collect_cov() {
                          bp::std_out > out, bp::std_err > err);
     CHECKF(proc_child, "Error running gcov: {} {}", f_gcov_bin, fmt::join(run_arg, " "));
 
-    proc_child.wait();
-    if (err && err.peek() != EOF) {
-        CHECKF(0, "Gcov error (ec = {}). Stderr = \n", proc_child.exit_code()) << err.rdbuf();
-    }
-
     using namespace rapidjson;
     set<str> res;
-    str json_str;
+    str json_str = read_stream_to_str(out);
+
+    std::string serr = read_stream_to_str(err);
+    // TODO: Check error
+    if (!serr.empty()) {
+        CHECKF(0, "Gcov error (ec = {}). Stderr = \n", proc_child.exit_code()) << serr;
+    }
+    //====
+
     Document document;
     document.ParseInsitu(json_str.data());
 
@@ -191,6 +206,8 @@ set<str> GCovRunner::collect_cov() {
         const Value &file = obj["file"];
         CHECK(file.IsString());
         str file_str = file.GetString();
+        if (boost::algorithm::starts_with(file_str, f_loc_trim_prefix))
+            file_str.erase(file_str.begin(), file_str.begin() + f_loc_trim_prefix.size());
 
         const Value &lines = obj["lines"];
         CHECK(lines.IsArray());
@@ -207,11 +224,12 @@ set<str> GCovRunner::collect_cov() {
         }
     }
 
+    proc_child.wait();
     return res;
 }
 
 void GCovRunner::clean_cov() {
-
+    std::filesystem::remove(f_gcov_gcda_file);
 }
 
 

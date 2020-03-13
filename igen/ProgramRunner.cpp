@@ -109,7 +109,9 @@ set<str> ProgramRunner::_run_gcov(const PConfig &config) const {
         }
     }
     gcov_runner_->exec(str_args);
-    return {};
+    set<str> res = gcov_runner_->collect_cov();
+    gcov_runner_->clean_cov();
+    return res;
 }
 
 void ProgramRunner::cleanup() {

@@ -365,7 +365,7 @@ public:
         cov()->register_cov(c, e);
         bool insert_new = set_ran_conf_hash.insert(c->hash_128()).second;
         CHECK(insert_new);
-        VLOG(50, "{}  ==>  ", *c) << e;
+        VLOG(50, "{}  ==>  {} locs", *c, e.size());// << e;
     }
 
     void run_alg() {
