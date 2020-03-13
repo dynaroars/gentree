@@ -133,6 +133,15 @@ void GCovRunner::parse(const str &filename, map<str, str> &varmap) {
     }
 }
 
+static std::string read_stream_to_str(std::istream &in) {
+    std::string ret;
+    char buffer[4096];
+    while (in.read(buffer, sizeof(buffer)))
+        ret.append(buffer, sizeof(buffer));
+    ret.append(buffer, in.gcount());
+    return ret;
+}
+
 void GCovRunner::exec(const vec<str> &config_values) {
     for (const auto &ce : cmds) {
         switch (ce.cmd) {
@@ -145,14 +154,15 @@ void GCovRunner::exec(const vec<str> &config_values) {
                 }
                 VLOG(100, "Run: {} {}", f_bin, fmt::join(run_arg, " "));
 
-                bp::ipstream out, err;
+                bp::ipstream err;
                 bp::child proc_child(f_bin, bp::args(run_arg), bp::start_dir(f_wd), bp::env(bp_env),
-                                     bp::std_out > out, bp::std_err > err);
+                                     bp::std_out > bp::null, bp::std_err > err);
                 CHECKF(proc_child, "Error running process: {} {}", f_bin, fmt::join(run_arg, " "));
                 proc_child.wait();
                 //LOG(INFO, "ec = {}", proc_child.exit_code()) << out.rdbuf();
                 //GLOG(INFO) << err.rdbuf();
 
+                str str_err = read_stream_to_str(err);
                 // TODO: Check stderr
                 break;
             }
@@ -168,15 +178,6 @@ void GCovRunner::exec(const vec<str> &config_values) {
             }
         }
     }
-}
-
-static std::string read_stream_to_str(std::istream &in) {
-    std::string ret;
-    char buffer[4096];
-    while (in.read(buffer, sizeof(buffer)))
-        ret.append(buffer, sizeof(buffer));
-    ret.append(buffer, in.gcount());
-    return ret;
 }
 
 set<str> GCovRunner::collect_cov() {
