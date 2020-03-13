@@ -19,7 +19,7 @@ using PMutCNode = ptr<CNode>;
 
 class CNode : public intrusive_ref_base_st<CNode> {
 public:
-    CNode(CTree *tree, CNode *parent, std::array<boost::sub_range<vec<PConfig>>, 2> configs);
+    CNode(CTree *tree, CNode *parent, int id, std::array<boost::sub_range<vec<PConfig>>, 2> configs);
 
     [[nodiscard]] boost::sub_range<vec<PConfig>> &miss_configs() { return configs_[0]; }
 
@@ -44,6 +44,9 @@ public:
 
     int n_childs() const { return int(childs.size()); }
 
+    // SEMI PRIVATE
+    int min_cases_in_one_leaf() const { return min_cases_in_one_leaf_; }
+
 private:
     bool evaluate_split();
 
@@ -60,7 +63,7 @@ private:
 private:
     CTree *tree;
     CNode *parent;
-    int depth_;
+    int id_, depth_;
     std::array<boost::sub_range<vec<PConfig>>, 2> configs_;
 
     PVarDomain split_by;
@@ -74,16 +77,21 @@ private:
     PVarDomain dom(int var_id) const;
 
 private: // For gen CEX
-    int min_cases_in_one_leaf;
+    int min_cases_in_one_leaf_;
 
     void gather_small_leaves(vec<PConfig> &res, int min_confs, int max_confs, const PMutConfig &curtpl) const;
+
+    void gather_leaves_nodes(vec<ptr<const CNode>> &res, int min_confs, int max_confs) const;
+
+public:
+    void gen_tpl(PMutConfig &conf) const;
 
 private: // TEMP DATA
     std::array<vec<vec<int>>, 2> freq;
     vec<double> info, gain;
     int possible;
     double base_info, avgain, mdl, mingain;
-    int splitvar, find_pass;
+    int splitvar = -1, find_pass;
 
     void calc_freq();
 

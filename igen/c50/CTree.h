@@ -45,9 +45,12 @@ public:
     void cleanup() override;
 
 public: // For gen CEX
-    int n_min_cases_in_one_leaf() const { return root_->min_cases_in_one_leaf; };
+    int n_min_cases_in_one_leaf() const { return root_->min_cases_in_one_leaf_; };
 
     vec<PConfig> gather_small_leaves(int min_confs, int max_confs) const;
+
+    void gather_leaves_nodes(vec<PCNode> &res,
+                             int min_confs = 0, int max_confs = std::numeric_limits<int>::max()) const;
 
 private:
     std::array<vec<PConfig>, 2> configs_;

@@ -15,8 +15,8 @@ static const double Epsilon = 1E-4;
 
 static const int V_LOG_BUILD = 100;
 
-CNode::CNode(CTree *tree, CNode *parent, std::array<boost::sub_range<vec<PConfig>>, 2> configs) :
-        tree(tree), parent(parent), configs_(std::move(configs)) {
+CNode::CNode(CTree *tree, CNode *parent, int id, std::array<boost::sub_range<vec<PConfig>>, 2> configs) :
+        tree(tree), parent(parent), id_(id), configs_(std::move(configs)) {
     depth_ = (parent ? parent->depth() + 1 : 0);
     if (parent) {
         tested_vars_ = parent->tested_vars_;
@@ -164,7 +164,7 @@ void CNode::create_childs() {
 
         boost::sub_range<vec<PConfig>> miss_conf = {beg[0], end[0]};
         boost::sub_range<vec<PConfig>> hit_conf = {beg[1], end[1]};
-        childs[val] = new CNode(tree, this, {miss_conf, hit_conf});
+        childs[val] = new CNode(tree, this, val, {miss_conf, hit_conf});
     }
 }
 
@@ -175,7 +175,7 @@ bool CNode::evaluate_split() {
         CHECK(n_hits() == 0 || n_misses() == 0); // Same config lead to 2 different result?
         GVLOG(V_LOG_BUILD) << "\n<" << depth() << ">: " << n_total() << " cases\n    "
                            << (leaf_value() ? "HIT" : "MISS");
-        min_cases_in_one_leaf = n_total();
+        min_cases_in_one_leaf_ = n_total();
         return false;
     }
 
@@ -188,10 +188,10 @@ bool CNode::evaluate_split() {
     split_by = dom()->vars().at(splitvar);
     create_childs();
 
-    min_cases_in_one_leaf = std::numeric_limits<int>::max();
+    min_cases_in_one_leaf_ = std::numeric_limits<int>::max();
     for (auto &c : childs) {
         c->evaluate_split();
-        min_cases_in_one_leaf = std::min(min_cases_in_one_leaf, c->min_cases_in_one_leaf);
+        min_cases_in_one_leaf_ = std::min(min_cases_in_one_leaf_, c->min_cases_in_one_leaf_);
     }
 
     return split_by != nullptr;
@@ -316,15 +316,15 @@ std::pair<bool, int> CNode::test_add_config(const PConfig &conf, bool val) {
     if (is_leaf()) {
         bool leaf_val = leaf_value();
         if (leaf_val == val) {
-            min_cases_in_one_leaf++;
+            min_cases_in_one_leaf_++;
         }
         return {leaf_val, n_total()};
     }
     CHECK_NE(splitvar, -1);
     auto res = childs.at(size_t(conf->get(splitvar)))->test_add_config(conf, val);
-    min_cases_in_one_leaf = std::numeric_limits<int>::max();
+    min_cases_in_one_leaf_ = std::numeric_limits<int>::max();
     for (auto &c : childs) {
-        min_cases_in_one_leaf = std::min(min_cases_in_one_leaf, c->min_cases_in_one_leaf);
+        min_cases_in_one_leaf_ = std::min(min_cases_in_one_leaf_, c->min_cases_in_one_leaf_);
     }
     return res;
 }
@@ -333,7 +333,7 @@ std::pair<bool, int> CNode::test_add_config(const PConfig &conf, bool val) {
 
 void CNode::gather_small_leaves(vec<PConfig> &res, int min_confs, int max_confs, const PMutConfig &curtpl) const {
     if (is_leaf()) {
-        if (min_confs <= min_cases_in_one_leaf && min_cases_in_one_leaf <= max_confs)
+        if (min_confs <= min_cases_in_one_leaf_ && min_cases_in_one_leaf_ <= max_confs)
             res.emplace_back(new Config(curtpl));
         return;
     }
@@ -343,6 +343,28 @@ void CNode::gather_small_leaves(vec<PConfig> &res, int min_confs, int max_confs,
         curtpl->set(splitvar, v);
         childs[v]->gather_small_leaves(res, min_confs, max_confs, curtpl);
         curtpl->set(splitvar, -1);
+    }
+}
+
+void CNode::gather_leaves_nodes(vec<ptr<const CNode>> &res, int min_confs, int max_confs) const {
+    if (is_leaf()) {
+        if (min_confs <= min_cases_in_one_leaf_ && min_cases_in_one_leaf_ <= max_confs)
+            res.emplace_back(this);
+        return;
+    }
+    CHECK_NE(splitvar, -1);
+    for (int v = 0; v < n_childs(); ++v) {
+        childs[v]->gather_leaves_nodes(res, min_confs, max_confs);
+    }
+}
+
+void CNode::gen_tpl(PMutConfig &conf) const {
+    if (is_leaf()) {
+        CHECK_EQ(splitvar, -1);
+    }
+    if (parent != nullptr) {
+        conf->set(parent->splitvar, id_);
+        parent->gen_tpl(conf);
     }
 }
 

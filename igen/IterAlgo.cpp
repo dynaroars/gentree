@@ -212,7 +212,7 @@ public:
     bool alg_test_1_iteration([[maybe_unused]] int iter) {
         vec_loc_data.resize(size_t(cov()->n_locs()));
 
-        vec<PMutConfig> cex;
+        vec<PCNode> leaves;
         int n_min_cases_in_one_leaf = std::numeric_limits<int>::max();
         map_loc_hash.clear();
         for (const PLocation &loc : cov()->locs()) {
@@ -234,30 +234,32 @@ public:
                 tree = new CTree(ctx()), tree->prepare_data_for_loc(loc), tree->build_tree();
                 VLOG(30, "NEW DECISION TREE (n_min_cases = {}) = \n", tree->n_min_cases_in_one_leaf()) << (*tree);
             }
-            n_min_cases_in_one_leaf = std::min(n_min_cases_in_one_leaf, tree->n_min_cases_in_one_leaf());
 
-            int lim_gather = tree->n_min_cases_in_one_leaf(), prev_lim_gather = -1;
-            int skipped = 0, cex_tried = 0, n_gene = 0;
-            while (n_gene == 0) {
-                vec<PConfig> tpls = tree->gather_small_leaves(prev_lim_gather + 1, lim_gather);
-                VLOG_BLOCK(40, {
-                    fmt::print(log, "Tpls =  (lim {} -> {})\n", prev_lim_gather + 1, lim_gather);
-                    for (const auto &c : tpls) log << *c << "\n";
-                });
-
-                for (const auto &t : tpls) {
-                    for (auto &c : dom()->gen_one_convering_configs(t)) {
-                        if (set_conf_hash.insert(c->hash_128()).second) cex.emplace_back(move(c)), n_gene++;
-                        else skipped++;
-                    }
-                }
-                prev_lim_gather = lim_gather;
-                lim_gather *= 2;
-                if (++cex_tried == 2) break;
-            }
-            VLOG_IF(25, skipped, "Skipped {} duplicated configs", skipped);
+            tree->gather_leaves_nodes(leaves);
         }
+        // ============================================================================================================
 
+        std::sort(leaves.begin(), leaves.end(), [](const PCNode &a, const PCNode &b) {
+            return a->min_cases_in_one_leaf() < b->min_cases_in_one_leaf();
+        });
+
+        vec<PMutConfig> cex;
+        PMutConfig gen_tpl = new Config(ctx_mut());
+        int skipped = 0;
+        for (const PCNode &node : leaves) {
+            if (node->min_cases_in_one_leaf() > 0 && cex.size() > 20) break;
+            gen_tpl->set_all(-1);
+            node->gen_tpl(gen_tpl);
+            VLOG(30, "Tpl ({}): ", node->min_cases_in_one_leaf()) << *gen_tpl;
+
+            for (auto &c : dom()->gen_one_convering_configs(gen_tpl)) {
+                if (set_conf_hash.insert(c->hash_128()).second) cex.emplace_back(move(c));
+                else skipped++;
+            }
+        }
+        VLOG_IF(25, skipped, "Skipped {} duplicated configs", skipped);
+
+        // === Try rand
         int cex_rand_tried = 0;
         while (cex.empty()) {
             LOG(WARNING, "Can't gen cex, try random configs");
@@ -274,6 +276,8 @@ public:
 //            for (const auto &c : cex) log << *c << '\n';
 //        });
         if (cex.empty()) return false;
+
+        // ============================================================================================================
 
         for (const auto &c : cex) run_config(c);
 

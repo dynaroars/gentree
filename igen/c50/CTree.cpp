@@ -49,7 +49,7 @@ void CTree::prepare_data_for_loc(const PLocation &loc) {
 }
 
 void CTree::build_tree() {
-    root_ = new CNode(this, nullptr, {miss_configs(), hit_configs()});
+    root_ = new CNode(this, nullptr, 0, {miss_configs(), hit_configs()});
     root_->evaluate_split();
 }
 
@@ -99,7 +99,7 @@ std::ostream &operator<<(std::ostream &output, const CTree &t) {
     return t.print_tree(output);
 }
 
-// =====================================================================================================================
+// =====================================new CNode================================================================================
 
 vec<PConfig> CTree::gather_small_leaves(int min_confs, int max_confs) const {
     CHECK(root_ != nullptr);
@@ -108,6 +108,11 @@ vec<PConfig> CTree::gather_small_leaves(int min_confs, int max_confs) const {
     curtmpl->set_all(-1);
     root_->gather_small_leaves(res, min_confs, max_confs, curtmpl);
     return res;
+}
+
+void CTree::gather_leaves_nodes(vec<PCNode> &res, int min_confs, int max_confs) const {
+    CHECK(root_ != nullptr);
+    root_->gather_leaves_nodes(res, min_confs, max_confs);
 }
 
 }
