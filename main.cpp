@@ -39,6 +39,7 @@ int prog(int argc, char *argv[]) {
             ("runner,r", po::value<str>(), "Select program runner")
             ("simple-runner,S", "Simple runner")
             ("builtin-runner,B", "Builtin runner")
+            ("gcov-runner,G", "GCov runner")
             ("seed,s", po::value<uint64_t>()->default_value(123), "Random seed")
 
             ("conjdisj,A", "Run the conj/disj algorithm")

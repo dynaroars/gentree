@@ -14,7 +14,11 @@
 
 namespace igen {
 
-BETTER_ENUM(RunnerType, int, Invalid, Simple, BuiltIn)
+BETTER_ENUM(RunnerType, int, Invalid, Simple, BuiltIn, GCov)
+
+class GCovRunner;
+
+void intrusive_ptr_release(GCovRunner *);
 
 class ProgramRunner : public Object {
 public:
@@ -26,6 +30,8 @@ public:
 
     int n_runs() const { return n_runs_; };
 
+    void cleanup() override;
+
 private:
     RunnerType type;
     str target;
@@ -35,6 +41,10 @@ private:
     set<str> _run_simple(const PConfig &config) const;
 
     set<str> _run_builtin(const PConfig &config) const;
+
+    ptr<GCovRunner> gcov_runner_;
+
+    set<str> _run_gcov(const PConfig &config) const;
 };
 
 using PProgramRunner = ptr<const ProgramRunner>;

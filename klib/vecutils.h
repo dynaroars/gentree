@@ -20,6 +20,16 @@ void vec_move_append(std::vector<T> &dst, std::vector<T> &src) {
     }
 }
 
+template<class T>
+void vec_append(std::vector<T> &dst, const std::vector<T> &src) {
+    if (dst.empty()) {
+        dst = src;
+    } else {
+        dst.reserve(dst.size() + src.size());
+        dst.insert(std::end(dst), std::begin(src), std::end(src));
+    }
+}
+
 }
 
 #endif //IGEN4_VECUTILS_H

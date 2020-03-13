@@ -18,6 +18,8 @@ typedef unsigned long DWORD;
 #include <boost/process/io.hpp>
 #include <boost/process/args.hpp>
 
+#include "GCovRunner.h"
+
 namespace bp = boost::process;
 
 namespace igen {
@@ -28,6 +30,8 @@ ProgramRunner::ProgramRunner(PMutContext _ctx) : Object(move(_ctx)), type(Runner
         type = RunnerType::Simple;
     } else if (ctx()->has_option("builtin-runner")) {
         type = RunnerType::BuiltIn;
+    } else if (ctx()->has_option("gcov-runner")) {
+        type = RunnerType::GCov;
     } else {
         str str_type = ctx()->get_option_as<str>("runner");
         type = RunnerType::_from_string_nocase(str_type.c_str());
@@ -35,12 +39,19 @@ ProgramRunner::ProgramRunner(PMutContext _ctx) : Object(move(_ctx)), type(Runner
     if (ctx()->has_option("target")) {
         target = ctx()->get_option_as<str>("target");
     } else {
-        target = ctx()->get_option_as<str>("filestem") + ".exe";
+        if (type == +RunnerType::GCov)
+            target = ctx()->get_option_as<str>("filestem") + ".gcov";
+        else
+            target = ctx()->get_option_as<str>("filestem") + ".exe";
     }
     LOG(INFO, "Program runner: type {}, target {}", type._to_string(), target);
     if (type == +RunnerType::BuiltIn) {
         builtin_fn = builtin::get_fn(target);
         LOG(INFO, "Builtin runner source: ") << builtin::get_src(target);
+    }
+    if (type == +RunnerType::GCov) {
+        gcov_runner_ = new GCovRunner(ctx_mut());
+        gcov_runner_->parse(target);
     }
 }
 
@@ -51,6 +62,8 @@ set<str> ProgramRunner::run(const PConfig &config) const {
             return _run_simple(config);
         case RunnerType::BuiltIn:
             return _run_builtin(config);
+        case RunnerType::GCov:
+            return _run_gcov(config);
         default:
             CHECK(0);
     }
@@ -80,6 +93,27 @@ set<str> ProgramRunner::_run_simple(const PConfig &config) const {
 
 set<str> ProgramRunner::_run_builtin(const PConfig &config) const {
     return builtin_fn(config);
+}
+
+set<str> ProgramRunner::_run_gcov(const PConfig &config) const {
+    vec<str> str_args;
+    str_args.reserve(size_t(dom()->n_vars()) * 2);
+    for (const auto &e : *config) {
+        bool on = e.label() == "on";
+        bool off = e.label() == "off";
+        if (on || off) {
+            if (on) str_args.emplace_back(e.name());
+        } else {
+            str_args.emplace_back(e.name());
+            str_args.emplace_back(e.label());
+        }
+    }
+    gcov_runner_->exec(str_args);
+    return {};
+}
+
+void ProgramRunner::cleanup() {
+    gcov_runner_.reset();
 }
 
 void intrusive_ptr_release(ProgramRunner *p) {
