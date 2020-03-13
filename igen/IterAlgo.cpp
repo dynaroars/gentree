@@ -245,7 +245,7 @@ public:
         vec_loc_data.resize(size_t(cov()->n_locs()));
 
         vec<PCNode> leaves;
-        int n_min_cases_in_one_leaf = std::numeric_limits<int>::max();
+        int n_min_cases_in_one_leaf = std::numeric_limits<int>::max(), n_uniq_locs = 0;
         map_loc_hash.clear();
         for (const PLocation &loc : cov()->locs()) {
             PLocation &mloc = map_loc_hash[loc->digest_cov_by_hash()];
@@ -254,6 +254,7 @@ public:
             if (mloc == nullptr) {
                 shared_tree = nullptr;
                 mloc = loc;
+                n_uniq_locs++;
                 VLOG(20, "Process loc {}: {}", loc->id(), loc->name());
             } else {
                 tree = nullptr;
@@ -339,10 +340,12 @@ public:
             }
         }
 
-        LOG(INFO, "(END ITER) n_rebuilds = {}, n_new_locs = {}, n_min_cases_in_one_leaf = {}",
+        LOG(INFO, "n_rebuilds = {}, n_new_locs = {}, n_min_cases_in_one_leaf = {}",
             n_rebuilds, n_new_locs, n_min_cases_in_one_leaf);
+        LOG(INFO, "n_configs = {}, n_locs = {}, n_uniq_locs = {}",
+            cov()->n_configs(), cov()->n_locs(), n_uniq_locs);
         bool need_term = n_rebuilds == 0 && n_new_locs == 0 && n_min_cases_in_one_leaf > 0;
-        LOG(WARNING, "need_term = TRUE, terminate_counter = {}", terminate_counter);
+        LOG_IF(WARNING, need_term, "need_term = TRUE, terminate_counter = {}", terminate_counter);
         if (need_term) {
             if (++terminate_counter == 10) return false;
         } else {
