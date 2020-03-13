@@ -199,6 +199,38 @@ public:
     }
 
 
+#define TREE_DATA(id) auto &[tree, shared_tree, tree_need_rebuild] = vec_loc_data.at(size_t(id))
+
+    void finalize_build_trees() {
+        LOG(INFO, "finalize_build_trees");
+        map_loc_hash.clear();
+        int n_min_cases_in_one_leaf = std::numeric_limits<int>::max();
+        int n_rebuilds = 0;
+        for (const PLocation &loc : cov()->locs()) {
+            if (loc->id() >= int(vec_loc_data.size())) break;
+            PLocation &mloc = map_loc_hash[loc->digest_cov_by_hash()];
+            TREE_DATA(loc->id());
+
+            if (mloc == nullptr) {
+                shared_tree = nullptr;
+                mloc = loc;
+                VLOG(20, "Process loc {}: {}", loc->id(), loc->name());
+            } else {
+                tree = nullptr;
+                shared_tree = vec_loc_data.at(size_t(mloc->id())).tree;
+                //VLOG(100, "Duplicated loc {}: {} (<=> {}: {})", loc->id(), loc->name(), mloc->id(), mloc->name());
+                continue;
+            }
+
+            tree = new CTree(ctx()), tree->prepare_data_for_loc(loc), tree->build_tree();
+            VLOG(30, "DECISION TREE (n_min_cases = {}) = \n", tree->n_min_cases_in_one_leaf()) << (*tree);
+            n_min_cases_in_one_leaf = std::min(n_min_cases_in_one_leaf, tree->n_min_cases_in_one_leaf());
+            n_rebuilds++;
+        }
+        LOG(INFO, "(END finalize_build_trees) unique locations = {}, n_min_cases_in_one_leaf = {}, n_unvisited = {}",
+            n_rebuilds, n_min_cases_in_one_leaf, int(vec_loc_data.size()) - cov()->n_locs());
+    }
+
     set<hash128_t> set_conf_hash, set_ran_conf_hash;
     map<hash128_t, PLocation> map_loc_hash;
     struct LocData {
@@ -207,7 +239,6 @@ public:
         bool tree_need_rebuild;
     };
     vec<LocData> vec_loc_data;
-#define TREE_DATA(id) auto &[tree, shared_tree, tree_need_rebuild] = vec_loc_data.at(size_t(id))
 
     bool alg_test_1_iteration([[maybe_unused]] int iter) {
         vec_loc_data.resize(size_t(cov()->n_locs()));
@@ -235,6 +266,7 @@ public:
                 VLOG(30, "NEW DECISION TREE (n_min_cases = {}) = \n", tree->n_min_cases_in_one_leaf()) << (*tree);
             }
 
+            n_min_cases_in_one_leaf = std::min(n_min_cases_in_one_leaf, tree->n_min_cases_in_one_leaf());
             tree->gather_leaves_nodes(leaves);
         }
         // ============================================================================================================
@@ -341,9 +373,13 @@ public:
                 break;
             }
         }
+
+        finalize_build_trees();
+
         LOG(INFO, "{:=^80}", "  FINAL RESULT  ");
         map_loc_hash.clear();
         for (const PLocation &loc : cov()->locs()) {
+            if (loc->id() >= int(vec_loc_data.size())) break;
             std::stringstream log;
             TREE_DATA(loc->id());
             PLocation &mloc = map_loc_hash[loc->digest_cov_by_hash()];
