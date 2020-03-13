@@ -27,7 +27,7 @@ public:
     void clean_cov();
 
 private:
-    str f_bin, f_wd;
+    str f_bin, f_wd, f_gcov_wd, f_gcov_bin, f_gcov_prog_name;
 
     boost::process::environment bp_env;
 

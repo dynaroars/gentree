@@ -31,8 +31,8 @@ find_package(Boost REQUIRED COMPONENTS headers program_options timer filesystem)
 
 # ===
 
+add_subdirectory(third_party/rapidjson)
 add_subdirectory(klib)
-add_subdirectory(third_party/smhash)
 add_subdirectory(igen)
 
 # === Main code ======================================

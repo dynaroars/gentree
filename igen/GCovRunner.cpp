@@ -27,6 +27,11 @@ typedef unsigned long DWORD;
 #include <boost/process/start_dir.hpp>
 #include <boost/process/env.hpp>
 
+#include <rapidjson/document.h>
+#include <rapidjson/writer.h>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/istreamwrapper.h>
+
 namespace bp = boost::process;
 
 
@@ -103,8 +108,13 @@ void GCovRunner::parse(const str &filename, map<str, str> &varmap) {
             bp_env[k] = v;
         } else if (cmd == "bin") {
             f_bin = readval(ss);
+            f_gcov_prog_name = std::filesystem::path(f_bin).filename();
         } else if (cmd == "wd") {
             f_wd = readval(ss);
+        } else if (cmd == "gcov_wd") {
+            f_gcov_wd = readval(ss);
+        } else if (cmd == "gcov_bin") {
+            f_gcov_bin = readval(ss);
         } else if (cmd == "run") {
             cmds.push_back({Cmd::Run, readargs(ss)});
         } else if (cmd == "cleandir") {
@@ -132,10 +142,12 @@ void GCovRunner::exec(const vec<str> &config_values) {
                 bp::ipstream out, err;
                 bp::child proc_child(f_bin, bp::args(run_arg), bp::start_dir(f_wd), bp::env(bp_env),
                                      bp::std_out > out, bp::std_err > err);
-                CHECKF(proc_child, "Error running process {}, args {}", f_bin, run_arg);
+                CHECKF(proc_child, "Error running process: {} {}", f_bin, fmt::join(run_arg, " "));
                 proc_child.wait();
-                LOG(INFO, "ec = {}", proc_child.exit_code()) << out.rdbuf();
+                //LOG(INFO, "ec = {}", proc_child.exit_code()) << out.rdbuf();
                 //GLOG(INFO) << err.rdbuf();
+
+                // TODO: Check stderr
                 break;
             }
             case Cmd::CleanDir: {
@@ -153,7 +165,49 @@ void GCovRunner::exec(const vec<str> &config_values) {
 }
 
 set<str> GCovRunner::collect_cov() {
-    return set<str>();
+    vec<str> run_arg = {"-it", f_gcov_prog_name};
+
+    bp::ipstream out, err;
+    bp::child proc_child(f_gcov_bin, bp::args(run_arg), bp::start_dir(f_gcov_wd),
+                         bp::std_out > out, bp::std_err > err);
+    CHECKF(proc_child, "Error running gcov: {} {}", f_gcov_bin, fmt::join(run_arg, " "));
+
+    proc_child.wait();
+    if (err && err.peek() != EOF) {
+        CHECKF(0, "Gcov error (ec = {}). Stderr = \n", proc_child.exit_code()) << err.rdbuf();
+    }
+
+    using namespace rapidjson;
+    set<str> res;
+    str json_str;
+    Document document;
+    document.ParseInsitu(json_str.data());
+
+    const Value &files = document["files"];
+    CHECK(files.IsArray());
+    for (Value::ConstValueIterator itf = files.Begin(); itf != files.End(); ++itf) {
+        CHECK(itf->IsObject());
+        const auto &obj = itf->GetObject();
+        const Value &file = obj["file"];
+        CHECK(file.IsString());
+        str file_str = file.GetString();
+
+        const Value &lines = obj["lines"];
+        CHECK(lines.IsArray());
+        for (Value::ConstValueIterator itL = lines.Begin(); itL != lines.End(); ++itL) {
+            CHECK(itL->IsObject());
+            const auto &objL = itL->GetObject();
+            if (objL["count"].GetInt() == 0) continue;
+            int lnum = objL["line_number"].GetInt();
+
+            str loc = file_str;
+            loc.push_back(':');
+            loc += std::to_string(lnum);
+            res.insert(move(loc));
+        }
+    }
+
+    return res;
 }
 
 void GCovRunner::clean_cov() {

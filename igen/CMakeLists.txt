@@ -15,5 +15,6 @@ add_library(libigen4
 target_link_libraries(libigen4
         PRIVATE
         Boost::headers Boost::program_options Boost::timer Boost::filesystem
+        rapidjson
         PUBLIC
         z3::libz3 klib)
