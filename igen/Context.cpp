@@ -67,7 +67,7 @@ const ptr<CoverageStore> &Context::cov() { return coverage_store_; }
 expr Context::zctx_solver_simplify(const expr &e) const {
     z3::context &ctx = const_cast<Context *>(this)->zctx();
     z3::tactic tactic(ctx, "ctx-solver-simplify");
-    tactic = z3::try_for(z3::repeat(tactic), 120000);
+    tactic = z3::try_for(z3::repeat(tactic), 10000);
     z3::goal goal(ctx);
     expr simple_simpl = e.simplify();
     goal.add(simple_simpl);

@@ -13,6 +13,7 @@
 #include <klib/print_stl.h>
 #include <klib/vecutils.h>
 #include <igen/c50/CTree.h>
+#include <fstream>
 
 namespace igen {
 
@@ -376,6 +377,26 @@ public:
 
         finalize_build_trees();
 
+        finish_alg1();
+    }
+
+    void finish_alg1() {
+        bool out_to_file = false;
+        std::ofstream outstream;
+        if (ctx()->has_option("output")) {
+            str fout = ctx()->get_option_as<str>("output");
+            outstream.open(fout);
+            out_to_file = true;
+            CHECKF(!outstream.fail(), "Can't open output file {}", fout);
+        }
+
+        struct LineEnt {
+            vec<PLocation> locs;
+            str expr;
+        };
+        vec<LineEnt> ents;
+        if (out_to_file) ents.resize(vec_loc_data.size());
+
         LOG(INFO, "{:=^80}", "  FINAL RESULT  ");
         map_loc_hash.clear();
         for (const PLocation &loc : cov()->locs()) {
@@ -390,14 +411,30 @@ public:
                 z3::expr e = tree->build_zexpr(CTree::DisjOfConj);
                 e = e.simplify();
                 e = ctx()->zctx_solver_simplify(e);
-                log << e;
+
+                if (out_to_file) {
+                    auto &et = ents.at(size_t(loc->id()));
+                    et.locs.push_back(loc);
+                    et.expr = e.to_string();
+                    log << et.expr;
+                } else {
+                    log << e;
+                }
             } else {
                 CHECK_NE(shared_tree, nullptr);
                 fmt::print(log, "{}: {}", mloc->id(), mloc->name());
+                if (out_to_file) ents.at(size_t(mloc->id())).locs.push_back(loc);
             }
             GLOG(INFO) << log.rdbuf();
         }
         LOG(INFO, "Runner n_runs = {}", ctx()->program_runner()->n_runs());
+
+        for (const auto &e : ents) {
+            if (e.locs.empty()) continue;
+            for (const auto &loc : e.locs)
+                outstream << loc->name() << ", ";
+            outstream << '\n' << e.expr << "\n===\n";
+        }
     }
 
     void run_config(const PMutConfig &c) {

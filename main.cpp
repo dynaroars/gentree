@@ -41,6 +41,7 @@ int prog(int argc, char *argv[]) {
             ("builtin-runner,B", "Builtin runner")
             ("gcov-runner,G", "GCov runner")
             ("seed,s", po::value<uint64_t>()->default_value(123), "Random seed")
+            ("output,O", po::value<str>(), "Output result")
 
             ("conjdisj,A", "Run the conj/disj algorithm")
             ("c50,5", "Run the ML algorithm")
