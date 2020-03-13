@@ -376,6 +376,10 @@ public:
                 LOG(WARNING, "Early break at iteration {}", iter);
                 break;
             }
+            if (iter % 100 == 0) {
+                finalize_build_trees();
+                finish_alg1(false);
+            }
         }
 
         finalize_build_trees();
@@ -383,7 +387,7 @@ public:
         finish_alg1();
     }
 
-    void finish_alg1() {
+    void finish_alg1(bool expensive_simplify = true) {
         bool out_to_file = false;
         std::ofstream outstream;
         if (ctx()->has_option("output")) {
@@ -413,7 +417,7 @@ public:
                 mloc = loc;
                 z3::expr e = tree->build_zexpr(CTree::DisjOfConj);
                 e = e.simplify();
-                e = ctx()->zctx_solver_simplify(e);
+                if (expensive_simplify) e = ctx()->zctx_solver_simplify(e);
 
                 if (out_to_file) {
                     auto &et = ents.at(size_t(loc->id()));
