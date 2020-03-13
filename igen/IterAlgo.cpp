@@ -226,7 +226,7 @@ public:
             } else {
                 tree = nullptr;
                 shared_tree = vec_loc_data.at(size_t(mloc->id())).tree;
-                VLOG(21, "Duplicated loc {}: {} (<=> {}: {})", loc->id(), loc->name(), mloc->id(), mloc->name());
+                VLOG(100, "Duplicated loc {}: {} (<=> {}: {})", loc->id(), loc->name(), mloc->id(), mloc->name());
                 continue;
             }
 
@@ -306,8 +306,8 @@ public:
             }
         }
 
-        VLOG(20, "n_rebuilds = {}, n_new_locs = {}, n_min_cases_in_one_leaf = {}",
-             n_rebuilds, n_new_locs, n_min_cases_in_one_leaf);
+        LOG(INFO, "(END ITER) n_rebuilds = {}, n_new_locs = {}, n_min_cases_in_one_leaf = {}",
+            n_rebuilds, n_new_locs, n_min_cases_in_one_leaf);
         bool need_term = n_rebuilds == 0 && n_new_locs == 0 && n_min_cases_in_one_leaf > 0;
         LOG(WARNING, "need_term = TRUE, terminate_counter = {}", terminate_counter);
         if (need_term) {
