@@ -165,7 +165,7 @@ vec<PMutConfig> Domain::gen_all_configs(const PConfig &templ) const {
     return configs;
 }
 
-vec<PMutConfig> Domain::gen_one_convering_configs(const PConfig &templ) const {
+vec<PMutConfig> Domain::gen_one_convering_configs(const PConfig &templ, int lim) const {
     vec<PMutConfig> ret;
 
     vec<set<int>> SetVAL;
@@ -179,7 +179,7 @@ vec<PMutConfig> Domain::gen_one_convering_configs(const PConfig &templ) const {
         }
     }
 
-    while (n_finished < n_vars()) {
+    while (n_finished < n_vars() && int(ret.size()) < lim) {
         PMutConfig conf = new Config(ctx_mut());
         for (int i = 0; i < n_vars(); i++) {
             set<int> &st = SetVAL[i];

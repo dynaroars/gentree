@@ -359,8 +359,11 @@ public:
 
     void run_alg_test_1() {
 
-        auto init_configs = dom()->gen_one_convering_configs();
-        {
+        vec<PMutConfig> init_configs;
+        if (ctx()->has_option("full")) {
+            init_configs = dom()->gen_all_configs();
+        } else {
+            init_configs = dom()->gen_one_convering_configs();
             int n_one_covering = int(init_configs.size());
             auto seed_configs = get_seed_configs();
             int n_seed_configs = int(seed_configs.size());
@@ -458,19 +461,19 @@ public:
     }
 
     void run_alg() {
-        if (ctx()->has_option("full")) {
-            run_alg_full();
-        } else if (ctx()->has_option("alg-test")) {
-            int v = ctx()->get_option_as<int>("alg-test");
-            switch (v) {
-                case 0:
-                    return run_alg_test_0();
-                case 1:
-                    return run_alg_test_1();
-                default:
-                    CHECK(0);
-            }
+//        if (ctx()->has_option("full")) {
+//            run_alg_full();
+//        } else if (ctx()->has_option("alg-test")) {
+        int v = ctx()->get_option_as<int>("alg-test");
+        switch (v) {
+            case 0:
+                return run_alg_test_0();
+            case 1:
+                return run_alg_test_1();
+            default:
+                CHECK(0);
         }
+//        }
     }
 
     vec<PMutConfig> get_seed_configs() const {

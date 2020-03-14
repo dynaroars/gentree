@@ -91,7 +91,8 @@ public:
 
     vec <ptr<Config>> gen_one_convering_configs() const;
 
-    vec <ptr<Config>> gen_one_convering_configs(const ptr<const Config> &templ) const;
+    vec <ptr<Config>> gen_one_convering_configs(const ptr<const Config> &templ,
+                                                int lim = std::numeric_limits<int>::max()) const;
 
     template<typename T>
     vec <T> create_vec_vars() const { return vec<T>(n_vars()); }
