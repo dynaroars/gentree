@@ -281,7 +281,7 @@ public:
         PMutConfig gen_tpl = new Config(ctx_mut());
         int skipped = 0;
         for (const PCNode &node : leaves) {
-            if (node->min_cases_in_one_leaf() > 0 && cex.size() > 20) break;
+            if (node->min_cases_in_one_leaf() > 0 && cex.size() > 50) break;
             gen_tpl->set_all(-1);
             node->gen_tpl(gen_tpl);
             VLOG(30, "Tpl ({}): ", node->min_cases_in_one_leaf()) << *gen_tpl;
@@ -291,7 +291,7 @@ public:
                 else skipped++;
             }
         }
-        VLOG_IF(25, skipped, "Skipped {} duplicated configs", skipped);
+        LOG_IF(INFO, skipped, "Skipped {} duplicated configs", skipped);
 
         // === Try rand
         int cex_rand_tried = 0;
@@ -316,7 +316,7 @@ public:
         for (const auto &c : cex) run_config(c);
 
         int n_new_locs = cov()->n_locs() - int(vec_loc_data.size());
-        int n_rebuilds = 0;
+        int n_rebuilds = 0, n_rebuilds_uniq = 0;
         for (const PMutConfig &c : cex) {
             const vec<int> cov_ids = c->cov_loc_ids();
             auto it = cov_ids.begin();
@@ -333,6 +333,7 @@ public:
                 tree_need_rebuild = (tree_eval != new_truth);
                 if (tree_need_rebuild) {
                     n_rebuilds++;
+                    if (tree != nullptr) n_rebuilds_uniq++;
                     tree = nullptr, shared_tree = nullptr;
                     VLOG(20, "Need rebuild loc {}", loc->name());
                     continue;
@@ -340,9 +341,9 @@ public:
             }
         }
 
-        LOG(INFO, "n_rebuilds = {}, n_new_locs = {}, n_min_cases_in_one_leaf = {}",
-            n_rebuilds, n_new_locs, n_min_cases_in_one_leaf);
-        LOG(INFO, "n_configs = {}, n_locs = {}, n_uniq_locs = {}",
+        LOG(INFO, "rebuilds = {}, rebuilds_uniq = {}, new_locs = {}, min_cases = {}",
+            n_rebuilds, n_rebuilds_uniq, n_new_locs, n_min_cases_in_one_leaf);
+        LOG(INFO, "configs = {}, locs = {}, uniq_locs = {}",
             cov()->n_configs(), cov()->n_locs(), n_uniq_locs);
         bool need_term = n_rebuilds == 0 && n_new_locs == 0 && n_min_cases_in_one_leaf > 0;
         LOG_IF(WARNING, need_term, "need_term = TRUE, terminate_counter = {}", terminate_counter);
