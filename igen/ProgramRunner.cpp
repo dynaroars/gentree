@@ -104,8 +104,14 @@ set<str> ProgramRunner::_run_gcov(const PConfig &config) const {
         if (on || off) {
             if (on) str_args.emplace_back(e.name());
         } else {
-            str_args.emplace_back(e.name());
-            str_args.emplace_back(e.label());
+            if (e.name() == "+") {
+                str_args.emplace_back(e.name() + e.label());
+            } else if (e.name().size() > 2 && e.name()[0] == '-' && e.name()[1] == '-') {
+                str_args.emplace_back(e.name() + '=' + e.label());
+            } else {
+                str_args.emplace_back(e.name());
+                str_args.emplace_back(e.label());
+            }
         }
     }
     gcov_runner_->clean_cov();

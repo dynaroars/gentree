@@ -79,7 +79,13 @@ void GCovRunner::parse(const str &filename, map<str, str> &varmap) {
     auto readargs = [&procval](std::istream &ss) -> vec<str> {
         vec<str> res;
         str entry;
-        while (ss >> entry) {
+        while (ss >> std::ws >> entry) {
+            if (!entry.empty() && entry[0] == '\'') {
+                entry.erase(entry.begin());
+                str cont;
+                std::getline(ss, cont, '\'');
+                entry += cont;
+            }
             boost::algorithm::trim(entry);
             if (entry.empty()) continue;
             procval(entry);
@@ -152,9 +158,9 @@ void GCovRunner::exec(const vec<str> &config_values) {
                     if (s == "{}") vec_append(run_arg, config_values);
                     else run_arg.emplace_back(s);
                 }
-                VLOG(100, "Run: {} {}", f_bin, fmt::join(run_arg, " "));
+                VLOG(10, "Run: {} {}", f_bin, fmt::join(run_arg, " "));
 
-                bp::ipstream err;
+                bp::ipstream out, err;
                 bp::child proc_child(f_bin, bp::args(run_arg), bp::start_dir(f_wd), bp::env(bp_env),
                                      bp::std_out > bp::null, bp::std_err > err);
                 CHECKF(proc_child, "Error running process: {} {}", f_bin, fmt::join(run_arg, " "));
@@ -162,7 +168,10 @@ void GCovRunner::exec(const vec<str> &config_values) {
                 //LOG(INFO, "ec = {}", proc_child.exit_code()) << out.rdbuf();
                 //GLOG(INFO) << err.rdbuf();
 
+//                str str_out = read_stream_to_str(out);
                 str str_err = read_stream_to_str(err);
+//                VLOG(10, "Out: {}", str_out);
+//                VLOG(10, "Err: {}", str_err);
                 // TODO: Check stderr
                 break;
             }
