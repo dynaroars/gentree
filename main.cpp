@@ -15,7 +15,7 @@
 
 #include <glog/raw_logging.h>
 
-#include <igen/algo/IterAlgo.h>
+#include <igen/algo/Algo.h>
 
 namespace po = boost::program_options;
 
@@ -43,10 +43,12 @@ int prog(int argc, char *argv[]) {
             ("seed,s", po::value<uint64_t>()->default_value(123), "Random seed")
             ("output,O", po::value<str>(), "Output result")
 
-            ("conjdisj,A", "Run the conj/disj algorithm")
-            ("c50,5", "Run the ML algorithm")
             ("full", "Run with full configs")
-            ("alg-test,T", po::value<int>()->default_value(0), "Run test algo")
+            ("analyze,A", po::value<int>()->default_value(0), "Run anaylzer")
+            ("c50,J", po::value<int>()->default_value(0), "Run the ML algorithm")
+            ("alg-version,T", po::value<int>()->default_value(0), "Select algo version")
+            ("inp,I", po::value<str>()->default_value(""), "Algorithm input")
+
             ("loc,X", po::value<str>(), "Interested location")
             ("rounds,R", po::value<int>(), "Number of iterations")
             ("seed-configs,C", po::value<std::vector<str>>()->default_value(std::vector<str>(), "none"), "Seed configs")
@@ -113,7 +115,23 @@ int prog(int argc, char *argv[]) {
         }
     BOOST_SCOPE_EXIT_END
 
-    if (vm.count("c50")) return igen::run_interative_algorithm(vm);
+    if (vm.count("c50")) {
+        switch (vm["c50"].as<int>()) {
+            case 0:
+                return igen::run_interative_algorithm(vm);
+            default:
+                CHECK(0) << "Invalid C50 version";
+        }
+    }
+
+    if (vm.count("analyze")) {
+        switch (vm["analyze"].as<int>()) {
+            case 0:
+                return igen::run_analyzer(vm);
+            default:
+                CHECK(0) << "Invalid analyzer version";
+        }
+    }
 
     return 0;
 }

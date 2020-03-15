@@ -2,7 +2,7 @@
 // Created by KH on 3/5/2020.
 //
 
-#include "IterAlgo.h"
+#include "Algo.h"
 
 #include <igen/Context.h>
 #include <igen/Domain.h>
@@ -461,11 +461,7 @@ public:
     }
 
     void run_alg() {
-//        if (ctx()->has_option("full")) {
-//            run_alg_full();
-//        } else if (ctx()->has_option("alg-test")) {
-        int v = ctx()->get_option_as<int>("alg-test");
-        switch (v) {
+        switch (ctx()->get_option_as<int>("alg-version")) {
             case 0:
                 return run_alg_test_0();
             case 1:
@@ -473,7 +469,6 @@ public:
             default:
                 CHECK(0);
         }
-//        }
     }
 
     vec<PMutConfig> get_seed_configs() const {
