@@ -4,11 +4,11 @@
 
 #include "IterAlgo.h"
 
-#include "Context.h"
-#include "Domain.h"
-#include "Config.h"
-#include "ProgramRunner.h"
-#include "CoverageStore.h"
+#include <igen/Context.h>
+#include <igen/Domain.h>
+#include <igen/Config.h>
+#include <igen/ProgramRunner.h>
+#include <igen/CoverageStore.h>
 
 #include <klib/print_stl.h>
 #include <klib/vecutils.h>
@@ -495,6 +495,7 @@ int run_interative_algorithm(const boost::program_options::variables_map &vm) {
         ctx->set_option(kv.first, kv.second.value());
     }
     ctx->init();
+    ctx->program_runner()->init();
     {
         ptr<IterativeAlgorithm> ite_alg = new IterativeAlgorithm(ctx);
         ite_alg->run_alg();

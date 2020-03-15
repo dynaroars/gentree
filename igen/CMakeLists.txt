@@ -3,7 +3,7 @@ add_library(libigen4
         Config.cpp Config.h
         Domain.cpp Domain.h
         Z3Scope.h
-        IterAlgo.cpp IterAlgo.h
+        algo/IterAlgo.cpp algo/IterAlgo.h
         c50/CTree.cpp c50/CTree.h
         ProgramRunner.cpp ProgramRunner.h
         CoverageStore.cpp CoverageStore.h
