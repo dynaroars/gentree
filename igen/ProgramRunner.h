@@ -34,6 +34,8 @@ public:
 
     void cleanup() override;
 
+    int n_locs() const;
+
 private:
     RunnerType type;
     str target;

@@ -208,6 +208,7 @@ set<str> GCovRunner::collect_cov() {
     }
     //====
 
+    int cur_n_locs = 0;
     Document document;
     document.ParseInsitu(json_str.data());
 
@@ -226,6 +227,7 @@ set<str> GCovRunner::collect_cov() {
         CHECK(lines.IsArray());
         for (Value::ConstValueIterator itL = lines.Begin(); itL != lines.End(); ++itL) {
             CHECK(itL->IsObject());
+            cur_n_locs++;
             const auto &objL = itL->GetObject();
             if (objL["count"].GetInt() == 0) continue;
             int lnum = objL["line_number"].GetInt();
@@ -237,6 +239,10 @@ set<str> GCovRunner::collect_cov() {
         }
     }
 
+    if (n_locs_ == -1)
+        n_locs_ = cur_n_locs;
+    else
+        CHECK_EQ(n_locs_, cur_n_locs);
     proc_child.wait();
     return res;
 }

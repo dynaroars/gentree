@@ -127,6 +127,11 @@ void ProgramRunner::init() {
     if (gcov_runner_ != nullptr) gcov_runner_->init();
 }
 
+int ProgramRunner::n_locs() const {
+    CHECK_EQ(type, +RunnerType::GCov);
+    return gcov_runner_->n_locs();
+}
+
 void intrusive_ptr_release(ProgramRunner *p) {
     boost::sp_adl_block::intrusive_ptr_release(p);
 }

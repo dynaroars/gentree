@@ -345,6 +345,8 @@ public:
             n_rebuilds, n_rebuilds_uniq, n_new_locs, n_min_cases_in_one_leaf);
         LOG(INFO, "configs = {}, locs = {}, uniq_locs = {}",
             cov()->n_configs(), cov()->n_locs(), n_uniq_locs);
+        LOG(INFO, "Runner stat: n_runs = {}, n_locs = {}",
+            ctx()->program_runner()->n_runs(), ctx()->program_runner()->n_locs());
         bool need_term = n_rebuilds == 0 && n_new_locs == 0 && n_min_cases_in_one_leaf > 0;
         LOG_IF(WARNING, need_term, "need_term = TRUE, terminate_counter = {}", terminate_counter);
         if (need_term) {
@@ -438,7 +440,8 @@ public:
             }
             GLOG(INFO) << log.rdbuf();
         }
-        LOG(INFO, "Runner n_runs = {}", ctx()->program_runner()->n_runs());
+        LOG(INFO, "Runner stat: n_runs = {}, n_locs = {}",
+            ctx()->program_runner()->n_runs(), ctx()->program_runner()->n_locs());
 
         for (const auto &e : ents) {
             if (e.locs.empty()) continue;
