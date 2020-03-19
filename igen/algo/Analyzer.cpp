@@ -96,10 +96,10 @@ public:
         CHECK_EQ(finp.size(), 2) << "Need two input files to compare";
         auto ma = read_file(finp.at(0));
         auto mb = read_file(finp.at(1));
-        set<unsigned> sdiff, smissing, slocs, ssameloc, sprintdiff;
+        set<unsigned> sdiff, smissing, slocsa, slocsb, sprintdiff;
         int cntdiff = 0, cntmissing = 0;
         for (const auto &p : ma) {
-            slocs.insert(p.second.id());
+            slocsa.insert(p.second.id());
             auto it = mb.find(p.first);
             if (it == mb.end()) {
                 LOG(INFO, "{} not found in B", p.first);
@@ -109,7 +109,6 @@ public:
             bool eq = is_equiv(p.second, it->second);
             if (eq) {
                 //VLOG(0, "{} ok", p.first);
-                if (p.second.id() != it->second.id()) ssameloc.insert(it->second.id());
             } else {
                 LOG(INFO, "{} diff ({})", p.first, p.second.id());
                 if (sprintdiff.insert(p.second.id()).second)
@@ -118,16 +117,16 @@ public:
             }
         }
         for (const auto &p : mb) {
-            slocs.insert(p.second.id());
+            slocsb.insert(p.second.id());
             if (!ma.contains(p.first)) {
                 LOG(INFO, "{} not found in A", p.first);
                 smissing.insert(p.second.id()), cntmissing++;
             }
         }
         LOG(INFO, "{:=^80}", "  FINAL RESULT  ");
-        LOG(INFO, "Total: diff {:>4}, miss {:>4}, locs A {} B {}", cntdiff, cntmissing, ma.size(), mb.size());
-        LOG(INFO, "Uniq : diff {:>4}, miss {:>4}, locs {:>4}", sdiff.size(), smissing.size(),
-            (int) slocs.size() - (int) ssameloc.size());
+        LOG(INFO, "Total: diff {:>4}, miss {:>4}, locs A {:>4}, B {:>4}", cntdiff, cntmissing, ma.size(), mb.size());
+        LOG(INFO, "Uniq : diff {:>4}, miss {:>4}, locs A {:>4}, B {:>4}", sdiff.size(), smissing.size(),
+            slocsa.size(), slocsb.size());
     }
 
 
