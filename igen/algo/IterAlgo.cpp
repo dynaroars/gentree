@@ -438,7 +438,11 @@ public:
                 fmt::print(log, "{}: {}", mloc->id(), mloc->name());
                 if (out_to_file) ents.at(size_t(mloc->id())).locs.push_back(loc);
             }
-            GLOG(INFO) << log.rdbuf();
+            if (out_to_file) {
+                GVLOG(1) << log.rdbuf();
+            } else {
+                GLOG(INFO) << log.rdbuf();
+            }
         }
         LOG(INFO, "Runner stat: n_runs = {}, n_locs = {}",
             ctx()->program_runner()->n_runs(), ctx()->program_runner()->n_locs());
@@ -447,7 +451,7 @@ public:
             if (e.locs.empty()) continue;
             for (const auto &loc : e.locs)
                 outstream << loc->name() << ", ";
-            outstream << '\n' << e.expr << "\n===\n";
+            outstream << "\n-\n" << e.expr << "\n======\n";
         }
     }
 

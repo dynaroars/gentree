@@ -44,10 +44,10 @@ int prog(int argc, char *argv[]) {
             ("output,O", po::value<str>(), "Output result")
 
             ("full", "Run with full configs")
-            ("analyze,A", po::value<int>()->default_value(0), "Run anaylzer")
-            ("c50,J", po::value<int>()->default_value(0), "Run the ML algorithm")
+            ("analyze,A", po::value<int>()->implicit_value(0), "Run anaylzer")
+            ("c50,J", po::value<int>()->implicit_value(0), "Run the ML algorithm")
             ("alg-version,T", po::value<int>()->default_value(0), "Select algo version")
-            ("inp,I", po::value<str>()->default_value(""), "Algorithm input")
+            ("input,I", po::value<str>()->default_value(""), "Algorithm input")
 
             ("loc,X", po::value<str>(), "Interested location")
             ("rounds,R", po::value<int>(), "Number of iterations")

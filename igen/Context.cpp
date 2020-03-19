@@ -29,7 +29,7 @@ bool Context::has_option(const str &key) const {
 
 boost::any Context::get_option(const str &key) const {
     auto it = options.find(key);
-    CHECK(it != options.end());
+    CHECKF(it != options.end(), "Missing option \"{}\"", key);
     return it->second;
 }
 
