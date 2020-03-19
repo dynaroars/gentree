@@ -25,24 +25,45 @@ class Analyzer : public Object {
 public:
     explicit Analyzer(PMutContext ctx) : Object(move(ctx)) {}
 
-    map<std::pair<int, int>, bool> map_is_equiv;
+    map<std::pair<int, int>, int> map_count_cex;
 
-    bool is_equiv(const expr &a, const expr &b, bool def = false) {
-        auto it = map_is_equiv.find({a.id(), b.id()});
-        if (it != map_is_equiv.end()) return it->second;
-        expr bi = (a != b);
-        z3::check_result res = ctx()->zsolver().check(1, &bi);
-        switch (res) {
-            case z3::check_result::sat:
-                return map_is_equiv[{a.id(), b.id()}] = map_is_equiv[{b.id(), a.id()}] = false;
-            case z3::check_result::unsat:
-                return map_is_equiv[{a.id(), b.id()}] = map_is_equiv[{b.id(), a.id()}] = true;
-            case z3::check_result::unknown:
-                LOG(WARNING, "Z3 solver returns unknown:\n") << ctx()->zsolver() << '\n' << a << '\n' << b;
-                return map_is_equiv[{a.id(), b.id()}] = map_is_equiv[{b.id(), a.id()}] = def;
-            default:
-                abort();
+    expr to_expr(const z3::model &m) {
+        z3::expr_vector vecExpr(m.ctx());
+        int nvars = m.num_consts();
+        vecExpr.resize(nvars);
+        for (int i = 0; i < nvars; ++i) {
+            const auto &de = m.get_const_decl(i);
+            z3::expr eqExpr = (de() == m.get_const_interp(de));
+            vecExpr.set(i, eqExpr);
         }
+        return z3::mk_and(vecExpr);
+    }
+
+    int count_cex(const expr &a, const expr &b, int lim = 1000) {
+        auto it = map_count_cex.find({a.id(), b.id()});
+        if (it != map_count_cex.end()) return it->second;
+        int &ncex = map_count_cex[{a.id(), b.id()}];
+
+        expr bi = (a != b);
+        auto solver = ctx()->zscope();
+        solver->add(a != b);
+
+        while (ncex < lim) {
+            z3::check_result checkres = solver->check();
+            if (checkres == z3::unsat) {
+                break;
+            } else if (checkres == z3::unknown) {
+                LOG(WARNING, "Z3 solver returns unknown:\n") << *solver;
+                ncex = lim;
+                break;
+            }
+            CHECK_EQ(checkres, z3::sat);
+            ncex++;
+            z3::model m = solver->get_model();
+            expr mexpr = to_expr(m);
+            solver->add(!mexpr);
+        }
+        return ncex;
     }
 
     map<str, expr> read_file(const str &path) {
@@ -106,11 +127,11 @@ public:
                 smissing.insert(p.second.id()), cntmissing++;
                 continue;
             }
-            bool eq = is_equiv(p.second, it->second);
-            if (eq) {
+            int num_cex = count_cex(p.second, it->second);
+            if (num_cex == 0) {
                 //VLOG(0, "{} ok", p.first);
             } else {
-                LOG(INFO, "{} diff ({})", p.first, p.second.id());
+                LOG(INFO, "{} diff (cex = {}) ({})", p.first, num_cex, p.second.id());
                 if (sprintdiff.insert(p.second.id()).second)
                     GVLOG(0) << "\nA: " << p.second << "\nB: " << it->second;
                 sdiff.insert(p.second.id()), cntdiff++;
