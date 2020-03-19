@@ -59,7 +59,9 @@ public:
             boost::algorithm::trim(line);
             if (line.empty() || line[0] == '#') continue;
             if (line[0] == '-') {
-                read_loc = false;
+                CHECKF(!locs.empty(), "Empty location set ({})", path);
+                if (read_loc) { read_loc = false; }
+                else { CHECKF(0, "Invalid syntax ({}): unexpected -", path); }
                 continue;
             } else if (line[0] == '=') {
                 if (locs.empty()) continue;

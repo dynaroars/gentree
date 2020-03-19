@@ -345,7 +345,7 @@ public:
             n_rebuilds, n_rebuilds_uniq, n_new_locs, n_min_cases_in_one_leaf);
         LOG(INFO, "configs = {}, locs = {}, uniq_locs = {}",
             cov()->n_configs(), cov()->n_locs(), n_uniq_locs);
-        LOG(INFO, "Runner stat: n_runs = {}, n_locs = {}",
+        LOG(INFO, "Runner stat: n_runs = {}, n_total_locs = {}",
             ctx()->program_runner()->n_runs(), ctx()->program_runner()->n_locs());
         bool need_term = n_rebuilds == 0 && n_new_locs == 0 && n_min_cases_in_one_leaf > 0;
         LOG_IF(WARNING, need_term, "need_term = TRUE, terminate_counter = {}", terminate_counter);
@@ -446,14 +446,20 @@ public:
         }
         LOG(INFO, "configs = {}, locs = {}, uniq_locs = {}",
             cov()->n_configs(), cov()->n_locs(), map_loc_hash.size());
-        LOG(INFO, "Runner stat: n_runs = {}, n_locs = {}",
+        LOG(INFO, "Runner stat: n_runs = {}, n_total_locs = {}",
             ctx()->program_runner()->n_runs(), ctx()->program_runner()->n_locs());
 
-        for (const auto &e : ents) {
-            if (e.locs.empty()) continue;
-            for (const auto &loc : e.locs)
-                outstream << loc->name() << ", ";
-            outstream << "\n-\n" << e.expr << "\n======\n";
+        if (out_to_file) {
+            fmt::print(outstream,
+                       "# configs = {}, locs = {}, uniq_locs = {}\n# n_runs = {}, n_total_locs = {}\n======\n",
+                       cov()->n_configs(), cov()->n_locs(), map_loc_hash.size(),
+                       ctx()->program_runner()->n_runs(), ctx()->program_runner()->n_locs());
+            for (const auto &e : ents) {
+                if (e.locs.empty()) continue;
+                for (const auto &loc : e.locs)
+                    outstream << loc->name() << ", ";
+                outstream << "\n-\n" << e.expr << "\n======\n";
+            }
         }
     }
 
