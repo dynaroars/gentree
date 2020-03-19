@@ -123,7 +123,7 @@ public:
             slocsa.insert(p.second.id());
             auto it = mb.find(p.first);
             if (it == mb.end()) {
-                LOG(INFO, "{} not found in B", p.first);
+                VLOG(5, "{} not found in B", p.first);
                 smissing.insert(p.second.id()), cntmissing++;
                 continue;
             }
@@ -131,10 +131,10 @@ public:
             if (num_cex == 0) {
                 //VLOG(0, "{} ok", p.first);
             } else {
-                LOG(INFO, "{} diff (cex = {}) ({})", p.first, num_cex, p.second.id());
+                VLOG(5, "{} diff (cex = {}) ({})", p.first, num_cex, p.second.id());
                 if (sprintdiff.insert(p.second.id()).second) {
                     totalcex += num_cex;
-                    GVLOG(0) << "\nA: " << p.second << "\nB: " << it->second;
+                    GVLOG(10) << "\nA: " << p.second << "\nB: " << it->second;
                 }
                 sdiff.insert(p.second.id()), cntdiff++;
             }
@@ -142,7 +142,7 @@ public:
         for (const auto &p : mb) {
             slocsb.insert(p.second.id());
             if (!ma.contains(p.first)) {
-                LOG(INFO, "{} not found in A", p.first);
+                VLOG(5, "{} not found in A", p.first);
                 smissing.insert(p.second.id()), cntmissing++;
             }
         }
