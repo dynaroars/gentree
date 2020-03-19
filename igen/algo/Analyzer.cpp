@@ -118,7 +118,7 @@ public:
         auto ma = read_file(finp.at(0));
         auto mb = read_file(finp.at(1));
         set<unsigned> sdiff, smissing, slocsa, slocsb, sprintdiff;
-        int cntdiff = 0, cntmissing = 0;
+        int cntdiff = 0, cntmissing = 0, totalcex = 0;
         for (const auto &p : ma) {
             slocsa.insert(p.second.id());
             auto it = mb.find(p.first);
@@ -132,8 +132,10 @@ public:
                 //VLOG(0, "{} ok", p.first);
             } else {
                 LOG(INFO, "{} diff (cex = {}) ({})", p.first, num_cex, p.second.id());
-                if (sprintdiff.insert(p.second.id()).second)
+                if (sprintdiff.insert(p.second.id()).second) {
+                    totalcex += num_cex;
                     GVLOG(0) << "\nA: " << p.second << "\nB: " << it->second;
+                }
                 sdiff.insert(p.second.id()), cntdiff++;
             }
         }
@@ -146,8 +148,8 @@ public:
         }
         LOG(INFO, "{:=^80}", "  FINAL RESULT  ");
         LOG(INFO, "Total: diff {:>4}, miss {:>4}, locs A {:>4}, B {:>4}", cntdiff, cntmissing, ma.size(), mb.size());
-        LOG(INFO, "Uniq : diff {:>4}, miss {:>4}, locs A {:>4}, B {:>4}", sdiff.size(), smissing.size(),
-            slocsa.size(), slocsb.size());
+        LOG(INFO, "Uniq : diff {:>4}, miss {:>4}, locs A {:>4}, B {:>4}, cex {:>4}", sdiff.size(), smissing.size(),
+            slocsa.size(), slocsb.size(), totalcex);
     }
 
 
