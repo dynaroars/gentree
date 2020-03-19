@@ -25,7 +25,9 @@ void intrusive_ptr_release(Domain *d) {
 }
 
 Domain::Domain(PMutContext _ctx)
-        : Object(move(_ctx)), vars_expr_vector_(ctx()->zctx()), expr_all_asserts_(ctx()->zctx()) {
+        : Object(move(_ctx)),
+          vars_expr_vector_(ctx()->zctx()), func_decl_vector_(zctx()),
+          expr_all_asserts_(zctx()) {
     str filepath;
     if (ctx()->has_option("dom")) {
         filepath = ctx()->get_option_as<str>("dom");
@@ -96,9 +98,12 @@ std::istream &Domain::parse(std::istream &input) {
     }
 
     vars_expr_vector_.resize(unsigned(vars_.size()));
+    func_decl_vector_.resize(unsigned(vars_.size()));
     for (int i = 0; i < n_vars(); ++i) {
         auto ref = vars_[i]->zvar();
         vars_expr_vector_.set(i, ref);
+        auto decl = ref.decl();
+        func_decl_vector_.set(i, decl);
     }
 
     CHECK_EQ(vars_.size(), cvars_.size());

@@ -82,6 +82,8 @@ public:
 
     const expr &expr_all_asserts() const { return expr_all_asserts_; }
 
+    const z3::func_decl_vector &func_decl_vector() const { return func_decl_vector_; }
+
     void cleanup() override;
 
 public:
@@ -110,6 +112,7 @@ private:
     vec <PVarDomain> cvars_;
     int n_all_values_ = 0;
     z3::expr_vector vars_expr_vector_;
+    z3::func_decl_vector func_decl_vector_;
     expr expr_all_asserts_;
 
     friend std::ostream &operator<<(std::ostream &output, const Domain &d);

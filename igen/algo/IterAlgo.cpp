@@ -444,6 +444,8 @@ public:
                 GLOG(INFO) << log.rdbuf();
             }
         }
+        LOG(INFO, "configs = {}, locs = {}, uniq_locs = {}",
+            cov()->n_configs(), cov()->n_locs(), map_loc_hash.size());
         LOG(INFO, "Runner stat: n_runs = {}, n_locs = {}",
             ctx()->program_runner()->n_runs(), ctx()->program_runner()->n_locs());
 
