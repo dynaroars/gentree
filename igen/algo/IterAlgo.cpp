@@ -422,7 +422,7 @@ public:
             if (mloc == nullptr) {
                 CHECK_NE(tree, nullptr);
                 mloc = loc;
-                z3::expr e = tree->build_zexpr(CTree::DisjOfConj);
+                z3::expr e = tree->build_zexpr(CTree::FreeMix);
                 e = e.simplify();
                 if (expensive_simplify) e = ctx()->zctx_solver_simplify(e);
 

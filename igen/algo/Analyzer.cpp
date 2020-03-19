@@ -58,10 +58,9 @@ public:
         while (getline(f, line)) {
             boost::algorithm::trim(line);
             if (line.empty() || line[0] == '#') continue;
-            if (line[0] == '-') {
+            if (read_loc && line[0] == '-') {
                 CHECKF(!locs.empty(), "Empty location set ({})", path);
-                if (read_loc) { read_loc = false; }
-                else { CHECKF(0, "Invalid syntax ({}): unexpected -", path); }
+                read_loc = false;
                 continue;
             } else if (line[0] == '=') {
                 if (locs.empty()) continue;
