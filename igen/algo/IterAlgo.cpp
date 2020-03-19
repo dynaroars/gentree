@@ -240,6 +240,7 @@ public:
         bool tree_need_rebuild;
     };
     vec<LocData> vec_loc_data;
+    bool iter_try_nodes = true;
 
     bool alg_test_1_iteration([[maybe_unused]] int iter) {
         vec_loc_data.resize(size_t(cov()->n_locs()));
@@ -281,7 +282,7 @@ public:
         PMutConfig gen_tpl = new Config(ctx_mut());
         int skipped = 0, max_min_cases = 0;
         for (const PCNode &node : leaves) {
-            if (node->min_cases_in_one_leaf() > 0 && cex.size() > 50) break;
+            if ((node->min_cases_in_one_leaf() > 0 && cex.size() > 50) || !iter_try_nodes) break;
             max_min_cases = std::max(max_min_cases, node->min_cases_in_one_leaf());
             gen_tpl->set_all(-1);
             node->gen_tpl(gen_tpl);
@@ -365,6 +366,7 @@ public:
         vec<PMutConfig> init_configs;
         if (ctx()->has_option("full")) {
             init_configs = dom()->gen_all_configs();
+            iter_try_nodes = false;
         } else {
             init_configs = dom()->gen_one_convering_configs();
             int n_one_covering = int(init_configs.size());
