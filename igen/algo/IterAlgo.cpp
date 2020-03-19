@@ -374,7 +374,9 @@ public:
             VLOG(10, "Run initial configs (n_one_covering = {}, n_seed_configs = {})", n_one_covering, n_seed_configs);
         }
 
+        LOG(INFO, "Running {} init configs", init_configs.size());
         for (const auto &c : init_configs) set_conf_hash.insert(c->hash_128()), run_config(c);
+        LOG(INFO, "Done run {} init configs", init_configs.size());
 
         int N_ROUNDS = ctx()->get_option_as<int>("rounds");
         for (int iter = 1; iter <= N_ROUNDS; ++iter) {
