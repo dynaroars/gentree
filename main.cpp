@@ -42,6 +42,7 @@ int prog(int argc, char *argv[]) {
             ("gcov-runner,G", "GCov runner")
             ("seed,s", po::value<uint64_t>()->default_value(123), "Random seed")
             ("output,O", po::value<str>(), "Output result")
+            ("disj-conj", "Gen expr strat DisjOfConj")
 
             ("full", "Run with full configs")
             ("analyze,A", po::value<int>()->implicit_value(0), "Run anaylzer")

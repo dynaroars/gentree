@@ -413,6 +413,8 @@ public:
 
         LOG(INFO, "{:=^80}", "  FINAL RESULT  ");
         map_loc_hash.clear();
+        auto expr_strat = CTree::FreeMix;
+        if (ctx()->has_option("disj-conj")) expr_strat = CTree::DisjOfConj;
         for (const PLocation &loc : cov()->locs()) {
             if (loc->id() >= int(vec_loc_data.size())) break;
             std::stringstream log;
@@ -422,7 +424,7 @@ public:
             if (mloc == nullptr) {
                 CHECK_NE(tree, nullptr);
                 mloc = loc;
-                z3::expr e = tree->build_zexpr(CTree::FreeMix);
+                z3::expr e = tree->build_zexpr(expr_strat);
                 e = e.simplify();
                 if (expensive_simplify) e = ctx()->zctx_solver_simplify(e);
 
