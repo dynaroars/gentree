@@ -279,9 +279,10 @@ public:
 
         vec<PMutConfig> cex;
         PMutConfig gen_tpl = new Config(ctx_mut());
-        int skipped = 0;
+        int skipped = 0, max_min_cases = 0;
         for (const PCNode &node : leaves) {
             if (node->min_cases_in_one_leaf() > 0 && cex.size() > 50) break;
+            max_min_cases = std::max(max_min_cases, node->min_cases_in_one_leaf());
             gen_tpl->set_all(-1);
             node->gen_tpl(gen_tpl);
             VLOG(30, "Tpl ({}): ", node->min_cases_in_one_leaf()) << *gen_tpl;
@@ -291,7 +292,7 @@ public:
                 else skipped++;
             }
         }
-        LOG_IF(INFO, skipped, "Skipped {} duplicated configs", skipped);
+        LOG_IF(INFO, skipped, "Skipped {} duplicated configs, max_min_cases = {}", skipped, max_min_cases);
 
         // === Try rand
         int cex_rand_tried = 0;
