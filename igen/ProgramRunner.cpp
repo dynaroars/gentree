@@ -74,6 +74,9 @@ ProgramRunner::ProgramRunner(PMutContext _ctx) : Object(move(_ctx)), type(Runner
         Status s = DB::Open(options, cachedir, &db);
         cachedb_.reset(db);
         CHECKF(s.ok(), "Fail to open cachedb at: {}", cachedir);
+        cachedb_readopts_ = std::make_unique<ReadOptions>();
+        cachedb_writeopts_ = std::make_unique<WriteOptions>();
+        cachedb_writeopts_->disableWAL = true;
     }
 }
 
@@ -89,7 +92,7 @@ set<str> ProgramRunner::run(const PConfig &config) {
     n_runs_++;
     if (cachedb_ != nullptr) {
         PinnableSlice val;
-        Status s = cachedb_->Get(ReadOptions(), cachedb_->DefaultColumnFamily(), to_key(config), &val);
+        Status s = cachedb_->Get(*cachedb_readopts_, cachedb_->DefaultColumnFamily(), to_key(config), &val);
         CHECKF(s.ok() || s.IsNotFound(), "Fail to read cache for: ") << *config;
         if (s.ok()) {
             n_cache_hit_++;
@@ -124,7 +127,7 @@ set<str> ProgramRunner::run(const PConfig &config) {
         str val;
         val.reserve(ret.size() * 32);
         for (const str &s : ret) val.append(s), val.push_back(',');
-        Status s = cachedb_->Put(WriteOptions(), to_key(config), val);
+        Status s = cachedb_->Put(*cachedb_writeopts_, to_key(config), val);
         CHECKF(s.ok(), "Fail to write cache for: ") << *config;
     }
     return ret;

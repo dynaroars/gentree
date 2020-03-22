@@ -14,6 +14,10 @@
 
 namespace rocksdb {
 class DB;
+
+class ReadOptions;
+
+class WriteOptions;
 }
 
 namespace igen {
@@ -48,6 +52,8 @@ private:
     builtin::BuiltinRunnerFn builtin_fn;
     int n_runs_ = 0, n_cache_hit_ = 0, n_cache_write_ = 0;
     std::unique_ptr<rocksdb::DB> cachedb_;
+    std::unique_ptr<rocksdb::ReadOptions> cachedb_readopts_{};
+    std::unique_ptr<rocksdb::WriteOptions> cachedb_writeopts_{};
 
     set<str> _run_simple(const PConfig &config) const;
 

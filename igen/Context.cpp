@@ -52,10 +52,10 @@ expr Context::zctx_solver_simplify(const expr &e) const {
     tactic = z3::try_for(tactic, 20000);
     z3::goal goal(ctx);
     expr simple_simpl = e.simplify();
-    goal.add(simple_simpl);
-    z3::apply_result tatic_result = tactic.apply(goal);
-    z3::goal result_goal = tatic_result[0];
     try {
+        goal.add(simple_simpl);
+        z3::apply_result tatic_result = tactic.apply(goal);
+        z3::goal result_goal = tatic_result[0];
         return result_goal.as_expr();
     } catch (z3::exception &e) {
         LOG(WARNING, "zctx_solver_simplify exception: ") << e;
