@@ -97,6 +97,7 @@ fmt_rev=$(grep fmt $deps_rev_file | tr -s ' ' | cut -f2 -d' ')
 spdlog_rev=$(grep spdlog $deps_rev_file | tr -s ' ' | cut -f2 -d' ')
 glog_rev=$(grep glog $deps_rev_file | tr -s ' ' | cut -f2 -d' ')
 z3_rev=$(grep z3 $deps_rev_file | tr -s ' ' | cut -f2 -d' ')
+zstd_rev=$(grep zstd $deps_rev_file | tr -s ' ' | cut -f2 -d' ')
 rocksdb_rev=$(grep rocksdb $deps_rev_file | tr -s ' ' | cut -f2 -d' ')
 
 boost_dl=$(grep boost_dl $deps_rev_file | tr -s ' ' | cut -f2 -d' ')
@@ -230,6 +231,23 @@ boost_dl=$(grep boost_dl $deps_rev_file | tr -s ' ' | cut -f2 -d' ')
   if [ "$checkpoint" -gt "$my_checkpoint" ]; then exit 0; fi
   if [ "$checkpoint_end" -lt "$my_checkpoint" ]; then exit 0; fi
 
+  if [ ! -e zstd ]; then
+    git clone https://github.com/facebook/zstd.git
+  fi
+  cd zstd
+  git fetch
+  git checkout -f $zstd_rev
+
+  make PREFIX="$install_prefix" -j$JOBS
+  make PREFIX="$install_prefix" install
+)
+
+(
+  set -e
+  my_checkpoint=7
+  if [ "$checkpoint" -gt "$my_checkpoint" ]; then exit 0; fi
+  if [ "$checkpoint_end" -lt "$my_checkpoint" ]; then exit 0; fi
+
   if [ ! -e rocksdb ]; then
     git clone https://github.com/facebook/rocksdb
   fi
@@ -241,7 +259,7 @@ boost_dl=$(grep boost_dl $deps_rev_file | tr -s ' ' | cut -f2 -d' ')
   cmake .. "${cmake_extra_flags[@]}" \
     -DCMAKE_CXX_STANDARD=$cxx_std -DCMAKE_INSTALL_PREFIX="$install_prefix" -DCMAKE_PREFIX_PATH="$prefix_path;/mingw64" \
     -DCMAKE_BUILD_TYPE="$build_type" -DROCKSDB_BUILD_SHARED=ON \
-    -DWITH_GFLAGS=OFF
+    -DWITH_GFLAGS=OFF -DWITH_ZSTD=ON
 
   make -j$JOBS
   make install

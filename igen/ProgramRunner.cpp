@@ -69,6 +69,7 @@ ProgramRunner::ProgramRunner(PMutContext _ctx) : Object(move(_ctx)), type(Runner
         // create the DB if it's not already present
         options.create_if_missing = true;
         options.keep_log_file_num = options.recycle_log_file_num = 2;
+        options.bottommost_compression = options.compression = CompressionType::kZSTD;
 
         DB *db;
         Status s = DB::Open(options, cachedir, &db);
