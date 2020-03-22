@@ -128,8 +128,8 @@ void ProgramRunner::init() {
 }
 
 int ProgramRunner::n_locs() const {
-    CHECK_EQ(type, +RunnerType::GCov);
-    return gcov_runner_->n_locs();
+    if (gcov_runner_ != nullptr) return gcov_runner_->n_locs();
+    return -1;
 }
 
 void intrusive_ptr_release(ProgramRunner *p) {
