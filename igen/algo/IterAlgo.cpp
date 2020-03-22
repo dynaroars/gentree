@@ -14,11 +14,17 @@
 #include <klib/vecutils.h>
 #include <igen/c50/CTree.h>
 #include <fstream>
+#include <csignal>
+#include <glog/raw_logging.h>
 
 #include <boost/range/adaptor/reversed.hpp>
 #include <klib/random.h>
 
 namespace igen {
+
+namespace {
+static volatile std::sig_atomic_t gSignalStatus = 0;
+}
 
 class IterativeAlgorithm : public Object {
 public:
@@ -414,6 +420,10 @@ public:
                 LOG(WARNING, "Early break at iteration {}", iter);
                 break;
             }
+            if (gSignalStatus == SIGINT) {
+                LOG(WARNING, "Requested break at iteration {}", iter);
+                break;
+            }
             if (iter % 100 == 0) {
                 finalize_build_trees();
                 finish_alg1(false);
@@ -512,6 +522,13 @@ public:
     }
 
     void run_alg() {
+        std::signal(SIGINT, [](int signal) {
+            if (gSignalStatus) {
+                RAW_LOG(ERROR, "Force terminate");
+                exit(1);
+            }
+            gSignalStatus = signal;
+        });
         switch (ctx()->get_option_as<int>("alg-version")) {
             case 0:
                 return run_alg_test_0();
