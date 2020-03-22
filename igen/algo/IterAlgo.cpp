@@ -278,15 +278,19 @@ public:
         // ============================================================================================================
 
         std::sort(leaves.begin(), leaves.end(), [](const PCNode &a, const PCNode &b) {
-            return a->min_cases_in_one_leaf() < b->min_cases_in_one_leaf();
+            if (a->min_cases_in_one_leaf() != b->min_cases_in_one_leaf())
+                return a->min_cases_in_one_leaf() < b->min_cases_in_one_leaf();
+            else
+                return a->depth() > b->depth();
         });
 
         vec<PMutConfig> cex;
         int max_min_cases = 0, skipped = 0;
-        const auto gen_for = [this, &max_min_cases, &skipped, &cex](const PCNode &node) {
+        const auto gen_for = [this, &max_min_cases, &skipped, &cex](
+                const PCNode &node, int lim = std::numeric_limits<int>::max()) {
             int skipped_me = 0;
             max_min_cases = std::max(max_min_cases, node->min_cases_in_one_leaf());
-            for (auto &c : node->gen_one_convering_configs()) {
+            for (auto &c : node->gen_one_convering_configs(lim)) {
                 if (set_conf_hash.insert(c->hash_128()).second) { cex.emplace_back(move(c)); }
                 else { skipped++, skipped_me++; }
             }
@@ -294,25 +298,21 @@ public:
         };
         if (iter_try_nodes) {
             for (const PCNode &node : leaves) {
-                if (node->min_cases_in_one_leaf() > 0 && cex.size() > 50) break;
+                if (node->min_cases_in_one_leaf() > 0 && cex.size() > 5) break;
+                if (cex.size() > 20) break;
                 gen_for(node);
             }
         }
         LOG(INFO, "Gen  {} cex, skipped {}, max_min_cases = {}", cex.size(), skipped, max_min_cases);
 
         if (iter_try_nodes && terminate_counter >= 4) {
-            for (const PCNode &node : leaves) {
-                if (cex.size() > 150) break;
-                gen_for(node);
-            }
-            LOG(INFO, "Fwd  {} cex, skipped {}, max_min_cases = {}", cex.size(), skipped, max_min_cases);
             for (const PCNode &node : boost::adaptors::reverse(leaves)) {
-                if (cex.size() > 200) break;
+                if (cex.size() > 10) break;
                 gen_for(node);
             }
             LOG(INFO, "Rev  {} cex, skipped {}, max_min_cases = {}", cex.size(), skipped, max_min_cases);
             int rand_skip = 0;
-            while (cex.size() < 300) {
+            while (cex.size() < 20) {
                 const PCNode &node = *Rand.get(leaves);
                 if (gen_for(node) > 0 && ++rand_skip == 10) break;
             }
