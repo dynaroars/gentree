@@ -75,7 +75,7 @@ public:
             all_configs[i]->set_id(e.contains(loc));
             //all_configs_res.push_back(e.contains(loc));
         }
-        ctx_mut()->program_runner()->reset_n_runs(0);
+        ctx_mut()->program_runner()->reset_stat();
         //=== END TEST ALL CONF =================================================================
 
         set<hash128_t> set_conf_hash;
@@ -371,8 +371,9 @@ public:
             n_rebuilds, n_rebuilds_uniq, n_new_locs, n_min_cases_in_one_leaf);
         LOG(INFO, "configs = {}, locs = {}, uniq_locs = {}",
             cov()->n_configs(), cov()->n_locs(), n_uniq_locs);
-        LOG(INFO, "Runner stat: n_runs = {}, n_total_locs = {}",
-            ctx()->program_runner()->n_runs(), ctx()->program_runner()->n_locs());
+        const auto &prunner = ctx()->program_runner();
+        LOG(INFO, "Runner stat: n_runs = {}, n_total_locs = {}, cache_hit = {}",
+            prunner->n_runs(), prunner->n_locs(), prunner->n_cache_hit());
         bool need_term = n_rebuilds == 0 && n_new_locs == 0 && n_min_cases_in_one_leaf > 0;
         LOG_IF(WARNING, need_term, "need_term = TRUE, terminate_counter = {}", terminate_counter + 1);
         if (need_term) {
@@ -479,8 +480,9 @@ public:
         }
         LOG(INFO, "configs = {}, locs = {}, uniq_locs = {}",
             cov()->n_configs(), cov()->n_locs(), map_loc_hash.size());
-        LOG(INFO, "Runner stat: n_runs = {}, n_total_locs = {}",
-            ctx()->program_runner()->n_runs(), ctx()->program_runner()->n_locs());
+        const auto &prunner = ctx()->program_runner();
+        LOG(INFO, "Runner stat: n_runs = {}, n_total_locs = {}, cache_hit = {}",
+            prunner->n_runs(), prunner->n_locs(), prunner->n_cache_hit());
 
         if (out_to_file) {
             fmt::print(outstream, "# seed = {}\n", ctx()->get_option_as<uint64_t>("seed"));

@@ -32,9 +32,11 @@ public:
 
     set<str> run(const PConfig &config);
 
-    void reset_n_runs(int val = 0) { n_runs_ = val; }
+    void reset_stat() { n_runs_ = n_cache_hit_ = 0; }
 
     int n_runs() const { return n_runs_; };
+
+    int n_cache_hit() const { return n_cache_hit_; }
 
     void cleanup() override;
 
@@ -44,7 +46,7 @@ private:
     RunnerType type;
     str target;
     builtin::BuiltinRunnerFn builtin_fn;
-    int n_runs_ = 0;
+    int n_runs_ = 0, n_cache_hit_ = 0, n_cache_write_ = 0;
     std::unique_ptr<rocksdb::DB> cachedb_;
 
     set<str> _run_simple(const PConfig &config) const;

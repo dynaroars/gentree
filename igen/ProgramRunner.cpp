@@ -68,6 +68,7 @@ ProgramRunner::ProgramRunner(PMutContext _ctx) : Object(move(_ctx)), type(Runner
         options.OptimizeUniversalStyleCompaction();
         // create the DB if it's not already present
         options.create_if_missing = true;
+        options.keep_log_file_num = options.recycle_log_file_num = 2;
 
         DB *db;
         Status s = DB::Open(options, cachedir, &db);
@@ -76,18 +77,57 @@ ProgramRunner::ProgramRunner(PMutContext _ctx) : Object(move(_ctx)), type(Runner
     }
 }
 
+static inline rocksdb::Slice to_key(const PConfig &config) {
+    const auto &vals = config->values();
+    return rocksdb::Slice(reinterpret_cast<const char *>(vals.data()), sizeof(vals[0]) * vals.size());
+}
+
 set<str> ProgramRunner::run(const PConfig &config) {
+    using namespace rocksdb;
+
+    set<str> ret;
     n_runs_++;
+    if (cachedb_ != nullptr) {
+        PinnableSlice val;
+        Status s = cachedb_->Get(ReadOptions(), cachedb_->DefaultColumnFamily(), to_key(config), &val);
+        CHECKF(s.ok() || s.IsNotFound(), "Fail to read cache for: ") << *config;
+        if (s.ok()) {
+            n_cache_hit_++;
+            str loc;
+            for (int i = 0; i < (int) val.size(); ++i) {
+                char c = val[i];
+                if (c == ',') {
+                    ret.emplace_hint(ret.end(), move(loc));
+                    loc.clear();
+                } else {
+                    loc.push_back(c);
+                }
+            }
+            return ret;
+        }
+    }
     switch (type) {
         case RunnerType::Simple:
-            return _run_simple(config);
+            ret = _run_simple(config);
+            break;
         case RunnerType::BuiltIn:
-            return _run_builtin(config);
+            ret = _run_builtin(config);
+            break;
         case RunnerType::GCov:
-            return _run_gcov(config);
+            ret = _run_gcov(config);
+            break;
         default:
             CHECK(0);
     }
+    if (cachedb_ != nullptr) {
+        n_cache_write_++;
+        str val;
+        val.reserve(ret.size() * 32);
+        for (const str &s : ret) val.append(s), val.push_back(',');
+        Status s = cachedb_->Put(WriteOptions(), to_key(config), val);
+        CHECKF(s.ok(), "Fail to write cache for: ") << *config;
+    }
+    return ret;
 }
 
 set<str> ProgramRunner::_run_simple(const PConfig &config) const {
@@ -142,6 +182,13 @@ set<str> ProgramRunner::_run_gcov(const PConfig &config) const {
 
 void ProgramRunner::cleanup() {
     gcov_runner_.reset();
+    if (cachedb_ != nullptr && n_cache_write_ > 0) {
+        using namespace rocksdb;
+        LOG(INFO, "Start compacting cache db ({} writes, {} hits)", n_cache_write_, n_cache_hit_);
+        Status s = cachedb_->CompactRange(CompactRangeOptions{}, nullptr, nullptr);
+        CHECKF(s.ok(), "Fail to compact cachedb");
+        LOG(INFO, "Done compacting cache db");
+    }
     cachedb_.reset();
 }
 
