@@ -77,9 +77,19 @@ std::istream &Domain::parse(std::istream &input) {
         if (auto it = sorts.find(labels); it != sorts.end()) {
             std::tie(zsort, enum_consts, enum_testers) = it->second;
         } else {
+            const str prefix, &sortname = name;
+            //str prefix = "s" + std::to_string(sorts.size()) + "_", sortname = prefix + name;
             vec<const char *> vcstr(labels.size());
-            std::transform(labels.begin(), labels.end(), vcstr.begin(), [](const str &s) { return s.c_str(); });
-            zsort = zctx().enumeration_sort(name.c_str(), (unsigned) labels.size(), vcstr.data(),
+            vec<str> newlbls;
+            if (prefix.empty()) {
+                std::transform(labels.begin(), labels.end(), vcstr.begin(), [](const str &s) { return s.c_str(); });
+            } else {
+                newlbls.resize(labels.size());
+                std::transform(labels.begin(), labels.end(), newlbls.begin(),
+                               [&prefix](const str &s) { return prefix + s; });
+                std::transform(newlbls.begin(), newlbls.end(), vcstr.begin(), [](const str &s) { return s.c_str(); });
+            }
+            zsort = zctx().enumeration_sort(sortname.c_str(), (unsigned) labels.size(), vcstr.data(),
                                             enum_consts, enum_testers);
             sorts.emplace(labels, ZSortTuple{zsort, enum_consts, enum_testers});
         }
