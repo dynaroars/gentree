@@ -279,21 +279,16 @@ public:
         });
 
         vec<PMutConfig> cex;
-        PMutConfig gen_tpl = new Config(ctx_mut());
-        int skipped = 0, max_min_cases = 0;
+        int max_min_cases = 0;
         for (const PCNode &node : leaves) {
             if ((node->min_cases_in_one_leaf() > 0 && cex.size() > 50) || !iter_try_nodes) break;
             max_min_cases = std::max(max_min_cases, node->min_cases_in_one_leaf());
-            gen_tpl->set_all(-1);
-            node->gen_tpl(gen_tpl);
-            VLOG(30, "Tpl ({}): ", node->min_cases_in_one_leaf()) << *gen_tpl;
-
-            for (auto &c : dom()->gen_one_convering_configs(gen_tpl)) {
-                if (set_conf_hash.insert(c->hash_128()).second) cex.emplace_back(move(c));
-                else skipped++;
+            for (auto &c : node->gen_one_convering_configs()) {
+                if (set_conf_hash.insert(c->hash_128()).second) { cex.emplace_back(move(c)); }
+                //else { CHECK(0) << *c; }
             }
         }
-        LOG_IF(INFO, skipped, "Skipped {} duplicated configs, max_min_cases = {}", skipped, max_min_cases);
+        LOG(INFO, "Gen {} cex from leaves, max_min_cases = {}", cex.size(), max_min_cases);
 
         // === Try rand
         int cex_rand_tried = 0;
@@ -306,7 +301,7 @@ public:
             if (++cex_rand_tried == 30) break;
         }
 
-        LOG(INFO, "Generated {} cex", cex.size());
+        LOG_IF(INFO, cex_rand_tried, "Generated total {} cex", cex.size());
 //        LOG_BLOCK(INFO, {
 //            log << "CEX:\n";
 //            for (const auto &c : cex) log << *c << '\n';

@@ -94,11 +94,11 @@ class Object : public intrusive_ref_base_st<Object> {
 public:
     PContext ctx() const { return ctx_; }
 
-    PMutContext ctx() { return ctx_; }
+    const PMutContext &ctx() { return ctx_; }
 
-    PMutContext ctx_mut() const { return ctx_; }
+    const PMutContext &ctx_mut() const { return ctx_; }
 
-    z3::context &zctx() { return ctx()->z3ctx_; }
+    z3::context &zctx() const { return ctx_mut()->z3ctx_; }
 
     z3::solver &zsolver() { return ctx()->z3solver_; }
 

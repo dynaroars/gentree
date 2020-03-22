@@ -47,6 +47,8 @@ public:
     // SEMI PRIVATE
     int min_cases_in_one_leaf() const { return min_cases_in_one_leaf_; }
 
+    vec<ptr<Config>> gen_one_convering_configs(int lim = std::numeric_limits<int>::max()) const;
+
 private:
     bool evaluate_split();
 
@@ -78,13 +80,14 @@ private:
 
 private: // For gen CEX
     int min_cases_in_one_leaf_;
+    vec<PConfig> new_configs_;
 
     void gather_small_leaves(vec<PConfig> &res, int min_confs, int max_confs, const PMutConfig &curtpl) const;
 
     void gather_leaves_nodes(vec<ptr<const CNode>> &res, int min_confs, int max_confs) const;
 
 public:
-    void gen_tpl(PMutConfig &conf) const;
+    void gen_tpl(Config &conf) const;
 
 private: // TEMP DATA
     std::array<vec<vec<int>>, 2> freq;

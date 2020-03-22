@@ -72,6 +72,21 @@ bool Config::eval(z3::expr e) const {
     return bool_val == Z3_L_TRUE;
 }
 
+expr Config::to_expr() const {
+    z3::expr_vector ret(zctx());
+    ret.resize((unsigned) dom()->n_vars());
+    expr _ztrue = ztrue();
+    for (int i = 0; i < dom()->n_vars(); ++i) {
+        if (int v = values_[i]; v != -1) {
+            expr e = dom()->var(i)->eq(v);
+            ret.set(i, e);
+        } else {
+            ret.set(i, _ztrue);
+        }
+    }
+    return z3::mk_and(ret);
+}
+
 bool Config::cov_loc(const str &loc_name) const {
     const PLocation &loc = cov()->loc(loc_name);
     if (loc == nullptr) return false;

@@ -30,6 +30,12 @@ void vec_append(std::vector<T> &dst, const std::vector<T> &src) {
     }
 }
 
+template<typename Vector>
+void unordered_erase(Vector &v, typename Vector::iterator it) {
+    *it = std::move(v.back());
+    v.pop_back();
+}
+
 }
 
 #endif //IGEN4_VECUTILS_H

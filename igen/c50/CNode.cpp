@@ -6,7 +6,14 @@
 #include "CTree.h"
 
 #include <klib/math.h>
+#include <klib/random.h>
+#include <klib/vecutils.h>
+
+#include <memory>
 #include <boost/scope_exit.hpp>
+#include <boost/container/small_vector.hpp>
+#include <boost/container/flat_set.hpp>
+#include <boost/iterator/counting_iterator.hpp>
 
 namespace igen {
 
@@ -317,6 +324,8 @@ std::pair<bool, int> CNode::test_add_config(const PConfig &conf, bool val) {
         bool leaf_val = leaf_value();
         if (leaf_val == val) {
             min_cases_in_one_leaf_++;
+            new_configs_.push_back(conf);
+            CHECK_EQ(min_cases_in_one_leaf_, n_total() + new_configs_.size());
         }
         return {leaf_val, n_total()};
     }
@@ -358,14 +367,105 @@ void CNode::gather_leaves_nodes(vec<ptr<const CNode>> &res, int min_confs, int m
     }
 }
 
-void CNode::gen_tpl(PMutConfig &conf) const {
+void CNode::gen_tpl(Config &conf) const {
     if (is_leaf()) {
         CHECK_EQ(splitvar, -1);
     }
     if (parent != nullptr) {
-        conf->set(parent->splitvar, id_);
+        CHECK_NE(parent->splitvar, -1);
+        conf.set(parent->splitvar, id_);
         parent->gen_tpl(conf);
     }
+}
+
+vec<ptr<Config>> CNode::gen_one_convering_configs(int lim) const {
+    const PMutContext ctx = tree->ctx();
+    const PDomain dom = tree->ctx()->dom();
+    //====
+    Config templ(ctx);
+    templ.set_all(-1);
+    gen_tpl(templ);
+    //====
+    set<hash128_t> shash;
+    shash.reserve((size_t) n_total());
+    // Note: either hit_configs() or miss_configs() is empty
+    CHECK(hit_configs().empty() || miss_configs().empty());
+    for (const auto &c : hit_configs()) shash.insert(c->hash_128());
+    for (const auto &c : miss_configs()) shash.insert(c->hash_128());
+    for (const auto &c : new_configs_) shash.insert(c->hash_128());
+    //====
+    vec<sm_vec<int>> SetVAL;
+    SetVAL.reserve((size_t) dom->n_vars());
+    int n_finished = 0;
+    for (int i = 0; i < dom->n_vars(); i++) {
+        if (templ.get(i) == -1) {
+            SetVAL.emplace_back(boost::counting_iterator<int>(0), boost::counting_iterator<int>(dom->n_values(i)));
+        } else {
+            SetVAL.emplace_back();
+            n_finished++;
+        }
+    }
+
+    LOG(INFO, "Tpl: \n") << templ;
+
+    vec<PMutConfig> ret;
+    std::unique_ptr<Z3Scope> z3;
+    while (n_finished < dom->n_vars() && int(ret.size()) < lim) {
+        PMutConfig conf = new Config(ctx);
+        sm_vec<int, 128> vrand;
+        for (int i = 0; i < dom->n_vars(); i++) {
+            sm_vec<int> &st = SetVAL[i];
+            int tmplval = templ.values()[i];
+            if (tmplval != -1) {
+                conf->set(i, tmplval);
+            } else if (!st.empty()) {
+                auto it = Rand.get(st);
+                conf->set(i, *it);
+                unordered_erase(st, it);
+                if (st.empty())
+                    n_finished++;
+            } else {
+                conf->set(i, Rand.get(dom->n_values(i)));
+                vrand.push_back(i);
+            }
+        }
+        if (shash.insert(conf->hash_128()).second) {
+            if (z3 != nullptr) (*z3)->add(!conf->to_expr());
+            ret.emplace_back(move(conf));
+        } else {
+            for (int id : vrand) conf->set(id, -1);
+
+            if (z3 == nullptr) {
+                z3 = std::make_unique<Z3Scope>(ctx->zscope());
+                for (const auto &c : hit_configs()) (*z3)->add(!c->to_expr());
+                for (const auto &c : miss_configs()) (*z3)->add(!c->to_expr());
+                for (const auto &c : new_configs_) (*z3)->add(!c->to_expr());
+                for (const auto &c : ret) (*z3)->add(!c->to_expr());
+            }
+
+            expr e = conf->to_expr();
+            if ((*z3)->check(1, &e) == z3::sat) {
+                z3::model m = (*z3)->get_model();
+                for (int id : vrand)
+                    conf->set(id, m.get_const_interp(dom->var(id)->zvar().decl()));
+
+                LOG(INFO, "Found cex for tpl using solver ({} conds): \n", shash.size()) << templ << '\n' << *conf;
+                bool insert_res = shash.insert(conf->hash_128(true /*recalc hash*/)).second;
+                CHECK(insert_res) << *conf;
+                (*z3)->add(!conf->to_expr());
+                ret.emplace_back(move(conf));
+            } else {
+                LOG(INFO, "Can't find cex for tpl: ") << templ;
+            }
+        }
+    }
+
+    LOG_BLOCK(INFO, {
+        log << "CEX:\n";
+        for (const auto &c : ret) log << *c << '\n';
+    });
+
+    return ret;
 }
 
 }

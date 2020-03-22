@@ -8,10 +8,12 @@
 #include "Config.h"
 
 #include <boost/container/flat_set.hpp>
+#include <boost/container/small_vector.hpp>
 #include <boost/iterator/counting_iterator.hpp>
 #include <boost/algorithm/string.hpp>
 
 #include <klib/random.h>
+#include <klib/vecutils.h>
 
 namespace igen {
 
@@ -181,7 +183,8 @@ vec<PMutConfig> Domain::gen_all_configs(const PConfig &templ) const {
 vec<PMutConfig> Domain::gen_one_convering_configs(const PConfig &templ, int lim) const {
     vec<PMutConfig> ret;
 
-    vec<set<int>> SetVAL;
+    vec<sm_vec<int>> SetVAL;
+    SetVAL.reserve((size_t) n_vars());
     int n_finished = 0;
     for (int i = 0; i < n_vars(); i++) {
         if (templ->get(i) == -1) {
@@ -195,14 +198,14 @@ vec<PMutConfig> Domain::gen_one_convering_configs(const PConfig &templ, int lim)
     while (n_finished < n_vars() && int(ret.size()) < lim) {
         PMutConfig conf = new Config(ctx_mut());
         for (int i = 0; i < n_vars(); i++) {
-            set<int> &st = SetVAL[i];
+            sm_vec<int> &st = SetVAL[i];
             int tmplval = templ->values()[i];
             if (tmplval != -1) {
                 conf->set(i, tmplval);
             } else if (!st.empty()) {
                 auto it = Rand.get(st);
                 conf->set(i, *it);
-                st.erase(it);
+                unordered_erase(st, it);
                 if (st.empty())
                     n_finished++;
             } else {

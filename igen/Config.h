@@ -41,15 +41,15 @@ public:
 
     vec<str> value_labels() const;
 
-    int operator[](int var_id) const { return values_[var_id]; }
+    int operator[](int var_id) const { return values_.at((size_t) var_id); }
 
-    int get(int var_id) const { return values_[var_id]; }
+    int get(int var_id) const { return values_.at((size_t) var_id); }
 
-    int value(int var_id) const { return values_[var_id]; }
+    int value(int var_id) const { return values_.at((size_t) var_id); }
 
     void set(int var_id, int value) {
-        CHECK(0 <= var_id && var_id < dom()->n_vars() && -1 <= value && value < dom()->n_values(var_id));
-        values_[var_id] = value;
+        CHECK(-1 <= value && value < dom()->n_values(var_id));
+        values_.at((size_t) var_id) = value;
     }
 
     void set_all(int value);
@@ -63,6 +63,8 @@ public:
     void add_cov_loc_id(int loc_id);
 
     bool eval(z3::expr e) const;
+
+    expr to_expr() const;
 
     bool cov_loc(const str &loc_name) const;
 
