@@ -422,6 +422,7 @@ public:
             }
             if (gSignalStatus == SIGINT) {
                 LOG(WARNING, "Requested break at iteration {}", iter);
+                ctx()->program_runner()->flush_compact_cachedb();
                 break;
             }
             if (iter % 100 == 0) {

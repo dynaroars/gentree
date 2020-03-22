@@ -44,6 +44,8 @@ public:
 
     void cleanup() override;
 
+    void flush_compact_cachedb();
+
     int n_locs() const;
 
 private:

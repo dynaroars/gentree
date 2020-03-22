@@ -186,14 +186,7 @@ set<str> ProgramRunner::_run_gcov(const PConfig &config) const {
 
 void ProgramRunner::cleanup() {
     gcov_runner_.reset();
-    if (cachedb_ != nullptr && n_cache_write_ > 0) {
-        using namespace rocksdb;
-        LOG(INFO, "Start compacting cache db ({} writes, {} hits)", n_cache_write_, n_cache_hit_);
-        Status s = cachedb_->CompactRange(CompactRangeOptions{}, nullptr, nullptr);
-        CHECKF(s.ok(), "Fail to compact cachedb");
-        LOG(INFO, "Done compacting cache db");
-    }
-    cachedb_.reset();
+    flush_compact_cachedb(), cachedb_.reset();
 }
 
 void ProgramRunner::init() {
@@ -203,6 +196,20 @@ void ProgramRunner::init() {
 int ProgramRunner::n_locs() const {
     if (gcov_runner_ != nullptr) return gcov_runner_->n_locs();
     return -1;
+}
+
+void ProgramRunner::flush_compact_cachedb() {
+    if (cachedb_ != nullptr && n_cache_write_ > 0) {
+        using namespace rocksdb;
+        LOG(INFO, "Start flushing & compacting cache db ({} writes, {} hits)", n_cache_write_, n_cache_hit_);
+        Status s = cachedb_->Flush({});
+        CHECKF(s.ok(), "Fail to flush cachedb");
+        s = cachedb_->CompactRange(CompactRangeOptions{}, nullptr, nullptr);
+        CHECKF(s.ok(), "Fail to compact cachedb");
+        LOG(INFO, "Done flushing & compacting cache db");
+
+        n_cache_write_ = 0;
+    }
 }
 
 void intrusive_ptr_release(const ProgramRunner *p) { boost::sp_adl_block::intrusive_ptr_release(p); }
