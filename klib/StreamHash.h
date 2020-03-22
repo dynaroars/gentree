@@ -26,19 +26,20 @@ public:
     }
 
     [[nodiscard]] hash128_t digest() const {
-        hash128_t ret = VAL, tkey = KEY;
-        uint64_t X = (uint64_t(counter) << 32u) | counter;
-        X = ROR(X, 16);
-        for (int i = 0; i < FINAL_ROUNDS; i++) {
-            R(tkey.first, tkey.second, X ^ uint64_t(i));
-            R(ret.first, ret.second, tkey.second);
-        }
-        return ret;
+        return VAL;
+//        hash128_t ret = VAL, tkey = KEY;
+//        uint64_t X = (uint64_t(counter) << 32u) | counter;
+//        X = ROR(X, 16);
+//        for (int i = 0; i < FINAL_ROUNDS; i++) {
+//            R(tkey.first, tkey.second, X ^ uint64_t(i));
+//            R(ret.first, ret.second, tkey.second);
+//        }
+//        return ret;
     }
 
 private:
     static constexpr int ROUNDS = 2;
-    static constexpr int FINAL_ROUNDS = 2;
+//    static constexpr int FINAL_ROUNDS = 2;
 
     static inline uint64_t ROR(const uint64_t x, const uint64_t r) {
         return (x >> r) | (x << (64 - r));
