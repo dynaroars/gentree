@@ -240,7 +240,7 @@ boost_dl=$(grep boost_dl $deps_rev_file | tr -s ' ' | cut -f2 -d' ')
   mkdir -p $build_dir && cd $build_dir
   cmake .. "${cmake_extra_flags[@]}" \
     -DCMAKE_CXX_STANDARD=$cxx_std -DCMAKE_INSTALL_PREFIX="$install_prefix" -DCMAKE_PREFIX_PATH="$prefix_path;/mingw64" \
-    -DCMAKE_BUILD_TYPE="$build_type" -DBUILD_SHARED_LIBS=$build_shared \
+    -DCMAKE_BUILD_TYPE="$build_type" -DROCKSDB_BUILD_SHARED=ON \
     -DWITH_GFLAGS=OFF
 
   make -j$JOBS
