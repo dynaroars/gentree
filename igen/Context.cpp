@@ -34,7 +34,7 @@ boost::any Context::get_option(const str &key) const {
 }
 
 void Context::init() {
-    dom_ = new Domain(this);
+    cdom_ = dom_ = new Domain(this);
     program_runner_ = new ProgramRunner(this);
     coverage_store_ = new CoverageStore(this);
 }
@@ -42,27 +42,8 @@ void Context::init() {
 void Context::cleanup() {
     coverage_store_->cleanup(), coverage_store_ = nullptr;
     program_runner_->cleanup(), program_runner_ = nullptr;
-    dom_->cleanup(), dom_ = nullptr;
+    dom_->cleanup(), dom_ = nullptr, cdom_ = nullptr;
 }
-
-
-ptr<const Domain> Context::dom() const { return dom_; }
-
-const ptr<Domain> &Context::dom() { return dom_; }
-
-ptr<const Domain> Object::dom() const { return ctx_->dom(); }
-
-ptr<const CoverageStore> Object::cov() const { return ctx_->cov(); }
-
-ptr<CoverageStore> Object::cov() { return ctx_->cov(); }
-
-ptr<const ProgramRunner> Context::program_runner() const { return program_runner_; }
-
-const ptr<ProgramRunner> &Context::program_runner() { return program_runner_; }
-
-ptr<const CoverageStore> Context::cov() const { return coverage_store_; }
-
-const ptr<CoverageStore> &Context::cov() { return coverage_store_; }
 
 expr Context::zctx_solver_simplify(const expr &e) const {
     z3::context &ctx = const_cast<Context *>(this)->zctx();

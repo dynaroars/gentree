@@ -32,11 +32,11 @@ CNode::CNode(CTree *tree, CNode *parent, int id, std::array<boost::sub_range<vec
     }
 }
 
-PDomain CNode::dom() const {
+const PDomain &CNode::dom() const {
     return tree->ctx()->dom();
 }
 
-PVarDomain CNode::dom(int var_id) const {
+const PVarDomain &CNode::dom(int var_id) const {
     return dom()->vars()[var_id];
 }
 
@@ -45,7 +45,7 @@ void CNode::calc_freq() {
         freq[hit] = dom()->create_vec_vars_values<int>();
         for (const auto &c : configs_[hit]) {
             const auto &vals = c->values();
-            for (int var_id = 0; var_id < dom()->n_vars(); ++var_id) {
+            for (int var_id = 0; var_id < (int) vals.size(); ++var_id) {
                 freq[hit][var_id][vals[var_id]]++;
             }
         }

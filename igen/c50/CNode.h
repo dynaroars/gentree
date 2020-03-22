@@ -74,9 +74,9 @@ private:
 
     friend class CTree;
 
-    PDomain dom() const;
+    const PDomain &dom() const;
 
-    PVarDomain dom(int var_id) const;
+    const PVarDomain &dom(int var_id) const;
 
 private: // For gen CEX
     int min_cases_in_one_leaf_;

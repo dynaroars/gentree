@@ -132,8 +132,8 @@ int ProgramRunner::n_locs() const {
     return -1;
 }
 
-void intrusive_ptr_release(ProgramRunner *p) {
-    boost::sp_adl_block::intrusive_ptr_release(p);
-}
+void intrusive_ptr_release(const ProgramRunner *p) { boost::sp_adl_block::intrusive_ptr_release(p); }
+
+void intrusive_ptr_add_ref(const ProgramRunner *p) { boost::sp_adl_block::intrusive_ptr_add_ref(p); }
 
 }

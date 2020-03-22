@@ -16,15 +16,19 @@ namespace igen {
 
 class Domain;
 
-void intrusive_ptr_release(Domain *);
+void intrusive_ptr_release(const Domain *);
 
 class ProgramRunner;
 
-void intrusive_ptr_release(ProgramRunner *);
+void intrusive_ptr_add_ref(const ProgramRunner *);
+
+void intrusive_ptr_release(const ProgramRunner *);
 
 class CoverageStore;
 
-void intrusive_ptr_release(CoverageStore *);
+void intrusive_ptr_add_ref(const CoverageStore *);
+
+void intrusive_ptr_release(const CoverageStore *);
 
 class Context : public intrusive_ref_base_st<Context> {
 public:
@@ -45,17 +49,17 @@ public:
 
     void cleanup();
 
-    ptr<const Domain> dom() const;
+    const ptr<const Domain> &dom() const { return cdom_; };
 
-    const ptr<Domain> &dom();
+    //const ptr<Domain> &dom() { return dom_; };
 
-    ptr<const ProgramRunner> program_runner() const;
+    ptr<const ProgramRunner> program_runner() const { return program_runner_; };
 
-    const ptr<ProgramRunner> &program_runner();
+    const ptr<ProgramRunner> &program_runner() { return program_runner_; };
 
-    ptr<const CoverageStore> cov() const;
+    ptr<const CoverageStore> cov() const { return coverage_store_; };
 
-    const ptr<CoverageStore> &cov();
+    const ptr<CoverageStore> &cov() { return coverage_store_; };
 
 public:
     z3::context &zctx() { return z3ctx_; }
@@ -83,6 +87,7 @@ private:
     z3::expr z3false_;
 
     ptr<Domain> dom_;
+    ptr<const Domain> cdom_;
     ptr<ProgramRunner> program_runner_;
     ptr<CoverageStore> coverage_store_;
 };
@@ -108,11 +113,11 @@ public:
 
     const z3::expr &zfalse() const { return ctx()->z3false_; }
 
-    ptr<const Domain> dom() const;
+    const ptr<const Domain> &dom() const { return ctx_->cdom_; };
 
-    ptr<const CoverageStore> cov() const;
+    ptr<const CoverageStore> cov() const { return ctx_->cov(); };
 
-    ptr<CoverageStore> cov();
+    const ptr<CoverageStore> &cov() { return ctx_->cov(); };
 
     virtual ~Object() = default;
 

@@ -66,7 +66,8 @@ void CoverageStore::cleanup() {
     cconfigs_.clear();
 }
 
-void intrusive_ptr_release(CoverageStore *d) { boost::sp_adl_block::intrusive_ptr_release(d); }
+void intrusive_ptr_release(const CoverageStore *d) { boost::sp_adl_block::intrusive_ptr_release(d); }
 
+void intrusive_ptr_add_ref(const CoverageStore *d) { boost::sp_adl_block::intrusive_ptr_add_ref(d); }
 
 }

@@ -23,7 +23,7 @@ VarDomain::VarDomain(PMutContext ctx) : Object(move(ctx)), zvar_(zctx()), zsort_
 
 str Domain::STR_VALUE_ANY = "*";
 
-void intrusive_ptr_release(Domain *d) {
+void intrusive_ptr_release(const Domain *d) {
     boost::sp_adl_block::intrusive_ptr_release(d);
 }
 
