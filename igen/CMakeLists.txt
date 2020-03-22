@@ -18,3 +18,9 @@ target_link_libraries(libigen4
         rapidjson
         PUBLIC
         z3::libz3 klib)
+
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_link_libraries(libigen4 PRIVATE RocksDB::rocksdb-shared)
+else ()
+    target_link_libraries(libigen4 PRIVATE RocksDB::rocksdb)
+endif ()

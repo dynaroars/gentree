@@ -17,6 +17,9 @@ message(STATUS "Found glog ${glog_FIND_VERSION}, dir: ${glog_DIR}")
 find_package(Z3 REQUIRED CONFIG)
 message(STATUS "Found Z3 ${Z3_VERSION_STRING}, Z3_DIR: ${Z3_DIR}")
 
+find_package(RocksDB REQUIRED CONFIG)
+message(STATUS "Found RocksDB ${RocksDB_VERSION_STRING}, RocksDB_DIR: ${RocksDB_DIR}")
+
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     IF (WIN32)
         set(Boost_COMPILER mgw92)
