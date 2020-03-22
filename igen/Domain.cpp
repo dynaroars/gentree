@@ -194,12 +194,13 @@ vec<PMutConfig> Domain::gen_all_configs(const PConfig &templ) const {
 vec<PMutConfig> Domain::gen_one_convering_configs(const PConfig &templ, int lim) const {
     vec<PMutConfig> ret;
 
-    vec<sm_vec<int>> SetVAL;
+    vec<sm_vec<short>> SetVAL;
     SetVAL.reserve((size_t) n_vars());
     int n_finished = 0;
     for (int i = 0; i < n_vars(); i++) {
         if (templ->get(i) == -1) {
-            SetVAL.emplace_back(boost::counting_iterator<int>(0), boost::counting_iterator<int>(n_values(i)));
+            SetVAL.emplace_back(boost::counting_iterator<short>(0),
+                                boost::counting_iterator<short>((short) n_values(i)));
         } else {
             SetVAL.emplace_back();
             n_finished++;
@@ -209,7 +210,7 @@ vec<PMutConfig> Domain::gen_one_convering_configs(const PConfig &templ, int lim)
     while (n_finished < n_vars() && int(ret.size()) < lim) {
         PMutConfig conf = new Config(ctx_mut());
         for (int i = 0; i < n_vars(); i++) {
-            sm_vec<int> &st = SetVAL[i];
+            sm_vec<short> &st = SetVAL[i];
             int tmplval = templ->values()[i];
             if (tmplval != -1) {
                 conf->set(i, tmplval);
