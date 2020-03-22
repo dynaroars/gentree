@@ -452,6 +452,7 @@ public:
             ctx()->program_runner()->n_runs(), ctx()->program_runner()->n_locs());
 
         if (out_to_file) {
+            fmt::print(outstream, "# seed = {}\n", ctx()->get_option_as<uint64_t>("seed"));
             fmt::print(outstream,
                        "# configs = {}, locs = {}, uniq_locs = {}\n# n_runs = {}, n_total_locs = {}\n======\n",
                        cov()->n_configs(), cov()->n_locs(), map_loc_hash.size(),
