@@ -49,7 +49,7 @@ int prog(int argc, char *argv[]) {
             ("c50,J", po::value<int>()->implicit_value(0), "Run the ML algorithm")
             ("alg-version,T", po::value<int>()->default_value(0), "Select algo version")
             ("input,I", po::value<str>()->default_value(""), "Algorithm input")
-            ("term-cnt", po::value<int>()->default_value(20), "Termination counter")
+            ("term-cnt", po::value<int>()->default_value(10), "Termination counter")
 
             ("loc,X", po::value<str>(), "Interested location")
             ("rounds,R", po::value<int>(), "Number of iterations")

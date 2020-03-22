@@ -15,6 +15,9 @@
 #include <igen/c50/CTree.h>
 #include <fstream>
 
+#include <boost/range/adaptor/reversed.hpp>
+#include <klib/random.h>
+
 namespace igen {
 
 class IterativeAlgorithm : public Object {
@@ -280,15 +283,36 @@ public:
 
         vec<PMutConfig> cex;
         int max_min_cases = 0, skipped = 0;
-        for (const PCNode &node : leaves) {
-            if ((node->min_cases_in_one_leaf() > 0 && cex.size() > 50) || !iter_try_nodes) break;
+        const auto gen_for = [this, &max_min_cases, &skipped, &cex](const PCNode &node) {
+            int skipped_me = 0;
             max_min_cases = std::max(max_min_cases, node->min_cases_in_one_leaf());
             for (auto &c : node->gen_one_convering_configs()) {
                 if (set_conf_hash.insert(c->hash_128()).second) { cex.emplace_back(move(c)); }
-                else { skipped++; }
+                else { skipped++, skipped_me++; }
+            }
+            return skipped_me;
+        };
+        if (iter_try_nodes) {
+            for (const PCNode &node : leaves) {
+                if (node->min_cases_in_one_leaf() > 0 && cex.size() > 50) break;
+                gen_for(node);
             }
         }
-        LOG(INFO, "Gen {} cex, skipped {}, max_min_cases = {}", cex.size(), skipped, max_min_cases);
+        LOG(INFO, "Gen  {} cex, skipped {}, max_min_cases = {}", cex.size(), skipped, max_min_cases);
+
+        if (iter_try_nodes && terminate_counter >= 4) {
+            for (const PCNode &node : boost::adaptors::reverse(leaves)) {
+                if (cex.size() > 100) break;
+                gen_for(node);
+            }
+            LOG(INFO, "Rev  {} cex, skipped {}, max_min_cases = {}", cex.size(), skipped, max_min_cases);
+            int rand_skip = 0;
+            while (cex.size() < 200) {
+                const PCNode &node = *Rand.get(leaves);
+                if (gen_for(node) > 0 && ++rand_skip == 10) break;
+            }
+            LOG(INFO, "Rand {} cex, skipped {}, max_min_cases = {}", cex.size(), skipped, max_min_cases);
+        }
 
         // === Try rand
         int cex_rand_tried = 0;
@@ -345,7 +369,7 @@ public:
         LOG(INFO, "Runner stat: n_runs = {}, n_total_locs = {}",
             ctx()->program_runner()->n_runs(), ctx()->program_runner()->n_locs());
         bool need_term = n_rebuilds == 0 && n_new_locs == 0 && n_min_cases_in_one_leaf > 0;
-        LOG_IF(WARNING, need_term, "need_term = TRUE, terminate_counter = {}", terminate_counter);
+        LOG_IF(WARNING, need_term, "need_term = TRUE, terminate_counter = {}", terminate_counter + 1);
         if (need_term) {
             if (++terminate_counter == max_terminate_counter) return false;
         } else {
@@ -354,8 +378,8 @@ public:
         return true;
     }
 
-    int terminate_counter;
-    int max_terminate_counter;
+    int terminate_counter = 0;
+    int max_terminate_counter = 0;
 
     void run_alg_test_1() {
         max_terminate_counter = ctx()->get_option_as<int>("term-cnt");
