@@ -22,6 +22,7 @@ private:
 
 private:
     expr zvar_;
+    z3::sort zsort_;
     vec <expr> zvar_eq_val;
     vec <expr> zvals_;
 
@@ -47,6 +48,8 @@ public:
     const vec <expr> &zvals() const { return zvals_; }
 
     const expr &zval(int v) const { return zvals_[size_t(v)]; }
+
+    const z3::sort &zsort() const { return zsort_; }
 };
 
 using PVarDomain = ptr<const VarDomain>;
@@ -80,9 +83,9 @@ public:
 
     const z3::expr_vector &vars_expr_vector() const { return vars_expr_vector_; }
 
-    const expr &expr_all_asserts() const { return expr_all_asserts_; }
-
     const z3::func_decl_vector &func_decl_vector() const { return func_decl_vector_; }
+
+    const z3::sort_vector &sort_vector() const { return sort_vector_; }
 
     void cleanup() override;
 
@@ -113,7 +116,7 @@ private:
     int n_all_values_ = 0;
     z3::expr_vector vars_expr_vector_;
     z3::func_decl_vector func_decl_vector_;
-    expr expr_all_asserts_;
+    z3::sort_vector sort_vector_;
 
     friend std::ostream &operator<<(std::ostream &output, const Domain &d);
 

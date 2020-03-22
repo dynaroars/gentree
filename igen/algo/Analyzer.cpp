@@ -72,7 +72,6 @@ public:
         CHECKF(!f.fail(), "Error reading file: {}", path);
         str line;
         bool read_loc = true;
-        z3::sort_vector empty_sort_vector(zctx());
         vec<str> locs;
         str sexpr = "(assert ";
         set<unsigned> sexprid;
@@ -87,7 +86,7 @@ public:
                 if (locs.empty()) continue;
                 sexpr += ')';
                 z3::expr_vector evec = ctx()->zctx().parse_string(
-                        sexpr.c_str(), empty_sort_vector, dom()->func_decl_vector());
+                        sexpr.c_str(), dom()->sort_vector(), dom()->func_decl_vector());
                 CHECK_EQ(evec.size(), 1);
                 expr e = evec[0];
                 CHECKF(sexprid.insert(e.id()).second, "Duplicated expression ({})", path);

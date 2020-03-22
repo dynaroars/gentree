@@ -14,7 +14,7 @@
 
 namespace igen {
 
-VarDomain::VarDomain(PMutContext ctx) : Object(move(ctx)), zvar_(zctx()) {}
+VarDomain::VarDomain(PMutContext ctx) : Object(move(ctx)), zvar_(zctx()), zsort_(zctx()) {}
 
 //===================================================================================
 
@@ -26,8 +26,7 @@ void intrusive_ptr_release(Domain *d) {
 
 Domain::Domain(PMutContext _ctx)
         : Object(move(_ctx)),
-          vars_expr_vector_(ctx()->zctx()), func_decl_vector_(zctx()),
-          expr_all_asserts_(zctx()) {
+          vars_expr_vector_(ctx()->zctx()), func_decl_vector_(zctx()), sort_vector_(zctx()) {
     str filepath;
     if (ctx()->has_option("dom")) {
         filepath = ctx()->get_option_as<str>("dom");
@@ -50,8 +49,9 @@ std::istream &Domain::parse(std::istream &input) {
 
     n_all_values_ = 0;
 
+    using ZSortTuple = std::tuple<z3::sort, z3::func_decl_vector, z3::func_decl_vector>;
+    map<vec<str>, ZSortTuple> sorts;
     std::string line;
-    bool assigned_expr_all_asserts = false;
     while (std::getline(input, line)) {
         std::stringstream ss(line);
         str name;
@@ -69,13 +69,18 @@ std::istream &Domain::parse(std::istream &input) {
         CHECK_GT(n_vals, 0);
 
         //===
-        z3::expr zvar = (n_vals == 2) ? zctx().bool_const(name.c_str()) : zctx().int_const(name.c_str());
-        if (n_vals != 2) {
-            expr e = 0 <= zvar && zvar < n_vals;
-            zsolver().add(e);
-            if (assigned_expr_all_asserts) expr_all_asserts_ = expr_all_asserts_ && e;
-            else expr_all_asserts_ = e, assigned_expr_all_asserts = true;
+        z3::sort zsort(zctx());
+        z3::func_decl_vector enum_consts(zctx()), enum_testers(zctx());
+        if (auto it = sorts.find(labels); it != sorts.end()) {
+            std::tie(zsort, enum_consts, enum_testers) = it->second;
+        } else {
+            vec<const char *> vcstr(labels.size());
+            std::transform(labels.begin(), labels.end(), vcstr.begin(), [](const str &s) { return s.c_str(); });
+            zsort = zctx().enumeration_sort(name.c_str(), (unsigned) labels.size(), vcstr.data(),
+                                            enum_consts, enum_testers);
+            sorts.emplace(labels, ZSortTuple{zsort, enum_consts, enum_testers});
         }
+        z3::expr zvar = zctx().constant(name.c_str(), zsort);
 
         PMutVarDomain entry = new VarDomain(ctx());
         vars_.emplace_back(entry);
@@ -85,13 +90,13 @@ std::istream &Domain::parse(std::istream &input) {
         entry->name_ = name;
         entry->labels_ = move(labels);
         entry->zvar_ = zvar;
+        entry->zsort_ = zsort;
 
         entry->zvar_eq_val.reserve(n_vals);
         for (int i = 0; i < n_vals; i++) {
-            expr ex_val = (n_vals == 2) ? ctx()->zbool(i) : ctx()->zctx().int_val(i);
-            entry->zvals_.push_back(ex_val);
-            expr e = (n_vals == 2 ? (i ? zvar : !zvar) : (zvar == ex_val));
-            entry->zvar_eq_val.push_back(e);
+            expr zval = enum_consts[i]();
+            entry->zvals_.push_back(zval);
+            entry->zvar_eq_val.push_back(entry->zvar_ == zval);
         }
 
         n_all_values_ += n_vals;
@@ -105,6 +110,8 @@ std::istream &Domain::parse(std::istream &input) {
         auto decl = ref.decl();
         func_decl_vector_.set(i, decl);
     }
+    for (const auto &p : sorts)
+        sort_vector_.push_back(std::get<0>(p.second));
 
     CHECK_EQ(vars_.size(), cvars_.size());
     return input;
