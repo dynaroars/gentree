@@ -301,13 +301,18 @@ public:
         LOG(INFO, "Gen  {} cex, skipped {}, max_min_cases = {}", cex.size(), skipped, max_min_cases);
 
         if (iter_try_nodes && terminate_counter >= 4) {
+            for (const PCNode &node : leaves) {
+                if (cex.size() > 150) break;
+                gen_for(node);
+            }
+            LOG(INFO, "Fwd  {} cex, skipped {}, max_min_cases = {}", cex.size(), skipped, max_min_cases);
             for (const PCNode &node : boost::adaptors::reverse(leaves)) {
-                if (cex.size() > 100) break;
+                if (cex.size() > 200) break;
                 gen_for(node);
             }
             LOG(INFO, "Rev  {} cex, skipped {}, max_min_cases = {}", cex.size(), skipped, max_min_cases);
             int rand_skip = 0;
-            while (cex.size() < 200) {
+            while (cex.size() < 300) {
                 const PCNode &node = *Rand.get(leaves);
                 if (gen_for(node) > 0 && ++rand_skip == 10) break;
             }
