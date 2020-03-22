@@ -91,7 +91,6 @@ public:
     void gen_tpl(Config &conf) const;
 
 private: // TEMP DATA
-    vec<double> info, gain;
     int possible;
     double base_info, avgain, mdl, mingain;
     int splitvar = -1, find_pass;
@@ -101,8 +100,6 @@ private: // TEMP DATA
     void calc_inf_gain();
 
     int select_best_var(bool first_pass);
-
-    void clear_all_tmp_data();
 
     void create_childs();
 

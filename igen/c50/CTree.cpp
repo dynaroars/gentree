@@ -9,9 +9,10 @@
 namespace igen {
 
 
-CTree::CTree(PMutContext ctx) : Object(move(ctx)),
-                                freq{dom()->create_vec_vars_values_sm<int>(),
-                                     dom()->create_vec_vars_values_sm<int>()} {
+CTree::CTree(PMutContext ctx) :
+        Object(move(ctx)),
+        t_freq{dom()->create_vec_vars_values_sm<int>(), dom()->create_vec_vars_values_sm<int>()},
+        t_info(dom()->create_vec_vars<double>()), t_gain(dom()->create_vec_vars<double>()) {
 }
 
 void CTree::prepare_data_for_loc(const PLocation &loc) {

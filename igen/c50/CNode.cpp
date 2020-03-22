@@ -42,7 +42,7 @@ const PVarDomain &CNode::dom(int var_id) const {
 
 void CNode::calc_freq() {
     int n_vars = (int) dom()->n_vars();
-    auto &freq = tree->freq;
+    auto &freq = tree->t_freq;
     for (auto &a : freq) for (auto &b : a) for (auto &c : b) c = 0;
     for (const auto &c : configs_[0]) {
         const auto &vals = c->values();
@@ -61,10 +61,10 @@ void CNode::calc_freq() {
 void CNode::calc_inf_gain() {
     splitvar = -1;
     double log2ntotal = log2(n_total());
-    auto &freq = tree->freq;
+    auto &freq = tree->t_freq;
+    auto &info = tree->t_info, &gain = tree->t_gain;
 
     // Calc info
-    info = dom()->create_vec_vars<double>();
     for (int var_id = 0; var_id < dom()->n_vars(); ++var_id) {
         if (tested_vars_[var_id]) continue;
         double sum = 0;
@@ -85,10 +85,9 @@ void CNode::calc_inf_gain() {
 
     // Calc gain
     double total_gain = 0;
-    gain = dom()->create_vec_vars<double>();
     for (int var_id = 0; var_id < dom()->n_vars(); ++var_id) {
         if (tested_vars_[var_id]) continue;
-        double &g = gain[var_id];
+        double &g = (gain[var_id] = 0);
         for (int val = 0; val < dom()->n_values(var_id); ++val) {
             double sum = 0;
             int total = 0;
@@ -124,6 +123,7 @@ void CNode::calc_inf_gain() {
 }
 
 int CNode::select_best_var(bool first_pass) {
+    auto &info = tree->t_info, &gain = tree->t_gain;
     splitvar = -1;
     find_pass = first_pass ? 1 : 2;
     double bestratio = -1000;
@@ -183,8 +183,6 @@ void CNode::create_childs() {
 }
 
 bool CNode::evaluate_split() {
-    BOOST_SCOPE_EXIT(this_) { this_->clear_all_tmp_data(); }
-    BOOST_SCOPE_EXIT_END
     if (is_leaf()) {
         CHECK(n_hits() == 0 || n_misses() == 0); // Same config lead to 2 different result?
         GVLOG(V_LOG_BUILD) << "\n<" << depth() << ">: " << n_total() << " cases\n    "
@@ -211,13 +209,9 @@ bool CNode::evaluate_split() {
     return split_by != nullptr;
 }
 
-
-void CNode::clear_all_tmp_data() {
-    info.clear(), gain.clear();
-}
-
 std::ostream &CNode::print_tmp_state(std::ostream &output, const str &indent) const {
-    auto &freq = tree->freq;
+    auto &freq = tree->t_freq;
+    auto &info = tree->t_info, &gain = tree->t_gain;
     for (const auto &var : dom()->vars()) {
         // if (info[var->id()] < 0 || gain[var->id()] < 0)
         //     continue;
