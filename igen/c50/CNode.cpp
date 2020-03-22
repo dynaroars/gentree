@@ -393,6 +393,7 @@ vec<ptr<Config>> CNode::gen_one_convering_configs(int lim) const {
     for (const auto &c : hit_configs()) shash.insert(c->hash_128());
     for (const auto &c : miss_configs()) shash.insert(c->hash_128());
     for (const auto &c : new_configs_) shash.insert(c->hash_128());
+    bool use_solver = (shash.size() <= 10000);
     //====
     vec<sm_vec<int>> SetVAL;
     SetVAL.reserve((size_t) dom->n_vars());
@@ -432,7 +433,7 @@ vec<ptr<Config>> CNode::gen_one_convering_configs(int lim) const {
         if (shash.insert(conf->hash_128()).second) {
             if (z3 != nullptr) (*z3)->add(!conf->to_expr());
             ret.emplace_back(move(conf));
-        } else {
+        } else if (use_solver) {
             for (int id : vrand) conf->set(id, -1);
 
             if (z3 == nullptr) {
