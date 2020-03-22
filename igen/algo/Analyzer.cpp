@@ -73,7 +73,7 @@ public:
         str line;
         bool read_loc = true;
         vec<str> locs;
-        str sexpr = "(assert ";
+        str sexpr;
         set<unsigned> sexprid;
         while (getline(f, line)) {
             boost::algorithm::trim(line);
@@ -84,18 +84,14 @@ public:
                 continue;
             } else if (line[0] == '=') {
                 if (locs.empty()) continue;
-                sexpr += ')';
-                z3::expr_vector evec = ctx()->zctx().parse_string(
-                        sexpr.c_str(), dom()->sort_vector(), dom()->func_decl_vector());
-                CHECK_EQ(evec.size(), 1);
-                expr e = evec[0];
+                expr e = dom()->parse_string(move(sexpr));
                 CHECKF(sexprid.insert(e.id()).second, "Duplicated expression ({})", path);
                 //LOG(INFO, "EXPR: ") << e;
                 for (const str &s : locs) {
                     CHECKF(!res.contains(s), "Duplicated location ({}): {}", path, s);
                     res.emplace(s, e);
                 }
-                read_loc = true, locs.clear(), sexpr = "(assert ";
+                read_loc = true, locs.clear(), sexpr.clear();
                 continue;
             }
             if (read_loc) {

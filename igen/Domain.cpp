@@ -9,6 +9,7 @@
 
 #include <boost/container/flat_set.hpp>
 #include <boost/iterator/counting_iterator.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include <klib/random.h>
 
@@ -212,6 +213,27 @@ vec<PMutConfig> Domain::gen_one_convering_configs(const PConfig &templ, int lim)
     }
 
     return ret;
+}
+
+expr Domain::parse_string(str input) const {
+    if (parse_string_replace_map_.empty()) {
+        for (const auto &v : vars()) {
+            for (int i = 0; i < v->n_values(); ++i) {
+                str from = v->eq(i).to_string();
+                str to = "(= |" + v->name() + "| (as |" + v->label(i) + "| |" + v->zsort().name().str() + "|))";
+                const_cast<Domain *>(this)->parse_string_replace_map_[move(from)] = move(to);
+            }
+        }
+    }
+    CHECK_EQ(parse_string_replace_map_.size(), n_all_values_);
+
+    for (const auto &p : parse_string_replace_map_)
+        boost::algorithm::replace_all(input, p.first, p.second);
+
+    input = "(assert " + input + ")";
+    z3::expr_vector evec = ctx_mut()->zctx().parse_string(input.c_str(), sort_vector_, func_decl_vector_);
+    CHECK_EQ(evec.size(), 1);
+    return evec[0];
 }
 
 }

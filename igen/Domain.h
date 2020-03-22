@@ -87,6 +87,8 @@ public:
 
     const z3::sort_vector &sort_vector() const { return sort_vector_; }
 
+    expr parse_string(str input) const;
+
     void cleanup() override;
 
 public:
@@ -117,6 +119,8 @@ private:
     z3::expr_vector vars_expr_vector_;
     z3::func_decl_vector func_decl_vector_;
     z3::sort_vector sort_vector_;
+
+    map<str, str> parse_string_replace_map_;
 
     friend std::ostream &operator<<(std::ostream &output, const Domain &d);
 
