@@ -1,0 +1,7 @@
+fmt     6.1.2
+z3      z3-4.8.7
+spdlog  v1.5.0
+glog    195d416e3b1c8dc06980439f6acd3ebd40b6b820
+rocksdb v6.7.3
+
+boost_dl    https://dl.bintray.com/boostorg/release/1.72.0/source/boost_1_72_0.tar.bz2
