@@ -20,7 +20,7 @@ class Config : public Object {
 public:
     explicit Config(PMutContext ctx, int id = -1);
 
-    explicit Config(PMutContext ctx, const vec<int> &values, int id = -1);
+    explicit Config(PMutContext ctx, const vec<short> &values, int id = -1);
 
     explicit Config(PMutContext ctx, const str &str_values, int id = -1);
 
@@ -35,26 +35,26 @@ public:
         id_ = id;
     }
 
-    const vec<int> &values() const { return values_; }
+    const vec<short> &values() const { return values_; }
 
-    vec<int> &values() { return values_; }
+    vec<short> &values() { return values_; }
 
     vec<str> value_labels() const;
 
-    int operator[](int var_id) const { return values_.at((size_t) var_id); }
+    short operator[](int var_id) const { return values_.at((size_t) var_id); }
 
-    int get(int var_id) const { return values_.at((size_t) var_id); }
+    short get(int var_id) const { return values_.at((size_t) var_id); }
 
-    int value(int var_id) const { return values_.at((size_t) var_id); }
+    short value(int var_id) const { return values_.at((size_t) var_id); }
 
     void set(int var_id, int value) {
         CHECK(-1 <= value && value < dom()->n_values(var_id));
-        values_.at((size_t) var_id) = value;
+        values_.at((size_t) var_id) = (short) value;
     }
 
     void set_all(int value);
 
-    void set_all(const vec<int> &values);
+    void set_all(const vec<short> &values);
 
     vec<int> &cov_loc_mut_ids() { return cov_locs_; }
 
@@ -72,7 +72,7 @@ public:
 
 private:
     int id_;
-    vec<int> values_;
+    vec<short> values_;
     vec<int> cov_locs_; // Location id
 
     mutable hash128_t cached_hash_ = hash128_empty;
@@ -101,7 +101,7 @@ public:
     };
 
     class const_iterator :
-            public boost::iterator_adaptor<const_iterator, vec<int>::const_iterator, // Base type
+            public boost::iterator_adaptor<const_iterator, vec<short>::const_iterator, // Base type
                     const Entry,         // value_type
                     boost::use_default,     // difference_type
                     const Entry>       // reference_type

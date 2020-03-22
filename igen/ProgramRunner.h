@@ -45,7 +45,7 @@ private:
     str target;
     builtin::BuiltinRunnerFn builtin_fn;
     int n_runs_ = 0;
-    rocksdb::DB *cachedb_ = nullptr;
+    std::unique_ptr<rocksdb::DB> cachedb_;
 
     set<str> _run_simple(const PConfig &config) const;
 

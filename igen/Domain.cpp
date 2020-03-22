@@ -171,7 +171,7 @@ vec<ptr<Config>> Domain::gen_one_convering_configs() const {
 
 vec<PMutConfig> Domain::gen_all_configs(const PConfig &templ) const {
     vec<PMutConfig> configs;
-    vec<int> values(size_t(dom()->n_vars()));
+    vec<short> values(size_t(dom()->n_vars()));
     auto recur = [this, &templ, &configs, &values](int var_id, const auto &recur) -> void {
         if (var_id == dom()->n_vars()) {
             configs.emplace_back(new Config(ctx_mut(), values));
@@ -183,7 +183,7 @@ vec<PMutConfig> Domain::gen_all_configs(const PConfig &templ) const {
             return;
         }
         for (int i = 0; i < dom()->n_values(var_id); ++i) {
-            values[var_id] = i;
+            values[var_id] = (short) i;
             recur(var_id + 1, recur);
         }
     };

@@ -18,6 +18,10 @@ typedef unsigned long DWORD;
 #include <boost/process/io.hpp>
 #include <boost/process/args.hpp>
 
+#include <rocksdb/db.h>
+#include <rocksdb/slice.h>
+#include <rocksdb/options.h>
+
 #include "GCovRunner.h"
 
 namespace bp = boost::process;
@@ -52,6 +56,23 @@ ProgramRunner::ProgramRunner(PMutContext _ctx) : Object(move(_ctx)), type(Runner
     if (type == +RunnerType::GCov) {
         gcov_runner_ = new GCovRunner(ctx_mut());
         gcov_runner_->parse(target);
+    }
+
+    if (ctx()->has_option("cache")) {
+        str cachedir = ctx()->get_option_as<str>("cache");
+        if (cachedir.empty()) cachedir = ctx()->get_option_as<str>("filestem") + ".cachedb";
+
+        using namespace rocksdb;
+        Options options;
+        // Optimizes total bytes written to disk vs. logical database size (write amplification)
+        options.OptimizeUniversalStyleCompaction();
+        // create the DB if it's not already present
+        options.create_if_missing = true;
+
+        DB *db;
+        Status s = DB::Open(options, cachedir, &db);
+        cachedb_.reset(db);
+        CHECKF(s.ok(), "Fail to open cachedb at: {}", cachedir);
     }
 }
 
@@ -121,6 +142,7 @@ set<str> ProgramRunner::_run_gcov(const PConfig &config) const {
 
 void ProgramRunner::cleanup() {
     gcov_runner_.reset();
+    cachedb_.reset();
 }
 
 void ProgramRunner::init() {

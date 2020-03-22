@@ -16,7 +16,7 @@ Config::Config(PMutContext ctx, int id)
         : Object(move(ctx)), id_(id), values_(size_t(dom()->n_vars())) {
 }
 
-Config::Config(PMutContext ctx, const vec<int> &values, int id) : Config(move(ctx), id) {
+Config::Config(PMutContext ctx, const vec<short> &values, int id) : Config(move(ctx), id) {
     set_all(values);
 }
 
@@ -50,7 +50,7 @@ void Config::set_all(int value) {
     }
 }
 
-void Config::set_all(const vec<int> &values) {
+void Config::set_all(const vec<short> &values) {
     CHECK_EQ(values.size(), dom()->n_vars());
     for (int i = 0; i < dom()->n_vars(); ++i) {
         set(i, values[i]);

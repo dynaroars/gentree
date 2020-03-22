@@ -35,4 +35,7 @@ hash128_t calc_hash_128(const std::vector<T> &vec) {
 template
 hash128_t calc_hash_128<int>(const std::vector<int> &vec);
 
+template
+hash128_t calc_hash_128<short>(const std::vector<short> &vec);
+
 }
