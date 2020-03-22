@@ -16,7 +16,7 @@ Context::Context() :
 }
 
 Context::~Context() {
-    VLOG(1, "Context destroyed");
+    LOG(INFO, "Context destroyed");
 }
 
 void Context::set_option(const str &key, boost::any val) {

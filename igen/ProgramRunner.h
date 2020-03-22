@@ -12,6 +12,10 @@
 #include <klib/enum.h>
 #include <igen/builtin/programs.h>
 
+namespace rocksdb {
+class DB;
+}
+
 namespace igen {
 
 BETTER_ENUM(RunnerType, int, Invalid, Simple, BuiltIn, GCov)
@@ -26,7 +30,7 @@ public:
 
     void init();
 
-    set<str> run(const PConfig &config) const;
+    set<str> run(const PConfig &config);
 
     void reset_n_runs(int val = 0) { n_runs_ = val; }
 
@@ -40,7 +44,8 @@ private:
     RunnerType type;
     str target;
     builtin::BuiltinRunnerFn builtin_fn;
-    mutable int n_runs_ = 0;
+    int n_runs_ = 0;
+    rocksdb::DB *cachedb_ = nullptr;
 
     set<str> _run_simple(const PConfig &config) const;
 
