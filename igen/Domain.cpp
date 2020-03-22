@@ -217,15 +217,19 @@ vec<PMutConfig> Domain::gen_one_convering_configs(const PConfig &templ, int lim)
 
 expr Domain::parse_string(str input) const {
     if (parse_string_replace_map_.empty()) {
+        map<str, int> lbl_cnt;
+        for (const auto &v : vars())
+            for (int i = 0; i < v->n_values(); ++i)
+                lbl_cnt[v->label(i)]++;
         for (const auto &v : vars()) {
             for (int i = 0; i < v->n_values(); ++i) {
+                if (lbl_cnt[v->label(i)] == 1) continue;
                 str from = v->eq(i).to_string();
                 str to = "(= |" + v->name() + "| (as |" + v->label(i) + "| |" + v->zsort().name().str() + "|))";
                 const_cast<Domain *>(this)->parse_string_replace_map_[move(from)] = move(to);
             }
         }
     }
-    CHECK_EQ(parse_string_replace_map_.size(), n_all_values_);
 
     for (const auto &p : parse_string_replace_map_)
         boost::algorithm::replace_all(input, p.first, p.second);
