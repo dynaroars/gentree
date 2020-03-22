@@ -279,16 +279,16 @@ public:
         });
 
         vec<PMutConfig> cex;
-        int max_min_cases = 0;
+        int max_min_cases = 0, skipped = 0;
         for (const PCNode &node : leaves) {
             if ((node->min_cases_in_one_leaf() > 0 && cex.size() > 50) || !iter_try_nodes) break;
             max_min_cases = std::max(max_min_cases, node->min_cases_in_one_leaf());
             for (auto &c : node->gen_one_convering_configs()) {
                 if (set_conf_hash.insert(c->hash_128()).second) { cex.emplace_back(move(c)); }
-                //else { CHECK(0) << *c; }
+                else { skipped++; }
             }
         }
-        LOG(INFO, "Gen {} cex from leaves, max_min_cases = {}", cex.size(), max_min_cases);
+        LOG(INFO, "Gen {} cex, skipped {}, max_min_cases = {}", cex.size(), skipped, max_min_cases);
 
         // === Try rand
         int cex_rand_tried = 0;
@@ -347,7 +347,7 @@ public:
         bool need_term = n_rebuilds == 0 && n_new_locs == 0 && n_min_cases_in_one_leaf > 0;
         LOG_IF(WARNING, need_term, "need_term = TRUE, terminate_counter = {}", terminate_counter);
         if (need_term) {
-            if (++terminate_counter == 10) return false;
+            if (++terminate_counter == max_terminate_counter) return false;
         } else {
             terminate_counter = 0;
         }
@@ -355,8 +355,10 @@ public:
     }
 
     int terminate_counter;
+    int max_terminate_counter;
 
     void run_alg_test_1() {
+        max_terminate_counter = ctx()->get_option_as<int>("term-cnt");
 
         vec<PMutConfig> init_configs;
         if (ctx()->has_option("full")) {
