@@ -309,7 +309,8 @@ public:
                 gen_for(node);
             }
         }
-        LOG(INFO, "Gen  {} cex, skipped {}, max_min_cases = {}", cex.size(), skipped, max_min_cases);
+        LOG(INFO, "Gen  {} cex, skipped {}, max_min_cases = {}, leaves = {}",
+            cex.size(), skipped, max_min_cases, leaves.size());
 
         if (iter_try_nodes && terminate_counter >= 4) {
             for (const PCNode &node : boost::adaptors::reverse(leaves)) {

@@ -154,7 +154,7 @@ int CNode::select_best_var(bool first_pass) {
     return splitvar;
 }
 
-namespace {
+namespace radix16 {
 using RadixType = unsigned short;
 using RadixBase = kx::RadixTraitsUnsigned<RadixType>;
 
@@ -173,6 +173,24 @@ struct RadixTrait : RadixBase {
     }
 };
 }
+namespace radix8 {
+using RadixType = uint8_t;
+using RadixBase = kx::RadixTraitsUnsigned<RadixType>;
+
+struct RadixTrait : RadixBase {
+    int splitvar;
+
+    explicit RadixTrait(int splitvar) : splitvar(splitvar) {}
+
+    int kth_byte(const PConfig &x, [[maybe_unused]] int k) {
+        return static_cast<RadixType>(x->values()[splitvar]);
+    }
+
+    bool compare(const PConfig &x, const PConfig &y) {
+        return x->values()[splitvar] < y->values()[splitvar];
+    }
+};
+}
 
 void CNode::create_childs() {
     CHECK(0 <= splitvar && splitvar < dom()->n_vars());
@@ -182,7 +200,8 @@ void CNode::create_childs() {
         //std::sort(c.begin(), c.end(), [bestvar = splitvar](const auto &a, const auto &b) {
         //    return a->get(bestvar) < b->get(bestvar);
         //});
-        kx::radix_sort(c.begin(), c.end(), RadixTrait(splitvar));
+        //kx::radix_sort(c.begin(), c.end(), radix16::RadixTrait(splitvar));
+        kx::radix_sort(c.begin(), c.end(), radix8::RadixTrait(splitvar));
     }
 
     tested_vars_[splitvar] = true;
