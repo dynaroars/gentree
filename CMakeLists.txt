@@ -44,5 +44,8 @@ target_link_libraries(igen4 PRIVATE
         Boost::headers Boost::program_options Boost::timer
         z3::libz3 klib libigen4)
 
-
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+else ()
+    target_compile_options(igen4 PUBLIC -flto)
+endif ()
 
