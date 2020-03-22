@@ -406,7 +406,7 @@ vec<ptr<Config>> CNode::gen_one_convering_configs(int lim) const {
         }
     }
 
-    LOG(INFO, "Tpl: \n") << templ;
+    VLOG(100, "Tpl: \n") << templ;
 
     vec<PMutConfig> ret;
     std::unique_ptr<Z3Scope> z3;
@@ -447,20 +447,20 @@ vec<ptr<Config>> CNode::gen_one_convering_configs(int lim) const {
             if ((*z3)->check(1, &e) == z3::sat) {
                 z3::model m = (*z3)->get_model();
                 for (int id : vrand)
-                    conf->set(id, m.get_const_interp(dom->var(id)->zvar().decl()));
+                    conf->set(id, dom->var(id)->val_id_of(m.get_const_interp(dom->var(id)->zvar().decl())));
 
-                LOG(INFO, "Found cex for tpl using solver ({} conds): \n", shash.size()) << templ << '\n' << *conf;
+                VLOG(100, "Found cex for tpl using solver ({} conds): \n", shash.size()) << templ << '\n' << *conf;
                 bool insert_res = shash.insert(conf->hash_128(true /*recalc hash*/)).second;
                 CHECK(insert_res) << *conf;
                 (*z3)->add(!conf->to_expr());
                 ret.emplace_back(move(conf));
             } else {
-                LOG(INFO, "Can't find cex for tpl: ") << templ;
+                VLOG(100, "Can't find cex for tpl: ") << templ;
             }
         }
     }
 
-    LOG_BLOCK(INFO, {
+    VLOG_BLOCK(100, {
         log << "CEX:\n";
         for (const auto &c : ret) log << *c << '\n';
     });

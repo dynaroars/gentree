@@ -110,6 +110,7 @@ std::istream &Domain::parse(std::istream &input) {
             expr zval = enum_consts[i]();
             entry->zvals_.push_back(zval);
             entry->zvar_eq_val.push_back(entry->zvar_ == zval);
+            entry->map_zid_valid_[zval.id()] = i;
         }
 
         n_all_values_ += n_vals;

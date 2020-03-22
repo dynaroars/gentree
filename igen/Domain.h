@@ -25,6 +25,7 @@ private:
     z3::sort zsort_;
     vec <expr> zvar_eq_val;
     vec <expr> zvals_;
+    map<unsigned, int> map_zid_valid_;
 
 public:
     explicit VarDomain(PMutContext ctx);
@@ -50,6 +51,12 @@ public:
     const expr &zval(int v) const { return zvals_[size_t(v)]; }
 
     const z3::sort &zsort() const { return zsort_; }
+
+    int val_id_of(const z3::expr &e) const {
+        const auto it = map_zid_valid_.find(e.id());
+        CHECK(it != map_zid_valid_.end());
+        return it->second;
+    }
 };
 
 using PVarDomain = ptr<const VarDomain>;
@@ -120,7 +127,7 @@ private:
     z3::func_decl_vector func_decl_vector_;
     z3::sort_vector sort_vector_;
 
-    map<str, str> parse_string_replace_map_;
+    map <str, str> parse_string_replace_map_;
 
     friend std::ostream &operator<<(std::ostream &output, const Domain &d);
 
