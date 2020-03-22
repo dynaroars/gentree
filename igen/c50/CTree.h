@@ -54,6 +54,7 @@ public: // For gen CEX
 
 private:
     std::array<vec<PConfig>, 2> configs_;
+    std::array<vec<sm_vec<int>>, 2> freq;
 
     PMutCNode root_;
 

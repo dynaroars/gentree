@@ -42,14 +42,14 @@ const PVarDomain &CNode::dom(int var_id) const {
 
 void CNode::calc_freq() {
     int n_vars = (int) dom()->n_vars();
-    freq[0] = dom()->create_vec_vars_values_sm<int>();
+    auto &freq = tree->freq;
+    for (auto &a : freq) for (auto &b : a) for (auto &c : b) c = 0;
     for (const auto &c : configs_[0]) {
         const auto &vals = c->values();
         for (int var_id = 0; var_id < n_vars; ++var_id) {
             freq[0][var_id][vals[var_id]]++;
         }
     }
-    freq[1] = dom()->create_vec_vars_values_sm<int>();
     for (const auto &c : configs_[1]) {
         const auto &vals = c->values();
         for (int var_id = 0; var_id < n_vars; ++var_id) {
@@ -61,6 +61,7 @@ void CNode::calc_freq() {
 void CNode::calc_inf_gain() {
     splitvar = -1;
     double log2ntotal = log2(n_total());
+    auto &freq = tree->freq;
 
     // Calc info
     info = dom()->create_vec_vars<double>();
@@ -212,11 +213,11 @@ bool CNode::evaluate_split() {
 
 
 void CNode::clear_all_tmp_data() {
-    freq[0].clear(), freq[1].clear();
     info.clear(), gain.clear();
 }
 
 std::ostream &CNode::print_tmp_state(std::ostream &output, const str &indent) const {
+    auto &freq = tree->freq;
     for (const auto &var : dom()->vars()) {
         // if (info[var->id()] < 0 || gain[var->id()] < 0)
         //     continue;

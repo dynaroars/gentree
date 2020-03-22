@@ -91,7 +91,6 @@ public:
     void gen_tpl(Config &conf) const;
 
 private: // TEMP DATA
-    std::array<vec<sm_vec<int>>, 2> freq;
     vec<double> info, gain;
     int possible;
     double base_info, avgain, mdl, mingain;
