@@ -8,9 +8,9 @@
 #include <klib/math.h>
 #include <klib/random.h>
 #include <klib/vecutils.h>
+#include <klib/kxsort.h>
 
 #include <memory>
-#include <boost/scope_exit.hpp>
 #include <boost/container/small_vector.hpp>
 #include <boost/container/flat_set.hpp>
 #include <boost/iterator/counting_iterator.hpp>
@@ -154,14 +154,35 @@ int CNode::select_best_var(bool first_pass) {
     return splitvar;
 }
 
+namespace {
+using RadixType = unsigned short;
+using RadixBase = kx::RadixTraitsUnsigned<RadixType>;
+
+struct RadixTrait : RadixBase {
+    static_assert(RadixBase::nBytes == sizeof(std::declval<Config>().values()[0]));
+    int splitvar;
+
+    explicit RadixTrait(int splitvar) : splitvar(splitvar) {}
+
+    int kth_byte(const PConfig &x, int k) {
+        return RadixBase::kth_byte(static_cast<RadixType>(x->values()[splitvar]), k);
+    }
+
+    bool compare(const PConfig &x, const PConfig &y) {
+        return x->values()[splitvar] < y->values()[splitvar];
+    }
+};
+}
+
 void CNode::create_childs() {
     CHECK(0 <= splitvar && splitvar < dom()->n_vars());
     int nvalues = dom()->n_values(splitvar);
     for (int hit = 0; hit <= 1; ++hit) {
         auto &c = configs_[hit];
-        std::sort(c.begin(), c.end(), [bestvar = splitvar](const auto &a, const auto &b) {
-            return a->get(bestvar) < b->get(bestvar);
-        });
+        //std::sort(c.begin(), c.end(), [bestvar = splitvar](const auto &a, const auto &b) {
+        //    return a->get(bestvar) < b->get(bestvar);
+        //});
+        kx::radix_sort(c.begin(), c.end(), RadixTrait(splitvar));
     }
 
     tested_vars_[splitvar] = true;

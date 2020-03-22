@@ -6,6 +6,8 @@
 
 #include <boost/container/flat_set.hpp>
 
+#include <klib/kxsort.h>
+
 namespace igen {
 
 
@@ -26,6 +28,23 @@ void CoverageStore::register_config(const PMutConfig &config) {
     config->set_id(n_configs());
     configs_.emplace_back(config);
     cconfigs_.emplace_back(config);
+}
+
+namespace {
+using RadixType = unsigned int;
+using RadixBase = kx::RadixTraitsUnsigned<RadixType>;
+
+struct RadixTrait : RadixBase {
+    static_assert(RadixBase::nBytes == sizeof(std::declval<Location>().id()));
+
+    int kth_byte(const PMutLocation &x, int k) {
+        return RadixBase::kth_byte(static_cast<RadixType>(x->id()), k);
+    }
+
+    bool compare(const PMutLocation &x, const PMutLocation &y) {
+        return x->id() < y->id();
+    }
+};
 }
 
 int CoverageStore::register_cov(const PMutConfig &config, const set<str> &loc_names) {
