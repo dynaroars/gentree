@@ -119,6 +119,14 @@ public:
         return res;
     }
 
+    template<typename T>
+    vec <sm_vec<T>> create_vec_vars_values_sm() const {
+        auto res = vec<sm_vec<T>>(n_vars());
+        for (int i = 0; i < n_vars(); ++i)
+            res[i].resize(n_values(i));
+        return res;
+    }
+
 private:
     vec <PMutVarDomain> vars_;
     vec <PVarDomain> cvars_;

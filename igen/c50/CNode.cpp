@@ -41,13 +41,19 @@ const PVarDomain &CNode::dom(int var_id) const {
 }
 
 void CNode::calc_freq() {
-    for (int hit = 0; hit <= 1; ++hit) {
-        freq[hit] = dom()->create_vec_vars_values<int>();
-        for (const auto &c : configs_[hit]) {
-            const auto &vals = c->values();
-            for (int var_id = 0; var_id < (int) vals.size(); ++var_id) {
-                freq[hit][var_id][vals[var_id]]++;
-            }
+    int n_vars = (int) dom()->n_vars();
+    freq[0] = dom()->create_vec_vars_values_sm<int>();
+    for (const auto &c : configs_[0]) {
+        const auto &vals = c->values();
+        for (int var_id = 0; var_id < n_vars; ++var_id) {
+            freq[0][var_id][vals[var_id]]++;
+        }
+    }
+    freq[1] = dom()->create_vec_vars_values_sm<int>();
+    for (const auto &c : configs_[1]) {
+        const auto &vals = c->values();
+        for (int var_id = 0; var_id < n_vars; ++var_id) {
+            freq[1][var_id][vals[var_id]]++;
         }
     }
 }

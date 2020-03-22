@@ -5,6 +5,7 @@
 #ifndef IGEN4_CNODE_H
 #define IGEN4_CNODE_H
 
+#include <boost/container/small_vector.hpp>
 #include <boost/range/sub_range.hpp>
 #include <igen/Config.h>
 
@@ -90,7 +91,7 @@ public:
     void gen_tpl(Config &conf) const;
 
 private: // TEMP DATA
-    std::array<vec<vec<int>>, 2> freq;
+    std::array<vec<sm_vec<int>>, 2> freq;
     vec<double> info, gain;
     int possible;
     double base_info, avgain, mdl, mingain;
