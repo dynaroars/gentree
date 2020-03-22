@@ -420,7 +420,7 @@ public:
                 LOG(WARNING, "Early break at iteration {}", iter);
                 break;
             }
-            if (gSignalStatus == SIGINT) {
+            if (gSignalStatus == SIGUSR1) {
                 LOG(WARNING, "Requested break at iteration {}", iter);
                 ctx()->program_runner()->flush_compact_cachedb();
                 break;
@@ -523,7 +523,7 @@ public:
     }
 
     void run_alg() {
-        std::signal(SIGINT, [](int signal) {
+        std::signal(SIGUSR1, [](int signal) {
             if (gSignalStatus) {
                 RAW_LOG(ERROR, "Force terminate");
                 exit(1);
