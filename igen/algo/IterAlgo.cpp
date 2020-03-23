@@ -65,12 +65,21 @@ public:
             n_rebuilds, n_min_cases_in_one_leaf, int(vec_loc_data.size()) - cov()->n_locs());
     }
 
+    static constexpr int REBUILD_THR = 1000;
+    static constexpr int IGNORE_THR = int(REBUILD_THR * .9);
     set<hash128_t> set_conf_hash, set_ran_conf_hash;
     map<hash128_t, PLocation> map_loc_hash;
+
     struct LocData {
         PMutCTree tree;
         PCTree shared_tree;
+        boost::circular_buffer_space_optimized<int> rebuild_iter{{REBUILD_THR, 10}};
+
+        bool ignored_ = false;
+
+        bool ignored() const { return ignored_; }
     };
+
     vec<LocData> vec_loc_data;
     bool iter_try_nodes = true;
 
@@ -101,8 +110,10 @@ public:
                 VLOG(30, "NEW DECISION TREE (n_min_cases = {}) = \n", tree->n_min_cases_in_one_leaf()) << (*tree);
             }
 
-            n_min_cases_in_one_leaf = std::min(n_min_cases_in_one_leaf, tree->n_min_cases_in_one_leaf());
-            tree->gather_leaves_nodes(leaves);
+            if (!locdat.ignored()) {
+                n_min_cases_in_one_leaf = std::min(n_min_cases_in_one_leaf, tree->n_min_cases_in_one_leaf());
+                tree->gather_leaves_nodes(leaves, 0, cov()->n_configs() - 1);
+            }
         }
         // ============================================================================================================
 
@@ -179,7 +190,9 @@ public:
             for (const PLocation &loc : cov()->locs()) {
                 if (loc->id() >= int(vec_loc_data.size())) break;
                 TREE_DATA(loc->id());
+                auto &re_iter = locdat.rebuild_iter;
                 if (tree == nullptr && shared_tree == nullptr) continue;
+                if (locdat.ignored()) continue;
 
                 bool new_truth = false;
                 if (it != cov_ids.end() && *it == loc->id()) new_truth = true, ++it;
@@ -188,11 +201,23 @@ public:
 
                 bool tree_need_rebuild = (tree_eval != new_truth);
                 if (tree_need_rebuild) {
+                    re_iter.push_back(iter);
+                    while (re_iter.size() && re_iter.front() < iter - REBUILD_THR) re_iter.pop_front();
+                    long ig_th = std::max(100l, (long) IGNORE_THR - (iter - REBUILD_THR * 2l));
+                    if (iter > REBUILD_THR * 2 && (long) re_iter.size() > ig_th) {
+                        LOG(WARNING, "Ignored loc ({}) {}.   re_iter={},ig_th={}",
+                            loc->id(), loc->name(), re_iter.size(), ig_th);
+                        locdat.ignored_ = true;
+                        continue;
+                    }
+
                     n_rebuilds++;
                     if (tree != nullptr) n_rebuilds_uniq++;
                     tree = nullptr, shared_tree = nullptr;
                     VLOG(20, "Need rebuild loc {}", loc->name());
                     continue;
+                } else {
+                    while (re_iter.size() && re_iter.front() < iter - REBUILD_THR) re_iter.pop_front();
                 }
             }
         }
@@ -273,6 +298,8 @@ public:
         struct LineEnt {
             vec<PLocation> locs;
             str expr;
+            int rebuild_iter;
+            bool ignored;
         };
         vec<LineEnt> ents;
         if (out_to_file) ents.resize(vec_loc_data.size());
@@ -298,6 +325,8 @@ public:
                     auto &et = ents.at(size_t(loc->id()));
                     et.locs.push_back(loc);
                     et.expr = e.to_string();
+                    et.rebuild_iter = (int) locdat.rebuild_iter.size();
+                    et.ignored = locdat.ignored();
                     log << et.expr;
                 } else {
                     log << e;
@@ -327,6 +356,9 @@ public:
                        ctx()->program_runner()->n_runs(), ctx()->program_runner()->n_locs());
             for (const auto &e : ents) {
                 if (e.locs.empty()) continue;
+                if (e.ignored)
+                    outstream << "# IGNORED\n";
+                fmt::print(outstream, "# rebuild_iter = {} / {}\n", e.rebuild_iter, REBUILD_THR);
                 for (const auto &loc : e.locs)
                     outstream << loc->name() << ", ";
                 outstream << "\n-\n" << e.expr << "\n======\n";
