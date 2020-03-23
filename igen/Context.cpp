@@ -48,6 +48,7 @@ void Context::cleanup() {
 expr Context::zctx_solver_simplify(const expr &e) const {
     z3::context &ctx = const_cast<Context *>(this)->zctx();
     z3::tactic tactic(ctx, "ctx-solver-simplify");
+    tactic = z3::try_for(tactic, 20000);
     tactic = z3::repeat(tactic);
     tactic = z3::try_for(tactic, 20000);
     z3::goal goal(ctx);

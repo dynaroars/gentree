@@ -65,8 +65,8 @@ public:
             n_rebuilds, n_min_cases_in_one_leaf, int(vec_loc_data.size()) - cov()->n_locs());
     }
 
-    static constexpr int REBUILD_THR = 1000;
-    static constexpr int IGNORE_THR = int(REBUILD_THR * .9);
+    static constexpr int REBUILD_THR = 100;
+    static constexpr int THR_KICKIN = 3000;
     set<hash128_t> set_conf_hash, set_ran_conf_hash;
     map<hash128_t, PLocation> map_loc_hash;
 
@@ -110,7 +110,7 @@ public:
                 VLOG(30, "NEW DECISION TREE (n_min_cases = {}) = \n", tree->n_min_cases_in_one_leaf()) << (*tree);
 
                 n_min_cases_in_one_leaf = std::min(n_min_cases_in_one_leaf, tree->n_min_cases_in_one_leaf());
-                tree->gather_leaves_nodes(leaves, 0, cov()->n_configs() - 1);
+                tree->gather_leaves_nodes(leaves, 0, 16);
             }
         }
         if (leaves.empty()) {
@@ -211,14 +211,18 @@ public:
                 if (tree_need_rebuild) {
                     re_iter.push_back(iter);
                     while (re_iter.size() && re_iter.front() < iter - REBUILD_THR) re_iter.pop_front();
-                    long ig_th = std::max(100l, (long) IGNORE_THR - (iter - REBUILD_THR * 2l));
-                    if (ig_th == 100)
-                        ig_th = std::max(1l, ig_th - (iter - REBUILD_THR * 2l) / 20);
-                    if (iter > REBUILD_THR * 2 && (long) re_iter.size() > ig_th) {
-                        LOG(WARNING, "Ignored loc ({}) {}.   re_iter={},ig_th={}",
-                            loc->id(), loc->name(), re_iter.size(), ig_th);
-                        locdat.ignored_ = true;
-                        continue;
+                    if (iter > THR_KICKIN) {
+                        long progress = iter - THR_KICKIN;
+                        long ig_th = std::max(50l, (long) REBUILD_THR - progress / 5);
+                        if (ig_th == 50l) {
+                            ig_th = std::max(5l, ig_th - progress / 100);
+                        }
+                        if ((long) re_iter.size() > ig_th) {
+                            LOG(WARNING, "Ignored loc ({}) {}.   re_iter={},ig_th={}",
+                                loc->id(), loc->name(), re_iter.size(), ig_th);
+                            locdat.ignored_ = true;
+                            continue;
+                        }
                     }
 
                     n_rebuilds++;
@@ -367,9 +371,8 @@ public:
                        ctx()->program_runner()->n_runs(), ctx()->program_runner()->n_locs());
             for (const auto &e : ents) {
                 if (e.locs.empty()) continue;
-                if (e.ignored)
-                    outstream << "# IGNORED\n";
-                fmt::print(outstream, "# rebuild_iter = {} / {}\n", e.rebuild_iter, REBUILD_THR);
+                fmt::print(outstream, "# rebuild_iter = {:>5} / {}{}\n", e.rebuild_iter, REBUILD_THR,
+                           e.ignored ? "    (IGNORED)" : "");
                 for (const auto &loc : e.locs)
                     outstream << loc->name() << ", ";
                 outstream << "\n-\n" << e.expr << "\n======\n";
