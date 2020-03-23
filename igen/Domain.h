@@ -98,6 +98,8 @@ public:
 
     void cleanup() override;
 
+    uint64_t config_space() const;
+
 public:
     vec <ptr<Config>> gen_all_configs() const;
 

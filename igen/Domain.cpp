@@ -7,7 +7,6 @@
 #include "Domain.h"
 #include "Config.h"
 
-#include <boost/container/flat_set.hpp>
 #include <boost/container/small_vector.hpp>
 #include <boost/iterator/counting_iterator.hpp>
 #include <boost/algorithm/string.hpp>
@@ -142,7 +141,7 @@ std::istream &operator>>(std::istream &input, Domain &d) {
 }
 
 std::ostream &operator<<(std::ostream &output, const Domain &d) {
-    fmt::print(output, "Domain[{}]: ", d.n_vars());
+    fmt::print(output, "Domain[{} -> {}]: ", d.n_vars(), d.config_space());
     bool first_var = true;
     for (const auto &e : d) {
         if (!first_var) output << "; "; else first_var = false;
@@ -253,6 +252,12 @@ expr Domain::parse_string(str input) const {
     z3::expr_vector evec = ctx_mut()->zctx().parse_string(input.c_str(), sort_vector_, func_decl_vector_);
     CHECK_EQ(evec.size(), 1);
     return evec[0];
+}
+
+uint64_t Domain::config_space() const {
+    uint64_t res = 1;
+    for (const auto &v : vars_) res *= v->n_values();
+    return res;
 }
 
 }
