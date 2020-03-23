@@ -18,6 +18,7 @@
 #include <glog/raw_logging.h>
 
 #include <boost/range/adaptor/reversed.hpp>
+#include <boost/circular_buffer.hpp>
 #include <klib/random.h>
 
 namespace igen {
@@ -32,184 +33,7 @@ public:
 
     ~IterativeAlgorithm() override = default;
 
-    void run_alg_full() {
-        str loc = ctx()->get_option_as<str>("loc");
-        auto configs = dom()->gen_all_configs();
-        for (const auto &c : configs) {
-            auto e = ctx()->program_runner()->run(c);
-            cov()->register_cov(c, e);
-            //VLOG(20, "{}  ==>  ", *c) << e;
-            // VLOG_BLOCK(21, {
-            //     for (const auto &x : c->cov_locs()) {
-            //         log << x->name() << ", ";
-            //     }
-            // });
-        }
-
-        PMutCTree tree = new CTree(ctx());
-        tree->prepare_data_for_loc(cov()->loc(loc));
-        tree->build_tree();
-        LOG(INFO, "DECISION TREE = \n") << (*tree);
-        z3::expr e = tree->build_zexpr(CTree::DisjOfConj);
-        LOG(INFO, "EXPR BEFORE = \n") << e.simplify();
-        //z3::params simpl_params(ctx()->zctx());
-        //simpl_params.set("rewrite_patterns", true);
-        e = ctx()->zctx_solver_simplify(e);
-        LOG(INFO, "EXPR AFTER = \n") << e;
-        //LOG(INFO, "SOLVER = \n") << ctx()->zsolver();
-        for (const auto &c : cov()->configs()) {
-            bool val = c->eval(e);
-            //LOG(INFO, "{} ==> {}", *c, val);
-            int should_be = c->cov_loc("L1");
-            CHECK_EQ(val, should_be);
-        }
-        LOG(INFO, "Verified expr with {} configs", cov()->n_configs());
-    }
-
-    void run_alg_test_0() {
-        str loc = ctx()->get_option_as<str>("loc");
-
-        //=== TEST ALL CONF =================================================================
-        PMutConfig ALL_CONF_TPL = new Config(ctx_mut());
-        ALL_CONF_TPL->set_all(-1);
-        for (int i = 8; i < dom()->n_vars(); i++)
-            ALL_CONF_TPL->set(i, 0);
-        auto all_configs = dom()->gen_all_configs(ALL_CONF_TPL);
-        //vec<bool> all_configs_res;
-        for (int i = 0; i < int(all_configs.size()); ++i) {
-            auto e = ctx()->program_runner()->run(all_configs[i]);
-            all_configs[i]->set_id(e.contains(loc));
-            //all_configs_res.push_back(e.contains(loc));
-        }
-        ctx_mut()->program_runner()->reset_stat();
-        //=== END TEST ALL CONF =================================================================
-
-        set<hash128_t> set_conf_hash;
-
-        auto configs = dom()->gen_one_convering_configs();
-        int n_one_covering = int(configs.size());
-        auto seed_configs = get_seed_configs();
-        vec_move_append(configs, seed_configs);
-        VLOG(10, "Run initial configs (n_one_covering = {})", n_one_covering);
-        for (const auto &c : configs) {
-            auto e = ctx()->program_runner()->run(c);
-            cov()->register_cov(c, e);
-            set_conf_hash.insert(c->hash_128());
-            VLOG(20, "{}  ==>  ", *c) << e;
-        }
-
-        PMutCTree tree = new CTree(ctx());
-        {
-            tree->prepare_data_for_loc(cov()->loc(loc));
-            tree->build_tree();
-            LOG(INFO, "INITIAL DECISION TREE = \n") << (*tree);
-        }
-
-        int N_ROUNDS = ctx()->get_option_as<int>("rounds");
-        for (int iteration = 0; iteration < N_ROUNDS; ++iteration) {
-            LOG(INFO, "{:=^80}", fmt::format("  Iteration {}  ", iteration));
-
-
-            //LOG(INFO, "n_min_cases_in_one_leaf = {}", tree->n_min_cases_in_one_leaf());
-            vec<PMutConfig> cex;
-            int lim_gather = tree->n_min_cases_in_one_leaf(), prev_lim_gather = -1;
-            int skipped = 0, cex_tried = 0;
-            while (cex.empty()) {
-                vec<PConfig> tpls = tree->gather_small_leaves(prev_lim_gather + 1, lim_gather);
-                LOG_BLOCK(INFO, {
-                    fmt::print(log, "Tpls =  (lim {} -> {})\n", prev_lim_gather + 1, lim_gather);
-                    for (const auto &c : tpls) log << *c << "\n";
-                });
-
-                for (const auto &t : tpls) {
-                    vec<PMutConfig> vp = dom()->gen_one_convering_configs(t);
-                    //vec_move_append(cex, vp);
-                    for (auto &c : vp) {
-                        if (!set_conf_hash.insert(c->hash_128()).second)
-                            skipped++;
-                        else
-                            cex.emplace_back(move(c));
-                    }
-                }
-                prev_lim_gather = lim_gather;
-                lim_gather *= 2;
-                CHECK_LE(lim_gather, int(1e9));
-                if (++cex_tried == 2) break;
-            }
-            LOG(INFO, "Skipped {} duplicated configs", skipped);
-            while (cex.empty()) {
-                LOG(WARNING, "Can't gen cex, try random configs");
-                const auto &vp = dom()->gen_one_convering_configs();
-                for (auto &c : vp) {
-                    if (set_conf_hash.insert(c->hash_128()).second)
-                        cex.emplace_back(move(c));
-                }
-                if (++cex_tried == 30) {
-                    LOG(ERROR, "Can't gen cex anymore");
-                    goto end_alg;
-                }
-            }
-
-//            LOG_BLOCK(INFO, {
-//                log << "New CEXs = \n";
-//                for (const auto &c : cex) log << *c << "\n";
-//            });
-
-            for (const auto &c : cex) {
-                auto e = ctx()->program_runner()->run(c);
-                cov()->register_cov(c, e);
-                VLOG(20, "{}  ==>  ", *c) << e;
-            }
-
-
-
-            // =============================
-
-
-            tree->cleanup();
-            tree->prepare_data_for_loc(cov()->loc(loc));
-            tree->build_tree();
-            LOG(INFO, "DECISION TREE = \n") << (*tree);
-            z3::expr e = tree->build_zexpr(CTree::DisjOfConj);
-            e = e.simplify();
-            //e = ctx()->zctx_solver_simplify(e);
-            //LOG(INFO, "EXPR AFTER = \n") << e;
-
-
-            // ==== TEST=================
-            int n_wrongs = 0;
-            vec<PConfig> vwrongs;
-            for (const auto &c : all_configs) {
-                bool c_eval = c->eval(e);
-                bool truth = c->id();
-                bool tree_eval = tree->test_config(c).first;
-                CHECK_EQ(c_eval, tree_eval);
-                bool wr = (c_eval != truth);
-                n_wrongs += wr;
-                if (wr && vwrongs.size() < 10) vwrongs.push_back(c);
-            }
-            LOG(INFO, "VERIFY error {}/{} ( {:.1f}% )",
-                n_wrongs, all_configs.size(),
-                (n_wrongs * 100.0) / double(all_configs.size()));
-            if (n_wrongs <= 10) {
-                LOG_BLOCK(INFO, {
-                    log << "Wrong configs:\n";
-                    for (const auto &c : vwrongs) log << *c << '\n';
-                });
-            }
-//            if (n_wrongs == 0 && N_ROUNDS - iteration > 5) {
-//                N_ROUNDS = iteration + 5 + 1;
-//                LOG(WARNING, "Early cut to {} interations", N_ROUNDS);
-//            }
-            // ==== END TEST ============
-        }
-
-        end_alg:
-        LOG(INFO, "Runner n_runs = {}", ctx()->program_runner()->n_runs());
-    }
-
-
-#define TREE_DATA(id) auto &[tree, shared_tree, tree_need_rebuild] = vec_loc_data.at(size_t(id))
+#define TREE_DATA(id) auto &locdat = vec_loc_data.at(size_t(id)); auto &tree = locdat.tree; auto &shared_tree = locdat.shared_tree
 
     void finalize_build_trees() {
         LOG(INFO, "finalize_build_trees");
@@ -246,7 +70,6 @@ public:
     struct LocData {
         PMutCTree tree;
         PCTree shared_tree;
-        bool tree_need_rebuild;
     };
     vec<LocData> vec_loc_data;
     bool iter_try_nodes = true;
@@ -363,7 +186,7 @@ public:
                 bool tree_eval = (tree != nullptr ?
                                   tree->test_add_config(c, new_truth).first : shared_tree->test_config(c).first);
 
-                tree_need_rebuild = (tree_eval != new_truth);
+                bool tree_need_rebuild = (tree_eval != new_truth);
                 if (tree_need_rebuild) {
                     n_rebuilds++;
                     if (tree != nullptr) n_rebuilds_uniq++;
@@ -532,8 +355,6 @@ public:
             gSignalStatus = signal;
         });
         switch (ctx()->get_option_as<int>("alg-version")) {
-            case 0:
-                return run_alg_test_0();
             case 1:
                 return run_alg_test_1();
             default:
