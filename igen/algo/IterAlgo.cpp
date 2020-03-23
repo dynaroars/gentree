@@ -108,11 +108,19 @@ public:
             if (tree == nullptr) {
                 tree = new CTree(ctx()), tree->prepare_data_for_loc(loc), tree->build_tree();
                 VLOG(30, "NEW DECISION TREE (n_min_cases = {}) = \n", tree->n_min_cases_in_one_leaf()) << (*tree);
-            }
 
-            if (!locdat.ignored()) {
                 n_min_cases_in_one_leaf = std::min(n_min_cases_in_one_leaf, tree->n_min_cases_in_one_leaf());
                 tree->gather_leaves_nodes(leaves, 0, cov()->n_configs() - 1);
+            }
+        }
+        if (leaves.empty()) {
+            for (const PLocation &loc : cov()->locs()) {
+                TREE_DATA(loc->id());
+                (void) shared_tree;
+                if (!locdat.ignored() && tree != nullptr) {
+                    n_min_cases_in_one_leaf = std::min(n_min_cases_in_one_leaf, tree->n_min_cases_in_one_leaf());
+                    tree->gather_leaves_nodes(leaves, 0, cov()->n_configs() - 1);
+                }
             }
         }
         // ============================================================================================================
@@ -204,6 +212,8 @@ public:
                     re_iter.push_back(iter);
                     while (re_iter.size() && re_iter.front() < iter - REBUILD_THR) re_iter.pop_front();
                     long ig_th = std::max(100l, (long) IGNORE_THR - (iter - REBUILD_THR * 2l));
+                    if (ig_th == 100)
+                        ig_th = std::max(1l, ig_th - (iter - REBUILD_THR * 2l) / 20);
                     if (iter > REBUILD_THR * 2 && (long) re_iter.size() > ig_th) {
                         LOG(WARNING, "Ignored loc ({}) {}.   re_iter={},ig_th={}",
                             loc->id(), loc->name(), re_iter.size(), ig_th);
