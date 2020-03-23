@@ -405,7 +405,7 @@ vec<ptr<Config>> CNode::gen_one_convering_configs(int lim) const {
     for (const auto &c : hit_configs()) shash.insert(c->hash_128());
     for (const auto &c : miss_configs()) shash.insert(c->hash_128());
     for (const auto &c : new_configs_) shash.insert(c->hash_128());
-    bool use_solver = (shash.size() <= 10000);
+    bool use_solver = (shash.size() <= 1000);
     //====
     vec<sm_vec<int>> SetVAL;
     SetVAL.reserve((size_t) dom->n_vars());
