@@ -149,6 +149,8 @@ static std::string read_stream_to_str(std::istream &in) {
 }
 
 void GCovRunner::exec(const vec<str> &config_values) {
+#define PRINT_VERBOSE 0
+
     for (const auto &ce : cmds) {
         switch (ce.cmd) {
             case Cmd::Run: {
@@ -158,19 +160,26 @@ void GCovRunner::exec(const vec<str> &config_values) {
                     if (s == "{}") vec_append(run_arg, config_values);
                     else run_arg.emplace_back(s);
                 }
-                VLOG(10, "Run: {} {}", f_bin, fmt::join(run_arg, " "));
+                LOG_IF(INFO, PRINT_VERBOSE, "Run: {} {}", f_bin, fmt::join(run_arg, " "));
 
                 bp::ipstream out, err;
-                bp::child proc_child(f_bin, bp::args(run_arg), bp::start_dir(f_wd), bp::env(bp_env),
-                                     bp::std_out > bp::null, bp::std_err > err);
+                bp::child proc_child(
+                        f_bin, bp::args(run_arg), bp::start_dir(f_wd), bp::env(bp_env),
+#if PRINT_VERBOSE
+                        bp::std_out > out, bp::std_err > err
+#else
+                        bp::std_out > bp::null, bp::std_err > err
+#endif
+                );
                 CHECKF(proc_child, "Error running process: {} {}", f_bin, fmt::join(run_arg, " "));
                 proc_child.wait();
                 //LOG(INFO, "ec = {}", proc_child.exit_code()) << out.rdbuf();
                 //GLOG(INFO) << err.rdbuf();
-
-//                str str_out = read_stream_to_str(out);
+#if PRINT_VERBOSE
+                str str_out = read_stream_to_str(out);
+                VLOG(10, "Out: {}", str_out);
+#endif
                 str str_err = read_stream_to_str(err);
-//                VLOG(10, "Out: {}", str_out);
 //                VLOG(10, "Err: {}", str_err);
                 // TODO: Check stderr
                 break;
