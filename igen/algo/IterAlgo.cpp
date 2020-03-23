@@ -279,7 +279,7 @@ public:
                 LOG(WARNING, "Early break at iteration {}", iter);
                 break;
             }
-            if (gSignalStatus == SIGUSR1) {
+            if (gSignalStatus == SIGINT) {
                 LOG(WARNING, "Requested break at iteration {}", iter);
                 ctx()->program_runner()->flush_compact_cachedb();
                 break;
@@ -296,14 +296,7 @@ public:
     }
 
     void finish_alg1(bool expensive_simplify = true) {
-        bool out_to_file = false;
-        std::ofstream outstream;
-        if (ctx()->has_option("output")) {
-            str fout = ctx()->get_option_as<str>("output");
-            outstream.open(fout);
-            out_to_file = true;
-            CHECKF(!outstream.fail(), "Can't open output file {}", fout);
-        }
+        bool out_to_file = ctx()->has_option("output");
 
         struct LineEnt {
             vec<PLocation> locs;
@@ -318,6 +311,7 @@ public:
         map_loc_hash.clear();
         auto expr_strat = CTree::FreeMix;
         if (ctx()->has_option("disj-conj")) expr_strat = CTree::DisjOfConj;
+        int simpl_cnt = 0;
         for (const PLocation &loc : cov()->locs()) {
             if (loc->id() >= int(vec_loc_data.size())) break;
             std::stringstream log;
@@ -325,11 +319,13 @@ public:
             PLocation &mloc = map_loc_hash[loc->digest_cov_by_hash()];
             fmt::print(log, "{:>5}: {:<16}  ==>  ", loc->id(), loc->name());
             if (mloc == nullptr) {
+                bool do_simpl = expensive_simplify && !locdat.ignored();
+                LOG_IF(INFO, do_simpl, "Simplifying expr: {} ({}) {}", ++simpl_cnt, loc->id(), loc->name());
                 CHECK_NE(tree, nullptr);
                 mloc = loc;
                 z3::expr e = tree->build_zexpr(expr_strat);
                 e = e.simplify();
-                if (expensive_simplify) e = ctx()->zctx_solver_simplify(e);
+                if (do_simpl) e = ctx()->zctx_solver_simplify(e);
 
                 if (out_to_file) {
                     auto &et = ents.at(size_t(loc->id()));
@@ -359,6 +355,11 @@ public:
             prunner->n_runs(), prunner->n_locs(), prunner->n_cache_hit());
 
         if (out_to_file) {
+            std::ofstream outstream;
+            str fout = ctx()->get_option_as<str>("output");
+            outstream.open(fout);
+            CHECKF(!outstream.fail(), "Can't open output file {}", fout);
+
             fmt::print(outstream, "# seed = {}\n", ctx()->get_option_as<uint64_t>("seed"));
             fmt::print(outstream,
                        "# configs = {}, locs = {}, uniq_locs = {}\n# n_runs = {}, n_total_locs = {}\n======\n",
@@ -389,7 +390,7 @@ public:
     }
 
     void run_alg() {
-        std::signal(SIGUSR1, [](int signal) {
+        std::signal(SIGINT, [](int signal) {
             if (gSignalStatus) {
                 RAW_LOG(ERROR, "Force terminate");
                 exit(1);
