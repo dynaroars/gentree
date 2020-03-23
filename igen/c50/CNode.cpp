@@ -156,28 +156,40 @@ int CNode::select_best_var(bool first_pass) {
 void CNode::create_childs() {
     CHECK(0 <= splitvar && splitvar < dom()->n_vars());
     int nvalues = dom()->n_values(splitvar);
-    for (int hit = 0; hit <= 1; ++hit) {
-        auto &c = configs_[hit];
-        std::sort(c.begin(), c.end(), [splitvar = splitvar](const auto &a, const auto &b) {
-            return a->get(splitvar) < b->get(splitvar);
-        });
-    }
 
     tested_vars_[splitvar] = true;
     childs.resize(nvalues);
 
-    vec<PConfig>::iterator beg[2], end[2] = {miss_configs().begin(), hit_configs().begin()};
-    vec<PConfig>::iterator real_end[2] = {miss_configs().end(), hit_configs().end()};
-    for (int val = 0; val < nvalues; ++val) {
-        for (int hit = 0; hit <= 1; ++hit) {
-            beg[hit] = end[hit];
-            while (end[hit] != real_end[hit] && (*end[hit])->value(splitvar) == val)
-                end[hit]++;
+    for (int hit = 0; hit <= 1; ++hit) {
+        auto &c = configs_[hit];
+        const auto &freq = tree->t_freq[hit][splitvar];
+        auto &tmp_conf = tree->t_conf;
+        tmp_conf.assign(std::make_move_iterator(c.begin()), std::make_move_iterator(c.end()));
+        auto &curpos = tree->t_curpos[hit];
+        curpos.resize(nvalues);
+        curpos[0] = c.begin();
+        for (int i = 1; i < nvalues; ++i) {
+            curpos[i] = curpos[i - 1] + freq[i - 1];
         }
+        for (auto &x : tmp_conf) {
+            int v = x->values()[splitvar];
+            *curpos[v]++ = move(x);
+        }
+        CHECK(curpos[nvalues - 1] == c.end());
+        //DCHECK(std::is_sorted(c.begin(), c.end(), [splitvar = splitvar](const auto &a, const auto &b) {
+        //    return a->get(splitvar) < b->get(splitvar);
+        //}));
+        //std::stable_sort(c.begin(), c.end(), [splitvar = splitvar](const auto &a, const auto &b) {
+        //    return a->get(splitvar) < b->get(splitvar);
+        //});
+    }
 
-        boost::sub_range<vec<PConfig>> miss_conf = {beg[0], end[0]};
-        boost::sub_range<vec<PConfig>> hit_conf = {beg[1], end[1]};
-        childs[val] = new CNode(tree, this, val, {miss_conf, hit_conf});
+    for (int i = 0; i < nvalues; ++i) {
+        auto &pos = tree->t_curpos;
+        auto &c = configs_;
+        boost::sub_range<vec<PConfig>> miss_conf = {i == 0 ? c[0].begin() : pos[0][i - 1], pos[0][i]};
+        boost::sub_range<vec<PConfig>> hit_conf = {i == 0 ? c[1].begin() : pos[1][i - 1], pos[1][i]};
+        childs[i] = new CNode(tree, this, i, {miss_conf, hit_conf});
     }
 }
 
