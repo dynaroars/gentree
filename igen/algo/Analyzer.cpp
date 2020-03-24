@@ -17,6 +17,7 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/container/flat_map.hpp>
+#include <klib/random.h>
 
 namespace igen {
 
@@ -147,6 +148,47 @@ public:
             slocsa.size(), slocsb.size(), totalcex);
     }
 
+    // try random conf
+    void run_analyze_1() {
+        ctx()->program_runner()->init();
+
+        auto finp = get_inp();
+        CHECK_EQ(finp.size(), 1) << "Need 1 input file";
+        auto ma = read_file(finp.at(0));
+        int n_inter = ctx()->get_option_as<int>("rounds");
+        PMutConfig c = new Config(ctx_mut());
+        set<hash_t> all_configs, wrong_configs;
+        set<str> wrong_locs, wrong_locs_uniq, empty_set;
+        for (int iter = 1; iter <= n_inter; ++iter) {
+            for (int i = 0; i < dom()->n_vars(); ++i)
+                c->set(i, Rand.get(dom()->n_values(i)));
+            all_configs.insert(c->hash(true));
+
+            set<str> e = ctx()->program_runner()->run(c);
+            map<unsigned, bool> eval_cache;
+            for (const auto &p : ma) {
+                auto eid = p.second.id();
+                auto it = eval_cache.find(eid);
+                bool eval_res, uniq_loc;
+                if (it == eval_cache.end()) eval_res = eval_cache[eid] = c->eval(p.second), uniq_loc = true;
+                else eval_res = it->second, uniq_loc = false;
+
+                bool truth = e.contains(p.first);
+                if (eval_res != truth) {
+                    wrong_configs.insert(c->hash());
+                    wrong_locs.insert(p.first);
+                    if (uniq_loc) wrong_locs_uniq.insert(p.first);
+                }
+            }
+            if (iter % 10 == 0) {
+                LOG(INFO, "{:>4} | {:>4} {:>4} | {:>4} {:>4} | ",
+                    iter,
+                    all_configs.size(), wrong_configs.size(),
+                    wrong_locs_uniq.size(), wrong_locs.size())
+                        << (sz(wrong_locs_uniq) <= 10 ? wrong_locs_uniq : empty_set);
+            }
+        }
+    }
 
     vec<str> get_inp() {
         str inp = ctx()->get_option_as<str>("input");
@@ -162,6 +204,8 @@ public:
         switch (ctx()->get_option_as<int>("alg-version")) {
             case 0:
                 return run_analyzer_0();
+            case 1:
+                return run_analyze_1();
             default:
                 CHECK(0);
         }
