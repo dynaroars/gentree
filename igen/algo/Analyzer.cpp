@@ -160,9 +160,10 @@ public:
         set<hash_t> all_configs, wrong_configs;
         set<str> wrong_locs, wrong_locs_uniq, empty_set, missing_locs;
         for (int iter = 1; iter <= n_inter; ++iter) {
-            for (int i = 0; i < dom()->n_vars(); ++i)
-                c->set(i, Rand.get(dom()->n_values(i)));
-            all_configs.insert(c->hash(true));
+            do {
+                for (int i = 0; i < dom()->n_vars(); ++i)
+                    c->set(i, Rand.get(dom()->n_values(i)));
+            } while (!all_configs.insert(c->hash(true)).second);
 
             set<str> e = ctx()->program_runner()->run(c);
             map<unsigned, bool> eval_cache;

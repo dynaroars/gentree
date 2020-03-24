@@ -276,7 +276,7 @@ public:
             if (!dat->ignored) v_next_iter.emplace_back(dat);
     }
 
-    void finish_alg(int iter, str header = "FINAL RESULT", bool expensive_simplify = true) {
+    void finish_alg(int iter, const str &header = "FINAL RESULT", bool expensive_simplify = true) {
         bool out_to_file = ctx()->has_option("output");
         auto expr_strat = CTree::FreeMix;
         if (ctx()->has_option("disj-conj")) expr_strat = CTree::DisjOfConj;
