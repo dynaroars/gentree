@@ -15,9 +15,10 @@ CTree::CTree(PMutContext ctx) :
         t_info(dom()->create_vec_vars<double>()), t_gain(dom()->create_vec_vars<double>()) {
 }
 
-void CTree::prepare_data_for_loc(const PLocation &loc) {
+void CTree::prepare_data(const PLocation &loc) {
     CHECK_NE(loc->id(), -1);
     CHECK(root_ == nullptr);
+    hit_configs().reserve((size_t) cov()->n_configs()), miss_configs().reserve((size_t) cov()->n_configs());
     auto it = loc->cov_by_ids().begin(), it_end = loc->cov_by_ids().end();
     for (const auto &c : cov()->configs()) {
         if (it != it_end && *it == c->id()) {

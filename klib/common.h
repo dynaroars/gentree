@@ -32,6 +32,17 @@ template<class T> using ptr = boost::intrusive_ptr<T>;
 
 using expr = z3::expr;
 
+template<class T>
+static constexpr T kMAX = std::numeric_limits<T>::max();
+template<class T>
+static constexpr T kMIN = std::numeric_limits<T>::min();
+
+template<class T>
+static inline constexpr bool maxi(T &a, const T &b) { return a < b ? a = b, true : false; }
+
+template<class T>
+static inline constexpr bool mini(T &a, const T &b) { return b < a ? a = b, true : false; }
+
 }
 
 #endif //IGEN4_COMMON_H

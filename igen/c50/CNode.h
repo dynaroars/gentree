@@ -46,7 +46,7 @@ public:
     int n_childs() const { return int(childs.size()); }
 
     // SEMI PRIVATE
-    int min_cases_in_one_leaf() const { return min_cases_in_one_leaf_; }
+    int n_min_cases() const { return min_cases_in_one_leaf_; }
 
     vec<ptr<Config>> gen_one_convering_configs(int lim = std::numeric_limits<int>::max()) const;
 

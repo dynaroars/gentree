@@ -42,7 +42,7 @@ public:
         int n_rebuilds = 0;
         for (const PLocation &loc : cov()->locs()) {
             if (loc->id() >= int(vec_loc_data.size())) break;
-            PLocation &mloc = map_loc_hash[loc->digest_cov_by_hash()];
+            PLocation &mloc = map_loc_hash[loc->hash()];
             TREE_DATA(loc->id());
 
             if (mloc == nullptr) {
@@ -56,12 +56,12 @@ public:
                 continue;
             }
 
-            tree = new CTree(ctx()), tree->prepare_data_for_loc(loc), tree->build_tree();
-            VLOG(30, "DECISION TREE (n_min_cases = {}) = \n", tree->n_min_cases_in_one_leaf()) << (*tree);
-            n_min_cases_in_one_leaf = std::min(n_min_cases_in_one_leaf, tree->n_min_cases_in_one_leaf());
+            tree = new CTree(ctx()), tree->prepare_data(loc), tree->build_tree();
+            VLOG(30, "DECISION TREE (n_min_cases = {}) = \n", tree->n_min_cases()) << (*tree);
+            n_min_cases_in_one_leaf = std::min(n_min_cases_in_one_leaf, tree->n_min_cases());
             n_rebuilds++;
         }
-        LOG(INFO, "(END finalize_build_trees) unique locations = {}, n_min_cases_in_one_leaf = {}, n_unvisited = {}",
+        LOG(INFO, "(END finalize_build_trees) unique locations = {}, n_min_cases = {}, n_unvisited = {}",
             n_rebuilds, n_min_cases_in_one_leaf, int(vec_loc_data.size()) - cov()->n_locs());
     }
 
@@ -96,7 +96,7 @@ public:
         int n_min_cases_in_one_leaf = std::numeric_limits<int>::max(), n_uniq_locs = 0;
         map_loc_hash.clear();
         for (const PLocation &loc : cov()->locs()) {
-            PLocation &mloc = map_loc_hash[loc->digest_cov_by_hash()];
+            PLocation &mloc = map_loc_hash[loc->hash()];
             TREE_DATA(loc->id());
 
             if (mloc == nullptr) {
@@ -112,10 +112,10 @@ public:
             }
 
             if (tree == nullptr) {
-                tree = new CTree(ctx()), tree->prepare_data_for_loc(loc), tree->build_tree();
-                VLOG(30, "NEW DECISION TREE (n_min_cases = {}) = \n", tree->n_min_cases_in_one_leaf()) << (*tree);
+                tree = new CTree(ctx()), tree->prepare_data(loc), tree->build_tree();
+                VLOG(30, "NEW DECISION TREE (n_min_cases = {}) = \n", tree->n_min_cases()) << (*tree);
 
-                n_min_cases_in_one_leaf = std::min(n_min_cases_in_one_leaf, tree->n_min_cases_in_one_leaf());
+                n_min_cases_in_one_leaf = std::min(n_min_cases_in_one_leaf, tree->n_min_cases());
                 if (leaves.empty())
                     tree->gather_leaves_nodes(leaves, 0, 16);
             }
@@ -125,7 +125,7 @@ public:
                 TREE_DATA(loc->id());
                 (void) shared_tree;
                 if (!locdat.ignored() && tree != nullptr) {
-                    n_min_cases_in_one_leaf = std::min(n_min_cases_in_one_leaf, tree->n_min_cases_in_one_leaf());
+                    n_min_cases_in_one_leaf = std::min(n_min_cases_in_one_leaf, tree->n_min_cases());
                     tree->gather_leaves_nodes(leaves, 0, cov()->n_configs() - 1);
                 }
             }
@@ -133,8 +133,8 @@ public:
         // ============================================================================================================
 
         std::sort(leaves.begin(), leaves.end(), [](const PCNode &a, const PCNode &b) {
-            if (a->min_cases_in_one_leaf() != b->min_cases_in_one_leaf())
-                return a->min_cases_in_one_leaf() < b->min_cases_in_one_leaf();
+            if (a->n_min_cases() != b->n_min_cases())
+                return a->n_min_cases() < b->n_min_cases();
             else
                 return a->depth() > b->depth();
         });
@@ -144,7 +144,7 @@ public:
         const auto gen_for = [this, &max_min_cases, &skipped, &cex](
                 const PCNode &node, int lim = std::numeric_limits<int>::max()) {
             int skipped_me = 0;
-            max_min_cases = std::max(max_min_cases, node->min_cases_in_one_leaf());
+            max_min_cases = std::max(max_min_cases, node->n_min_cases());
             for (auto &c : node->gen_one_convering_configs(lim)) {
                 if (set_conf_hash.insert(c->hash_128()).second) { cex.emplace_back(move(c)); }
                 else { skipped++, skipped_me++; }
@@ -153,7 +153,7 @@ public:
         };
         if (iter_try_nodes) {
             for (const PCNode &node : leaves) {
-                if (node->min_cases_in_one_leaf() > 0 && cex.size() > 10) break;
+                if (node->n_min_cases() > 0 && cex.size() > 10) break;
                 if (cex.size() > 20) break;
                 gen_for(node);
             }
@@ -322,7 +322,7 @@ public:
             if (loc->id() >= int(vec_loc_data.size())) break;
             std::stringstream log;
             TREE_DATA(loc->id());
-            PLocation &mloc = map_loc_hash[loc->digest_cov_by_hash()];
+            PLocation &mloc = map_loc_hash[loc->hash()];
             fmt::print(log, "{:>5}: {:<16}  ==>  ", loc->id(), loc->name());
             if (mloc == nullptr) {
                 bool do_simpl = expensive_simplify && !locdat.ignored();

@@ -22,7 +22,7 @@ public:
 
     explicit CTree(PMutContext ctx);
 
-    void prepare_data_for_loc(const PLocation &loc);
+    void prepare_data(const PLocation &loc);
 
     void build_tree();
 
@@ -45,7 +45,7 @@ public:
     void cleanup() override;
 
 public: // For gen CEX
-    int n_min_cases_in_one_leaf() const { return root_->min_cases_in_one_leaf_; };
+    int n_min_cases() const { return root_->min_cases_in_one_leaf_; };
 
     vec<PConfig> gather_small_leaves(int min_confs, int max_confs) const;
 

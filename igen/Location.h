@@ -34,7 +34,7 @@ public:
 
     void add_cov_by_conf_id(int conf_id);
 
-    hash128_t digest_cov_by_hash() const { return cov_by_hash_.digest(); }
+    hash128_t hash() const { return cov_by_hash_.digest(); }
 
 private:
     str name_;
