@@ -208,11 +208,13 @@ public:
             bool finished = false, need_rebuild = true;
             int c_success = 0;
             meidx++;
-            for (int t = 1; t <= 10; ++t) {
+            int lim_times = 10, consecutive_success = 3;
+            if (dat->messed_up >= 5) lim_times = 20, consecutive_success = 6;
+            for (int t = 1; t <= lim_times; ++t) {
                 if (gSignalStatus == SIGINT) return false;
                 if (run_one_loc(iter, meidx, t, dat, need_rebuild, c_success > 0)) {
                     need_rebuild = false;
-                    if (++c_success == 3) {
+                    if (++c_success == consecutive_success) {
                         finished = true;
                         break;
                     }
