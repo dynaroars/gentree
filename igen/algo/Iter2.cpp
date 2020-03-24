@@ -159,6 +159,10 @@ public:
         } else {
             tree->gather_nodes(leaves, 0, std::max(16, tree->n_min_cases() + 1)), sort_leaves(leaves);
             gen_cex(cex, leaves, 5);
+            if (cex.empty()) {
+                tree->gather_nodes(leaves), sort_leaves(leaves);
+                gen_cex(cex, leaves, 0, 5, 0);
+            }
         }
         const auto &loc = dat->loc;
         if (cex.empty()) {
@@ -208,8 +212,8 @@ public:
             bool finished = false, need_rebuild = true;
             int c_success = 0;
             meidx++;
-            int lim_times = 10, consecutive_success = 3;
-            if (dat->messed_up >= 5) lim_times = 20, consecutive_success = 6;
+            const int lim_times = 10, consecutive_success = 3;
+            // if (dat->messed_up >= 5) lim_times = 20, consecutive_success = 6;
             for (int t = 1; t <= lim_times; ++t) {
                 if (gSignalStatus == SIGINT) return false;
                 if (run_one_loc(iter, meidx, t, dat, need_rebuild, c_success > 0)) {
