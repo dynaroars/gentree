@@ -11,14 +11,14 @@
 
 namespace igen {
 
-typedef std::pair<uint64_t, uint64_t> hash128_t;
+typedef std::pair<uint64_t, uint64_t> hash_t;
 
-static constexpr hash128_t hash128_empty = {0, 0};
+static constexpr hash_t hash128_empty = {0, 0};
 
-hash128_t calc_hash_128(const boost::dynamic_bitset<> &bs);
+hash_t calc_hash_128(const boost::dynamic_bitset<> &bs);
 
 template<typename T>
-hash128_t calc_hash_128(const std::vector<T> &vec);
+hash_t calc_hash_128(const std::vector<T> &vec);
 
 }
 

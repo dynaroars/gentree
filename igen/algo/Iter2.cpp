@@ -36,7 +36,7 @@ public:
 public:
     int terminate_counter = 0, max_terminate_counter = 0, n_iterations = 0;
     bool full_configs = false;
-    set<hash128_t> set_conf_hash, set_ran_conf_hash;
+    set<hash_t> set_conf_hash, set_ran_conf_hash;
 
     struct LocData;
     using PLocData = ptr<LocData>;
@@ -74,7 +74,7 @@ public:
             LOG(INFO, "Running initial configs (n_one_covering = {}, n_seed_configs = {})", n_one_covering,
                 n_seed_configs);
         }
-        for (const auto &c : init_configs) set_conf_hash.insert(c->hash_128()), run_config(c);
+        for (const auto &c : init_configs) set_conf_hash.insert(c->hash()), run_config(c);
         LOG(INFO, "Done running {} init configs", init_configs.size());
         // ====
         for (int iter = 1; iter <= n_iterations; ++iter) {
@@ -92,16 +92,39 @@ public:
         // ====
     }
 
-    bool gen_cex(vec<PMutConfig> &cex, const vec<PCNode> &leaves) {
+    bool gen_cex(vec<PMutConfig> &cex, const vec<PCNode> &leaves, int n_small, int n_rand = 0, int n_large = 0) {
         int gen_cnt = 0, skipped = 0, max_min_cases = -1;
-        for (const PCNode &node : leaves) {
+        const auto gen_for = [this, &max_min_cases, &skipped, &cex, &gen_cnt](const PCNode &node, int lim = kMAX<int>) {
+            int skipped_me = 0;
             maxi(max_min_cases, node->n_min_cases());
-            for (auto &c : node->gen_one_convering_configs()) {
-                if (set_conf_hash.insert(c->hash_128()).second) { cex.emplace_back(move(c)); }
-                else { skipped++, skipped++; }
+            for (auto &c : node->gen_one_convering_configs(lim)) {
+                if (set_conf_hash.insert(c->hash()).second) { cex.emplace_back(move(c)), gen_cnt++; }
+                else { skipped++, skipped_me++; }
             }
+            return skipped_me;
+        };
+        // ====
+        for (const PCNode &node : leaves) {
+            if (sz(cex) >= n_small) break;
+            gen_for(node);
         }
-        LOG(INFO, "Gen  {:>2} cex, skipped {}, max_min_cases = {}", cex.size(), skipped, max_min_cases);
+        LOG(INFO, "Small: {:>2} cex, skipped {}, max_min_cases = {}", cex.size(), skipped, max_min_cases);
+        // ====
+        int rand_skip = 0;
+        n_rand += n_small, max_min_cases = -1;
+        while (sz(cex) < n_rand) {
+            if (gen_for(*Rand.get(leaves)) > 0 && ++rand_skip == 10) break;
+        }
+        LOG(INFO, "Rand : {:>2} cex, skipped {}, max_min_cases = {}, rand_skip = {}",
+            cex.size(), skipped, max_min_cases, rand_skip);
+        // ====
+        n_large += n_rand, max_min_cases = -1;
+        for (const PCNode &node : boost::adaptors::reverse(leaves)) {
+            if (sz(cex) >= n_large) break;
+            gen_for(node);
+        }
+        LOG(INFO, "Large: {:>2} cex, skipped {}, max_min_cases = {}", cex.size(), skipped, max_min_cases);
+        // ====
         return gen_cnt;
     }
 
@@ -112,8 +135,10 @@ public:
 
         vec<PMutConfig> cex;
         vec<PCNode> leaves;
-        tree->gather_leaves_nodes(leaves, 0, tree->n_min_cases() + 1);
-
+        tree->gather_nodes(leaves, 0, tree->n_min_cases() + 1);
+        if(gen_cex(cex, leaves, 10) == 0) {
+            tree->gather_nodes(leaves, 0, tree->n_min_cases() + 1);
+        }
         return false;
     }
 
@@ -136,7 +161,7 @@ public:
     }
 
 private:
-    map<hash128_t, PLocData> map_hash_locs;
+    map<hash_t, PLocData> map_hash_locs;
 
     vec<PLocData> prepare_vec_loc_data() {
         vec<PLocData> v_new_locdat;
@@ -157,7 +182,7 @@ private:
     void run_config(const PMutConfig &c) {
         auto loc_names = ctx()->program_runner()->run(c);
         cov()->register_cov(c, loc_names);
-        CHECK(set_ran_conf_hash.insert(c->hash_128()).second);
+        CHECK(set_ran_conf_hash.insert(c->hash()).second);
         if (dom()->n_vars() <= 16 && loc_names.size() <= 16) {
             VLOG(50, "{}  ==>  ", *c) << loc_names;
         } else {

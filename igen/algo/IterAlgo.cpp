@@ -73,8 +73,8 @@ public:
         return (int) std::max(res, 1.0);
     }
 
-    set<hash128_t> set_conf_hash, set_ran_conf_hash;
-    map<hash128_t, PLocation> map_loc_hash;
+    set<hash_t> set_conf_hash, set_ran_conf_hash;
+    map<hash_t, PLocation> map_loc_hash;
 
     struct LocData {
         PMutCTree tree;
@@ -117,7 +117,7 @@ public:
 
                 n_min_cases_in_one_leaf = std::min(n_min_cases_in_one_leaf, tree->n_min_cases());
                 if (leaves.empty())
-                    tree->gather_leaves_nodes(leaves, 0, 16);
+                    tree->gather_nodes(leaves, 0, 16);
             }
         }
         if (leaves.empty()) {
@@ -126,7 +126,7 @@ public:
                 (void) shared_tree;
                 if (!locdat.ignored() && tree != nullptr) {
                     n_min_cases_in_one_leaf = std::min(n_min_cases_in_one_leaf, tree->n_min_cases());
-                    tree->gather_leaves_nodes(leaves, 0, cov()->n_configs() - 1);
+                    tree->gather_nodes(leaves, 0, cov()->n_configs() - 1);
                 }
             }
         }
@@ -146,7 +146,7 @@ public:
             int skipped_me = 0;
             max_min_cases = std::max(max_min_cases, node->n_min_cases());
             for (auto &c : node->gen_one_convering_configs(lim)) {
-                if (set_conf_hash.insert(c->hash_128()).second) { cex.emplace_back(move(c)); }
+                if (set_conf_hash.insert(c->hash()).second) { cex.emplace_back(move(c)); }
                 else { skipped++, skipped_me++; }
             }
             return skipped_me;
@@ -180,7 +180,7 @@ public:
             LOG(WARNING, "Can't gen cex, try random configs");
             const auto &vp = dom()->gen_one_convering_configs();
             for (auto &c : vp) {
-                if (set_conf_hash.insert(c->hash_128()).second) cex.emplace_back(move(c));
+                if (set_conf_hash.insert(c->hash()).second) cex.emplace_back(move(c));
             }
             if (++cex_rand_tried == 30) break;
         }
@@ -275,7 +275,7 @@ public:
         }
 
         LOG(INFO, "Running {} init configs", init_configs.size());
-        for (const auto &c : init_configs) set_conf_hash.insert(c->hash_128()), run_config(c);
+        for (const auto &c : init_configs) set_conf_hash.insert(c->hash()), run_config(c);
         LOG(INFO, "Done run {} init configs", init_configs.size());
 
         int N_ROUNDS = ctx()->get_option_as<int>("rounds");
@@ -385,7 +385,7 @@ public:
     void run_config(const PMutConfig &c) {
         auto e = ctx()->program_runner()->run(c);
         cov()->register_cov(c, e);
-        bool insert_new = set_ran_conf_hash.insert(c->hash_128()).second;
+        bool insert_new = set_ran_conf_hash.insert(c->hash()).second;
         CHECK(insert_new);
         if (dom()->n_vars() <= 16 && e.size() <= 16) {
             VLOG(50, "{}  ==>  ", *c) << e;

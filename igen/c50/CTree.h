@@ -49,8 +49,8 @@ public: // For gen CEX
 
     vec<PConfig> gather_small_leaves(int min_confs, int max_confs) const;
 
-    void gather_leaves_nodes(vec<PCNode> &res,
-                             int min_confs = 0, int max_confs = std::numeric_limits<int>::max()) const;
+    void gather_nodes(vec<PCNode> &res,
+                      int min_confs = 0, int max_confs = std::numeric_limits<int>::max()) const;
 
 private:
     std::array<vec<PConfig>, 2> configs_;

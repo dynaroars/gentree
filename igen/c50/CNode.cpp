@@ -398,13 +398,13 @@ vec<ptr<Config>> CNode::gen_one_convering_configs(int lim) const {
     templ.set_all(-1);
     gen_tpl(templ);
     //====
-    set<hash128_t> shash;
+    set<hash_t> shash;
     shash.reserve((size_t) n_total());
     // Note: either hit_configs() or miss_configs() is empty
     CHECK(hit_configs().empty() || miss_configs().empty());
-    for (const auto &c : hit_configs()) shash.insert(c->hash_128());
-    for (const auto &c : miss_configs()) shash.insert(c->hash_128());
-    for (const auto &c : new_configs_) shash.insert(c->hash_128());
+    for (const auto &c : hit_configs()) shash.insert(c->hash());
+    for (const auto &c : miss_configs()) shash.insert(c->hash());
+    for (const auto &c : new_configs_) shash.insert(c->hash());
     bool use_solver = (shash.size() <= 1000);
     //====
     vec<sm_vec<int>> SetVAL;
@@ -442,7 +442,7 @@ vec<ptr<Config>> CNode::gen_one_convering_configs(int lim) const {
                 vrand.push_back(i);
             }
         }
-        if (shash.insert(conf->hash_128()).second) {
+        if (shash.insert(conf->hash()).second) {
             if (z3 != nullptr) (*z3)->add(!conf->to_expr());
             ret.emplace_back(move(conf));
         } else if (use_solver) {
@@ -463,7 +463,7 @@ vec<ptr<Config>> CNode::gen_one_convering_configs(int lim) const {
                     conf->set(id, dom->var(id)->val_id_of(m.get_const_interp(dom->var(id)->zvar().decl())));
 
                 VLOG(100, "Found cex for tpl using solver ({} conds): \n", shash.size()) << templ << '\n' << *conf;
-                bool insert_res = shash.insert(conf->hash_128(true /*recalc hash*/)).second;
+                bool insert_res = shash.insert(conf->hash(true /*recalc hash*/)).second;
                 CHECK(insert_res) << *conf;
                 (*z3)->add(!conf->to_expr());
                 ret.emplace_back(move(conf));

@@ -43,6 +43,9 @@ static inline constexpr bool maxi(T &a, const T &b) { return a < b ? a = b, true
 template<class T>
 static inline constexpr bool mini(T &a, const T &b) { return b < a ? a = b, true : false; }
 
+template<class T>
+static inline int sz(const T &v) { return (int) v.size(); }
+
 }
 
 #endif //IGEN4_COMMON_H

@@ -113,7 +113,7 @@ vec<PConfig> CTree::gather_small_leaves(int min_confs, int max_confs) const {
     return res;
 }
 
-void CTree::gather_leaves_nodes(vec<PCNode> &res, int min_confs, int max_confs) const {
+void CTree::gather_nodes(vec<PCNode> &res, int min_confs, int max_confs) const {
     CHECK(root_ != nullptr);
     root_->gather_leaves_nodes(res, min_confs, max_confs);
 }
