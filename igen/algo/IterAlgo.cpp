@@ -66,7 +66,13 @@ public:
     }
 
     static constexpr int REBUILD_THR = 100;
-    static constexpr int THR_KICKIN = 3000;
+
+    int get_cur_ignore_thr(int x) {
+        static constexpr double L = 110, x0 = 15000, k = -0.000346;
+        double res = L / (1.0 + std::exp(-k * (x - x0)));
+        return (int) std::max(res, 1.0);
+    }
+
     set<hash128_t> set_conf_hash, set_ran_conf_hash;
     map<hash128_t, PLocation> map_loc_hash;
 
@@ -110,7 +116,8 @@ public:
                 VLOG(30, "NEW DECISION TREE (n_min_cases = {}) = \n", tree->n_min_cases_in_one_leaf()) << (*tree);
 
                 n_min_cases_in_one_leaf = std::min(n_min_cases_in_one_leaf, tree->n_min_cases_in_one_leaf());
-                tree->gather_leaves_nodes(leaves, 0, 16);
+                if (leaves.empty())
+                    tree->gather_leaves_nodes(leaves, 0, 16);
             }
         }
         if (leaves.empty()) {
@@ -146,26 +153,25 @@ public:
         };
         if (iter_try_nodes) {
             for (const PCNode &node : leaves) {
-                if (node->min_cases_in_one_leaf() > 0 && cex.size() > 5) break;
+                if (node->min_cases_in_one_leaf() > 0 && cex.size() > 10) break;
                 if (cex.size() > 20) break;
                 gen_for(node);
             }
         }
-        LOG(INFO, "Gen  {} cex, skipped {}, max_min_cases = {}, leaves = {}",
-            cex.size(), skipped, max_min_cases, leaves.size());
+        LOG(INFO, "Gen  {:>2} cex, skipped {}, max_min_cases = {}", cex.size(), skipped, max_min_cases);
 
         if (iter_try_nodes && terminate_counter >= 4) {
-            for (const PCNode &node : boost::adaptors::reverse(leaves)) {
-                if (cex.size() > 10) break;
-                gen_for(node);
-            }
-            LOG(INFO, "Rev  {} cex, skipped {}, max_min_cases = {}", cex.size(), skipped, max_min_cases);
             int rand_skip = 0;
-            while (cex.size() < 20) {
+            while (cex.size() < 40) {
                 const PCNode &node = *Rand.get(leaves);
                 if (gen_for(node) > 0 && ++rand_skip == 10) break;
             }
-            LOG(INFO, "Rand {} cex, skipped {}, max_min_cases = {}", cex.size(), skipped, max_min_cases);
+            LOG(INFO, "Rand {:>2} cex, skipped {}, max_min_cases = {}", cex.size(), skipped, max_min_cases);
+            for (const PCNode &node : boost::adaptors::reverse(leaves)) {
+                if (cex.size() > 50) break;
+                gen_for(node);
+            }
+            LOG(INFO, "Rev  {:>2} cex, skipped {}, max_min_cases = {}", cex.size(), skipped, max_min_cases);
         }
 
         // === Try rand
@@ -192,6 +198,7 @@ public:
 
         int n_new_locs = cov()->n_locs() - int(vec_loc_data.size());
         int n_rebuilds = 0, n_rebuilds_uniq = 0;
+        int ig_th = get_cur_ignore_thr(iter);
         for (const PMutConfig &c : cex) {
             const vec<int> cov_ids = c->cov_loc_ids();
             auto it = cov_ids.begin();
@@ -211,18 +218,11 @@ public:
                 if (tree_need_rebuild) {
                     re_iter.push_back(iter);
                     while (re_iter.size() && re_iter.front() < iter - REBUILD_THR) re_iter.pop_front();
-                    if (iter > THR_KICKIN) {
-                        long progress = iter - THR_KICKIN;
-                        long ig_th = std::max(50l, (long) REBUILD_THR - progress / 5);
-                        if (ig_th == 50l) {
-                            ig_th = std::max(5l, ig_th - progress / 100);
-                        }
-                        if ((long) re_iter.size() > ig_th) {
-                            LOG(WARNING, "Ignored loc ({}) {}.   re_iter={},ig_th={}",
-                                loc->id(), loc->name(), re_iter.size(), ig_th);
-                            locdat.ignored_ = true;
-                            continue;
-                        }
+                    if ((int) re_iter.size() > ig_th) {
+                        LOG(WARNING, "Ignored loc ({}) {}.   re_iter={}, ig_th={}",
+                            loc->id(), loc->name(), re_iter.size(), ig_th);
+                        locdat.ignored_ = true;
+                        continue;
                     }
 
                     n_rebuilds++;
@@ -236,15 +236,17 @@ public:
             }
         }
 
-        LOG(INFO, "rebuilds = {}, rebuilds_uniq = {}, new_locs = {}, min_cases = {}",
-            n_rebuilds, n_rebuilds_uniq, n_new_locs, n_min_cases_in_one_leaf);
-        LOG(INFO, "configs = {}, locs = {}, uniq_locs = {}",
-            cov()->n_configs(), cov()->n_locs(), n_uniq_locs);
         const auto &prunner = ctx()->program_runner();
-        LOG(INFO, "Runner stat: n_runs = {}, n_total_locs = {}, cache_hit = {}",
+        LOG(INFO, "    {:^10}{:^6}{:^10}{:^10}{:^8}{:^7} {:^8}{:^7}{:^6} {:^8}{:^9}{:^10}",
+            "rebuilds", "uniq", "new_locs", "min_cases", "leaves", "ig_th",
+            "configs", "locs", "uniq",
+            "runs", "all_locs", "cache_hit");
+        LOG(INFO, "    {:^10}{:^6}{:^10}{:^10}{:^8}{:^7} {:^8}{:^7}{:^6} {:^8}{:^9}{:^10}",
+            n_rebuilds, n_rebuilds_uniq, n_new_locs, n_min_cases_in_one_leaf, leaves.size(), ig_th,
+            cov()->n_configs(), cov()->n_locs(), n_uniq_locs,
             prunner->n_runs(), prunner->n_locs(), prunner->n_cache_hit());
         bool need_term = n_rebuilds == 0 && n_new_locs == 0 && n_min_cases_in_one_leaf > 0;
-        LOG_IF(WARNING, need_term, "need_term = TRUE, terminate_counter = {}", terminate_counter + 1);
+        LOG_IF(WARNING, need_term, "need_term = TRUE, terminate_counter = {:>2}", terminate_counter + 1);
         if (need_term) {
             if (++terminate_counter == max_terminate_counter) return false;
         } else {
@@ -324,7 +326,7 @@ public:
             fmt::print(log, "{:>5}: {:<16}  ==>  ", loc->id(), loc->name());
             if (mloc == nullptr) {
                 bool do_simpl = expensive_simplify && !locdat.ignored();
-                LOG_IF(INFO, do_simpl, "Simplifying expr: {} ({}) {}", ++simpl_cnt, loc->id(), loc->name());
+                LOG_IF(INFO, do_simpl, "Simplifying expr: {:>3} ({}) {}", ++simpl_cnt, loc->id(), loc->name());
                 CHECK_NE(tree, nullptr);
                 mloc = loc;
                 z3::expr e = tree->build_zexpr(expr_strat);
