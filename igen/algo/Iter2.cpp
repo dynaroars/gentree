@@ -145,10 +145,10 @@ public:
         return gen_cnt;
     }
 
-    bool run_one_loc(int iter, int meidx, int t, const PLocData &dat, bool heavy) {
+    bool run_one_loc(int iter, int meidx, int t, const PLocData &dat, bool rebuild, bool heavy) {
         CHECK(!dat->linked());
         auto &tree = dat->tree;
-        build_tree(dat);
+        if (rebuild) build_tree(dat);
 
         vec<PMutConfig> cex;
         vec<PCNode> leaves;
@@ -171,7 +171,7 @@ public:
         for (const PMutConfig &c : cex) {
             const vec<int> cov_ids = c->cov_loc_ids();
             bool new_truth = std::binary_search(cov_ids.begin(), cov_ids.end(), loc->id());
-            bool tree_eval = tree->test_config(c).first;
+            bool tree_eval = tree->test_add_config(c, new_truth).first;
             if (tree_eval != new_truth) {
                 ok = false;
                 break;
@@ -204,17 +204,19 @@ public:
         for (const auto &dat : v_loc_data) dat->queued_next = false;
         for (const auto &dat : v_this_iter) {
             CHECK(!dat->linked());
-            bool finished = false;
+            bool finished = false, need_rebuild = true;
             int c_success = 0;
             meidx++;
             for (int t = 1; t <= 50; ++t) {
                 if (gSignalStatus == SIGINT) return false;
-                if (run_one_loc(iter, meidx, t, dat, c_success > 0)) {
+                if (run_one_loc(iter, meidx, t, dat, need_rebuild, c_success > 0)) {
+                    need_rebuild = false;
                     if (++c_success == 10) {
                         finished = true;
                         break;
                     }
                 } else {
+                    need_rebuild = true;
                     c_success = 0;
                 }
             }

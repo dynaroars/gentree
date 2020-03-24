@@ -456,6 +456,7 @@ vec<ptr<Config>> CNode::gen_one_convering_configs(int lim) const {
                 for (const auto &c : miss_configs()) (*z3)->add(!c->to_expr());
                 for (const auto &c : new_configs_) (*z3)->add(!c->to_expr());
                 for (const auto &c : ret) (*z3)->add(!c->to_expr());
+                //(*z3)->set("timeout", 600u * 1000u); // 600s
             }
 
             expr e = conf->to_expr();
