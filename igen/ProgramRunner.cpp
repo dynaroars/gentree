@@ -13,10 +13,12 @@ typedef unsigned long DWORD;
 #   endif
 #endif
 
+#define BOOST_POSIX_HAS_VFORK 1
 #include <boost/process/child.hpp>
 #include <boost/process/pipe.hpp>
 #include <boost/process/io.hpp>
 #include <boost/process/args.hpp>
+#include <boost/process/posix.hpp>
 
 #include <rocksdb/db.h>
 #include <rocksdb/slice.h>
@@ -137,7 +139,8 @@ set<str> ProgramRunner::run(const PConfig &config) {
 set<str> ProgramRunner::_run_simple(const PConfig &config) const {
     bp::ipstream out, err;
     vec<str> args = config->value_labels();
-    bp::child proc_child(target, bp::args(args), bp::std_out > out, bp::std_err > err);
+    bp::child proc_child(target, bp::posix::use_vfork, bp::posix::sig.ign(),
+                         bp::args(args), bp::std_out > out, bp::std_err > err);
     CHECKF(proc_child, "Error running process {}, args {}", target, args);
 
     set<str> locations;

@@ -20,12 +20,14 @@ typedef unsigned long DWORD;
 #   endif
 #endif
 
+#define BOOST_POSIX_HAS_VFORK 1
 #include <boost/process/child.hpp>
 #include <boost/process/pipe.hpp>
 #include <boost/process/io.hpp>
 #include <boost/process/args.hpp>
 #include <boost/process/start_dir.hpp>
 #include <boost/process/env.hpp>
+#include <boost/process/posix.hpp>
 
 #include <rapidjson/document.h>
 #include <rapidjson/writer.h>
@@ -164,7 +166,8 @@ void GCovRunner::exec(const vec<str> &config_values) {
 
                 bp::ipstream out, err;
                 bp::child proc_child(
-                        f_bin, bp::args(run_arg), bp::start_dir(f_wd), bp::env(bp_env),
+                        f_bin, bp::posix::use_vfork, bp::posix::sig.ign(),
+                        bp::args(run_arg), bp::start_dir(f_wd), bp::env(bp_env),
 #if PRINT_VERBOSE
                         bp::std_out > out, bp::std_err > err
 #else
@@ -202,7 +205,8 @@ set<str> GCovRunner::collect_cov() {
     vec<str> run_arg = {"-it", f_gcov_prog_name};
 
     bp::ipstream out, err;
-    bp::child proc_child(f_gcov_bin, bp::args(run_arg), bp::start_dir(f_gcov_wd),
+    bp::child proc_child(f_gcov_bin, bp::posix::use_vfork, bp::posix::sig.ign(),
+                         bp::args(run_arg), bp::start_dir(f_gcov_wd),
                          bp::std_out > out, bp::std_err > err);
     CHECKF(proc_child, "Error running gcov: {} {}", f_gcov_bin, fmt::join(run_arg, " "));
 
