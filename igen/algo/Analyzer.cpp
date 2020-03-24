@@ -158,7 +158,7 @@ public:
         int n_inter = ctx()->get_option_as<int>("rounds");
         PMutConfig c = new Config(ctx_mut());
         set<hash_t> all_configs, wrong_configs;
-        set<str> wrong_locs, wrong_locs_uniq, empty_set;
+        set<str> wrong_locs, wrong_locs_uniq, empty_set, missing_locs;
         for (int iter = 1; iter <= n_inter; ++iter) {
             for (int i = 0; i < dom()->n_vars(); ++i)
                 c->set(i, Rand.get(dom()->n_values(i)));
@@ -180,12 +180,14 @@ public:
                     if (uniq_loc) wrong_locs_uniq.insert(p.first);
                 }
             }
+            for (const auto &s : e) if (!ma.contains(s)) missing_locs.insert(s);
             if (iter % 10 == 0) {
-                LOG(INFO, "{:>4} | {:>4} {:>4} | {:>4} {:>4} | ",
+                LOG(INFO, "{:>4} | {:>4} {:>4} | {:>4} {:>4} {:>4} | ",
                     iter,
                     all_configs.size(), wrong_configs.size(),
-                    wrong_locs_uniq.size(), wrong_locs.size())
-                        << (sz(wrong_locs_uniq) <= 10 ? wrong_locs_uniq : empty_set);
+                    wrong_locs_uniq.size(), wrong_locs.size(), missing_locs.size())
+                        << (sz(wrong_locs_uniq) <= 10 ? wrong_locs_uniq : empty_set)
+                        << (sz(missing_locs) <= 10 ? missing_locs : empty_set);
             }
         }
     }

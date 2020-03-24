@@ -36,7 +36,7 @@ public:
 
 public:
     int terminate_counter = 0, max_terminate_counter = 0, n_iterations = 0;
-    bool full_configs = false;
+    bool pregen_configs = false;
     set<hash_t> set_conf_hash, set_ran_conf_hash;
 
     struct LocData;
@@ -66,13 +66,15 @@ public:
 public:
     void run_alg() {
         max_terminate_counter = ctx()->get_option_as<int>("term-cnt");
-        full_configs = ctx()->has_option("full");
+        bool run_full = ctx()->has_option("full"), run_rand = ctx()->has_option("rand");
+        pregen_configs = run_full || run_rand;
         n_iterations = ctx()->get_option_as<int>("rounds");
         // ====
         vec<PMutConfig> init_configs;
-        if (full_configs) {
-            init_configs = dom()->gen_all_configs();
-            LOG(INFO, "Running full configs (n_configs = {})", init_configs.size());
+        if (pregen_configs) {
+            if (run_full) init_configs = dom()->gen_all_configs();
+            else init_configs = gen_rand_configs(ctx()->get_option_as<int>("rand"));
+            LOG(INFO, "Running pregen configs (n_configs = {})", init_configs.size());
         } else {
             init_configs = dom()->gen_one_convering_configs();
             int n_one_covering = int(init_configs.size());
@@ -85,7 +87,8 @@ public:
         for (const auto &c : init_configs) set_conf_hash.insert(c->hash()), run_config(c);
         LOG(INFO, "Done running {} init configs", init_configs.size());
         // ====
-        for (int iter = 1; iter <= n_iterations; ++iter) {
+        int iter;
+        for (iter = 1; iter <= n_iterations; ++iter) {
             CHECK_EQ(set_conf_hash.size(), set_ran_conf_hash.size());
             LOG(INFO, "{:=^80}", fmt::format("  Iteration {}  ", iter));
             if (run_iter(iter)) {
@@ -103,12 +106,13 @@ public:
                 ctx()->program_runner()->flush_compact_cachedb();
                 break;
             } else if (gSignalStatus == SIGUSR1 || gSignalStatus == SIGUSR2) {
-                finish_alg("TEMP FINISH", gSignalStatus == SIGUSR2);
+                finish_alg(iter, "TEMP FINISH", gSignalStatus == SIGUSR2);
                 gSignalStatus = 0;
             }
         }
         // ====
-        finish_alg();
+        if (v_loc_data.empty()) prepare_vec_loc_data();
+        finish_alg(iter);
     }
 
     int gen_cex(vec<PMutConfig> &cex, const vec<PCNode> &leaves, int n_small, int n_rand = 0, int n_large = 0) {
@@ -272,7 +276,7 @@ public:
             if (!dat->ignored) v_next_iter.emplace_back(dat);
     }
 
-    void finish_alg(str header = "FINAL RESULT", bool expensive_simplify = true) {
+    void finish_alg(int iter, str header = "FINAL RESULT", bool expensive_simplify = true) {
         bool out_to_file = ctx()->has_option("output");
         auto expr_strat = CTree::FreeMix;
         if (ctx()->has_option("disj-conj")) expr_strat = CTree::DisjOfConj;
@@ -285,6 +289,11 @@ public:
 
         LOG(INFO, "{:=^80}", "  " + header + "  ");
         std::stringstream out;
+        fmt::print(out, "# {:>8} {:>4} {:>4} | {:>5} {:>5} | {:>4} {:>4}\n======\n",
+                   cov()->n_configs(), cov()->n_locs(), v_uniq.size(),
+                   ctx()->program_runner()->n_cache_hit(), ctx()->program_runner()->n_locs(),
+                   ctx()->get_option_as<uint64_t>("seed"), iter
+        );
         int simpl_cnt = 0;
         for (const PLocData &dat : v_loc_data) {
             const auto &loc = dat->loc;
@@ -351,6 +360,8 @@ private:
         } else {
             VLOG(50, "Config {}  ==>  {} locs", c->id(), loc_names.size());
         }
+        if (pregen_configs && set_ran_conf_hash.size() % 100 == 0)
+            LOG(INFO, "Ran {:>6} configs", set_ran_conf_hash.size());
     }
 
     vec<PMutConfig> get_seed_configs() const {
@@ -388,6 +399,21 @@ private:
     void build_tree(const PLocData &d) {
         auto &tree = d->tree;
         tree = new CTree(ctx()), tree->prepare_data(d->loc), tree->build_tree();
+    }
+
+    vec<PMutConfig> gen_rand_configs(int num) const {
+        vec<PMutConfig> ret;
+        set<hash_t> s;
+        PMutConfig c;
+        while (sz(ret) < num) {
+            c = new Config(ctx_mut());
+            do {
+                for (int i = 0; i < dom()->n_vars(); ++i)
+                    c->set(i, Rand.get(dom()->n_values(i)));
+            } while (!s.insert(c->hash(true)).second);
+            ret.emplace_back(move(c));
+        }
+        return ret;
     }
 };
 

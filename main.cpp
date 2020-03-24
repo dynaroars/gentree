@@ -46,6 +46,7 @@ int prog(int argc, char *argv[]) {
             ("cache,c", po::value<str>()->implicit_value(""), "Cache run result")
 
             ("full", "Run with full configs")
+            ("rand", po::value<int>(), "Run with random configs")
             ("analyze,A", po::value<int>()->implicit_value(0), "Run anaylzer")
             ("c50,J", po::value<int>()->implicit_value(0), "Run the ML algorithm")
             ("alg-version,T", po::value<int>()->default_value(0), "Select algo version")
