@@ -315,7 +315,7 @@ private:
 
     void run_config(const PMutConfig &c) {
         auto loc_names = ctx()->program_runner()->run(c);
-        cov()->register_cov(c, loc_names);
+        cov_mut()->register_cov(c, loc_names);
         CHECK(set_ran_conf_hash.insert(c->hash()).second);
         if (dom()->n_vars() <= 16 && loc_names.size() <= 16) {
             VLOG(50, "{}  ==>  ", *c) << loc_names;

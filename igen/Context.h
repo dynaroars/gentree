@@ -49,7 +49,7 @@ public:
 
     void cleanup();
 
-    const ptr<const Domain> &dom() const { return cdom_; };
+    const ptr<const Domain> &dom() const { return c_dom_; };
 
     //const ptr<Domain> &dom() { return dom_; };
 
@@ -57,9 +57,9 @@ public:
 
     const ptr<ProgramRunner> &program_runner() { return program_runner_; };
 
-    ptr<const CoverageStore> cov() const { return coverage_store_; };
+    const ptr<const CoverageStore> &cov() const { return c_coverage_store_; };
 
-    const ptr<CoverageStore> &cov() { return coverage_store_; };
+    const ptr<CoverageStore> &cov_mut() { return coverage_store_; };
 
 public:
     z3::context &zctx() { return z3ctx_; }
@@ -87,9 +87,10 @@ private:
     z3::expr z3false_;
 
     ptr<Domain> dom_;
-    ptr<const Domain> cdom_;
+    ptr<const Domain> c_dom_;
     ptr<ProgramRunner> program_runner_;
     ptr<CoverageStore> coverage_store_;
+    ptr<const CoverageStore> c_coverage_store_;
 };
 
 using PContext = ptr<const Context>;
@@ -113,11 +114,11 @@ public:
 
     const z3::expr &zfalse() const { return ctx()->z3false_; }
 
-    const ptr<const Domain> &dom() const { return ctx_->cdom_; };
+    const ptr<const Domain> &dom() const { return ctx_->c_dom_; };
 
-    ptr<const CoverageStore> cov() const { return ctx_->cov(); };
+    const ptr<const CoverageStore> &cov() const { return ctx_->cov(); };
 
-    const ptr<CoverageStore> &cov() { return ctx_->cov(); };
+    const ptr<CoverageStore> &cov_mut() { return ctx_->cov_mut(); };
 
     virtual ~Object() = default;
 

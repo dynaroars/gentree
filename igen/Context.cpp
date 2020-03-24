@@ -34,15 +34,15 @@ boost::any Context::get_option(const str &key) const {
 }
 
 void Context::init() {
-    cdom_ = dom_ = new Domain(this);
+    c_dom_ = dom_ = new Domain(this);
     program_runner_ = new ProgramRunner(this);
-    coverage_store_ = new CoverageStore(this);
+    c_coverage_store_ = coverage_store_ = new CoverageStore(this);
 }
 
 void Context::cleanup() {
-    coverage_store_->cleanup(), coverage_store_ = nullptr;
+    coverage_store_->cleanup(), coverage_store_ = nullptr, c_coverage_store_ = nullptr;
     program_runner_->cleanup(), program_runner_ = nullptr;
-    dom_->cleanup(), dom_ = nullptr, cdom_ = nullptr;
+    dom_->cleanup(), dom_ = nullptr, c_dom_ = nullptr;
 }
 
 expr Context::zctx_solver_simplify(const expr &e) const {

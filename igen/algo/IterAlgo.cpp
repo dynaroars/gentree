@@ -384,7 +384,7 @@ public:
 
     void run_config(const PMutConfig &c) {
         auto e = ctx()->program_runner()->run(c);
-        cov()->register_cov(c, e);
+        cov_mut()->register_cov(c, e);
         bool insert_new = set_ran_conf_hash.insert(c->hash()).second;
         CHECK(insert_new);
         if (dom()->n_vars() <= 16 && e.size() <= 16) {
