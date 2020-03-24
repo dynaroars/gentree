@@ -145,14 +145,14 @@ public:
         return gen_cnt;
     }
 
-    bool run_one_loc(int iter, int meidx, int t, const PLocData &dat) {
+    bool run_one_loc(int iter, int meidx, int t, const PLocData &dat, bool heavy) {
         CHECK(!dat->linked());
         auto &tree = dat->tree;
         build_tree(dat);
 
         vec<PMutConfig> cex;
         vec<PCNode> leaves;
-        if (terminate_counter > 0) {
+        if (heavy) {
             tree->gather_nodes(leaves), sort_leaves(leaves);
             gen_cex(cex, leaves, 5, 5, 5);
         } else {
@@ -210,7 +210,7 @@ public:
             meidx++;
             for (int t = 1; t <= 50; ++t) {
                 if (gSignalStatus == SIGINT) return false;
-                if (run_one_loc(iter, meidx, t, dat)) {
+                if (run_one_loc(iter, meidx, t, dat, c_success > 0)) {
                     if (++c_success == 10) {
                         finished = true;
                         break;
