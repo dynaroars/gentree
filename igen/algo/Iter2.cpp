@@ -58,7 +58,7 @@ public:
         PMutCTree tree;
 
         bool queued_next = false, ignored = false;
-        int messed_up = 0;
+        int messed_up = 0, n_stuck = 0;
     };
 
     vec<PLocData> v_loc_data, v_this_iter, v_next_iter, v_uniq;
@@ -183,10 +183,10 @@ public:
             }
         }
 
-        LOG(INFO, "{:>4} {:>3} | {:>4} {:>2} {:>5} {:>3} {} | "
+        LOG(INFO, "{:>4} {:>3} | {:>4} {:>2} {:>2} {:>5} {:>3} {} | "
                   "{:>3} {:>3} {:>3} {:>2} | {:>5} {:>4} {:>3} | {:>5}",
             iter, t,
-            dat->loc->id(), dat->messed_up, leaves.size(), cex.size(), ok ? ' ' : '*',
+            dat->loc->id(), dat->messed_up, dat->n_stuck, leaves.size(), cex.size(), ok ? ' ' : '*',
             meidx, v_this_iter.size(), v_next_iter.size(), terminate_counter,
             cov()->n_configs(), cov()->n_locs(), v_uniq.size(),
             ctx()->program_runner()->n_cache_hit()
@@ -212,8 +212,8 @@ public:
             bool finished = false, need_rebuild = true;
             int c_success = 0;
             meidx++;
-            const int lim_times = 10, consecutive_success = 3;
-            // if (dat->messed_up >= 5) lim_times = 20, consecutive_success = 6;
+            int lim_times = 10, consecutive_success = 3;
+            if (dat->messed_up >= 5) lim_times = 20, consecutive_success = 6;
             for (int t = 1; t <= lim_times; ++t) {
                 if (gSignalStatus == SIGINT) return false;
                 if (run_one_loc(iter, meidx, t, dat, need_rebuild, c_success > 0)) {
@@ -227,7 +227,8 @@ public:
                     c_success = 0;
                 }
             }
-            if (!finished) enqueue_next(dat);
+            if (finished) dat->n_stuck = 0;
+            else enqueue_next(dat);
         }
         int add_loc = 0;
         for (int i = 0; i < prev_n_conf; ++i) {
@@ -255,7 +256,9 @@ public:
 
     void enqueue_next(const PLocData &dat) {
         CHECK(!dat->ignored);
-        if (terminate_counter > 0 && ++dat->messed_up == 10) {
+        bool ig_1 = terminate_counter > 0 && (dat->messed_up += (int) std::ceil(terminate_counter * 0.5)) >= 10;
+        bool ig_2 = ++dat->n_stuck >= 40;
+        if (ig_1 || ig_2) {
             LOG(WARNING, "Ignore loc ({}) {}", dat->id(), dat->loc->name());
             dat->ignored = true;
             return;
