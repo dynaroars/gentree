@@ -207,11 +207,11 @@ public:
             bool finished = false, need_rebuild = true;
             int c_success = 0;
             meidx++;
-            for (int t = 1; t <= 50; ++t) {
+            for (int t = 1; t <= 10; ++t) {
                 if (gSignalStatus == SIGINT) return false;
                 if (run_one_loc(iter, meidx, t, dat, need_rebuild, c_success > 0)) {
                     need_rebuild = false;
-                    if (++c_success == 10) {
+                    if (++c_success == 3) {
                         finished = true;
                         break;
                     }
