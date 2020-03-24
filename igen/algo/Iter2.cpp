@@ -46,6 +46,8 @@ public:
 
         void link_to(PLocData p) { parent = p, tree = nullptr; }
 
+        void unlink() { link_to(nullptr); }
+
         bool linked() { return parent != nullptr; }
 
         PLocation loc;
@@ -53,7 +55,7 @@ public:
         PMutCTree tree;
     };
 
-    vec<PLocData> v_loc_data, v_this_iter, v_next_iter;
+    vec<PLocData> v_loc_data, v_this_iter, v_next_iter, v_uniq;
 
 public:
     void run_alg() {
@@ -78,10 +80,15 @@ public:
         LOG(INFO, "Done running {} init configs", init_configs.size());
         // ====
         for (int iter = 1; iter <= n_iterations; ++iter) {
+            CHECK_EQ(set_conf_hash.size(), set_ran_conf_hash.size());
             LOG(INFO, "{:=^80}", fmt::format("  Iteration {}  ", iter));
             if (run_iter(iter)) {
-                LOG(WARNING, "Early break at iteration {}", iter);
-                break;
+                LOG(WARNING, "terminate_counter = {:>2}", terminate_counter + 1);
+                if (++terminate_counter == max_terminate_counter) {
+                    LOG(WARNING, "Early break at iteration {}", iter);
+                    break;
+                }
+                v_next_iter = v_uniq;
             }
             if (gSignalStatus == SIGINT) {
                 LOG(WARNING, "Requested break at iteration {}", iter);
@@ -92,7 +99,7 @@ public:
         // ====
     }
 
-    bool gen_cex(vec<PMutConfig> &cex, const vec<PCNode> &leaves, int n_small, int n_rand = 0, int n_large = 0) {
+    int gen_cex(vec<PMutConfig> &cex, const vec<PCNode> &leaves, int n_small, int n_rand = 0, int n_large = 0) {
         int gen_cnt = 0, skipped = 0, max_min_cases = -1;
         const auto gen_for = [this, &max_min_cases, &skipped, &cex, &gen_cnt](const PCNode &node, int lim = kMAX<int>) {
             int skipped_me = 0;
@@ -108,56 +115,94 @@ public:
             if (sz(cex) >= n_small) break;
             gen_for(node);
         }
-        LOG(INFO, "Small: {:>2} cex, skipped {}, max_min_cases = {}", cex.size(), skipped, max_min_cases);
+        VLOG(10, "Small: {:>2} cex, skipped {}, max_min_cases = {}", cex.size(), skipped, max_min_cases);
         // ====
         int rand_skip = 0;
         n_rand += n_small, max_min_cases = -1;
         while (sz(cex) < n_rand) {
             if (gen_for(*Rand.get(leaves)) > 0 && ++rand_skip == 10) break;
         }
-        LOG(INFO, "Rand : {:>2} cex, skipped {}, max_min_cases = {}, rand_skip = {}",
-            cex.size(), skipped, max_min_cases, rand_skip);
+        VLOG(10, "Rand : {:>2} cex, skipped {}, max_min_cases = {}, rand_skip = {}",
+             cex.size(), skipped, max_min_cases, rand_skip);
         // ====
         n_large += n_rand, max_min_cases = -1;
         for (const PCNode &node : boost::adaptors::reverse(leaves)) {
             if (sz(cex) >= n_large) break;
             gen_for(node);
         }
-        LOG(INFO, "Large: {:>2} cex, skipped {}, max_min_cases = {}", cex.size(), skipped, max_min_cases);
+        VLOG(10, "Large: {:>2} cex, skipped {}, max_min_cases = {}", cex.size(), skipped, max_min_cases);
         // ====
         return gen_cnt;
     }
 
-    bool run_one_loc([[maybe_unused]] int t, const PLocData &dat) {
+    bool run_one_loc(int iter, int t, const PLocData &dat) {
         CHECK(!dat->linked());
         auto &tree = dat->tree;
         tree = new CTree(ctx()), tree->prepare_data(dat->loc), tree->build_tree();
 
         vec<PMutConfig> cex;
         vec<PCNode> leaves;
-        tree->gather_nodes(leaves, 0, tree->n_min_cases() + 1);
-        if(gen_cex(cex, leaves, 10) == 0) {
-            tree->gather_nodes(leaves, 0, tree->n_min_cases() + 1);
+        tree->gather_nodes(leaves, 0, tree->n_min_cases() + 1), sort_leaves(leaves);
+        if (gen_cex(cex, leaves, 10) == 0) {
+            leaves.clear();
+            tree->gather_nodes(leaves, 0, cov()->n_configs() - 1), sort_leaves(leaves);
+            if (gen_cex(cex, leaves, 0, 10, 10) == 0) {
+                LOG(INFO, "Can't gen cex");
+                return true;
+            }
         }
-        return false;
+
+        for (const auto &c : cex) run_config(c);
+
+        const auto &loc = dat->loc;
+        bool ok = true;
+        for (const PMutConfig &c : cex) {
+            const vec<int> cov_ids = c->cov_loc_ids();
+            bool new_truth = std::binary_search(cov_ids.begin(), cov_ids.end(), loc->id());
+            bool tree_eval = tree->test_config(c).first;
+            if (tree_eval != new_truth) {
+                ok = false;
+                break;
+            }
+        }
+
+        LOG(INFO, "{:>4} {:>2} | {:>3} {:>5} {:>3} {} | "
+                  "{:>3} | {:>5} {:>4} {:>3}",
+            iter, t,
+            dat->loc->id(), leaves.size(), cex.size(), ok ? ' ' : '*',
+            v_this_iter.size(),
+            cov()->n_configs(), cov()->n_locs(), v_uniq.size()
+        );
+        return ok;
     }
 
-    bool run_iter([[maybe_unused]] int iter) {
+    bool run_iter(int iter) {
         v_this_iter = std::move(v_next_iter), v_next_iter.clear();
         auto v_new_locdat = prepare_vec_loc_data();
+        int n_new_loc = sz(v_new_locdat);
         vec_move_append(v_this_iter, v_new_locdat);
+        LOG_BLOCK(INFO, {
+            fmt::print(log, "v_this_iter (tot {:3>}, new {}) = {{", v_this_iter.size(), n_new_loc);
+            for (const auto &d : v_this_iter) fmt::print(log, "{}/{}, ", d->loc->id(), d->loc->name());
+            log << "}";
+        });
         for (const auto &dat : v_this_iter) {
             CHECK(!dat->linked());
             bool finished = false;
+            int c_success = 0;
             for (int t = 1; t <= 100; ++t) {
-                if (run_one_loc(t, dat)) {
-                    finished = true;
-                    break;
+                if (run_one_loc(iter, t, dat)) {
+                    if (++c_success == 3) {
+                        finished = true;
+                        break;
+                    }
+                } else {
+                    c_success = 0;
                 }
             }
             if (!finished) v_next_iter.emplace_back(dat);
         }
-        return false;
+        return v_next_iter.empty();
     }
 
 private:
@@ -165,15 +210,19 @@ private:
 
     vec<PLocData> prepare_vec_loc_data() {
         vec<PLocData> v_new_locdat;
-        map_hash_locs.clear(), map_hash_locs.reserve(cov()->n_locs());
-        v_loc_data.resize(cov()->n_locs());
+        map_hash_locs.clear(), map_hash_locs.reserve(size_t(cov()->n_locs()));
+        v_loc_data.resize(size_t(cov()->n_locs()));
+        v_uniq.clear();
         for (const auto &loc : cov()->locs()) {
-            auto &dat = v_loc_data[loc->id()];
+            auto &dat = v_loc_data[size_t(loc->id())];
             bool is_new = false;
             if (dat == nullptr) dat = new LocData(loc), is_new = true;
             if (auto res = map_hash_locs.try_emplace(loc->hash(), dat); !res.second) {
                 dat->link_to(res.first->second);
+            } else {
+                dat->unlink();
                 if (is_new) v_new_locdat.emplace_back(dat);
+                v_uniq.emplace_back(dat);
             }
         }
         return v_new_locdat;
@@ -193,7 +242,7 @@ private:
     vec<PMutConfig> get_seed_configs() const {
         vec<PMutConfig> ret;
         if (ctx()->has_option("seed-configs")) {
-            vec<str> vs = ctx()->get_option_as<vec<str>>("seed-configs");
+            auto vs = ctx()->get_option_as<vec<str>>("seed-configs");
             for (const auto &s : vs)
                 ret.emplace_back(new Config(ctx_mut(), s));
         }
@@ -204,6 +253,15 @@ private:
         static constexpr double L = 110, x0 = 15000, k = -0.000346;
         double res = L / (1.0 + std::exp(-k * (x - x0)));
         return (int) std::max(res, 1.0);
+    }
+
+    void sort_leaves(vec<PCNode> &leaves) const {
+        std::sort(leaves.begin(), leaves.end(), [](const PCNode &a, const PCNode &b) {
+            if (a->n_min_cases() != b->n_min_cases())
+                return a->n_min_cases() < b->n_min_cases();
+            else
+                return a->depth() > b->depth();
+        });
     }
 };
 
