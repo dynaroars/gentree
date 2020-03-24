@@ -8,6 +8,7 @@
 #include <csignal>
 #include <boost/range/adaptor/reversed.hpp>
 #include <boost/circular_buffer.hpp>
+#include <utility>
 
 #include <igen/Context.h>
 #include <igen/Domain.h>
@@ -42,13 +43,15 @@ public:
     using PLocData = ptr<LocData>;
 
     struct LocData : public intrusive_ref_base_st<LocData> {
-        LocData(const PLocation &loc) : loc(loc) {}
+        LocData(PLocation loc) : loc(std::move(loc)) {}
 
         void link_to(PLocData p) { parent = p, tree = nullptr; }
 
         void unlink() { link_to(nullptr); }
 
         bool linked() { return parent != nullptr; }
+
+        int id() const { return loc->id(); }
 
         PLocation loc;
         PLocData parent;
@@ -94,9 +97,13 @@ public:
                 LOG(WARNING, "Requested break at iteration {}", iter);
                 ctx()->program_runner()->flush_compact_cachedb();
                 break;
+            } else if (gSignalStatus == SIGUSR1 || gSignalStatus == SIGUSR2) {
+                finish_alg("TEMP FINISH", gSignalStatus == SIGUSR2);
+                gSignalStatus = 0;
             }
         }
         // ====
+        finish_alg();
     }
 
     int gen_cex(vec<PMutConfig> &cex, const vec<PCNode> &leaves, int n_small, int n_rand = 0, int n_large = 0) {
@@ -117,13 +124,12 @@ public:
         }
         VLOG(10, "Small: {:>2} cex, skipped {}, max_min_cases = {}", cex.size(), skipped, max_min_cases);
         // ====
-        int rand_skip = 0;
         n_rand += n_small, max_min_cases = -1;
-        while (sz(cex) < n_rand) {
-            if (gen_for(*Rand.get(leaves)) > 0 && ++rand_skip == 10) break;
+        for (int i = 0; i < 10; ++i) {
+            if (sz(cex) >= n_rand) break;
+            gen_for(*Rand.get(leaves));
         }
-        VLOG(10, "Rand : {:>2} cex, skipped {}, max_min_cases = {}, rand_skip = {}",
-             cex.size(), skipped, max_min_cases, rand_skip);
+        VLOG(10, "Rand : {:>2} cex, skipped {}, max_min_cases = {}", cex.size(), skipped, max_min_cases);
         // ====
         n_large += n_rand, max_min_cases = -1;
         for (const PCNode &node : boost::adaptors::reverse(leaves)) {
@@ -135,10 +141,10 @@ public:
         return gen_cnt;
     }
 
-    bool run_one_loc(int iter, int t, const PLocData &dat) {
+    bool run_one_loc(int iter, int meidx, int t, const PLocData &dat) {
         CHECK(!dat->linked());
         auto &tree = dat->tree;
-        tree = new CTree(ctx()), tree->prepare_data(dat->loc), tree->build_tree();
+        build_tree(dat);
 
         vec<PMutConfig> cex;
         vec<PCNode> leaves;
@@ -166,12 +172,13 @@ public:
             }
         }
 
-        LOG(INFO, "{:>4} {:>2} | {:>3} {:>5} {:>3} {} | "
-                  "{:>3} | {:>5} {:>4} {:>3}",
+        LOG(INFO, "{:>4} {:>3} | {:>4} {:>5} {:>3} {} | "
+                  "{:>3} {:>3} {:>3} {:>2} | {:>5} {:>4} {:>3} | {:>5}",
             iter, t,
             dat->loc->id(), leaves.size(), cex.size(), ok ? ' ' : '*',
-            v_this_iter.size(),
-            cov()->n_configs(), cov()->n_locs(), v_uniq.size()
+            meidx, v_this_iter.size(), v_next_iter.size(), terminate_counter,
+            cov()->n_configs(), cov()->n_locs(), v_uniq.size(),
+            ctx()->program_runner()->n_cache_hit()
         );
         return ok;
     }
@@ -186,12 +193,16 @@ public:
             for (const auto &d : v_this_iter) fmt::print(log, "{}/{}, ", d->loc->id(), d->loc->name());
             log << "}";
         });
+        CHECK(is_no_dup(v_this_iter));
+        int meidx = 0;
         for (const auto &dat : v_this_iter) {
             CHECK(!dat->linked());
             bool finished = false;
             int c_success = 0;
+            meidx++;
             for (int t = 1; t <= 100; ++t) {
-                if (run_one_loc(iter, t, dat)) {
+                if (gSignalStatus == SIGINT) return false;
+                if (run_one_loc(iter, meidx, t, dat)) {
                     if (++c_success == 3) {
                         finished = true;
                         break;
@@ -203,6 +214,52 @@ public:
             if (!finished) v_next_iter.emplace_back(dat);
         }
         return v_next_iter.empty();
+    }
+
+    void finish_alg(str header = "FINAL RESULT", bool expensive_simplify = true) {
+        bool out_to_file = ctx()->has_option("output");
+        auto expr_strat = CTree::FreeMix;
+        if (ctx()->has_option("disj-conj")) expr_strat = CTree::DisjOfConj;
+        // ====
+
+        vec<vec<PLocData>> vvp(v_loc_data.size());
+        for (const auto &d : v_loc_data)
+            if (d->linked()) vvp[d->parent->id()].push_back(d);
+            else vvp[d->id()].push_back(d);
+
+        LOG(INFO, "{:=^80}", "  " + header + "  ");
+        std::stringstream out;
+        int simpl_cnt = 0;
+        for (const PLocData &dat : v_loc_data) {
+            const auto &loc = dat->loc;
+            const auto &tree = dat->tree;
+            build_tree(dat);
+            if (dat->linked()) continue;
+
+            bool do_simpl = expensive_simplify;
+            LOG_IF(INFO, do_simpl, "Simplifying expr: {:>3} ({}) {}", ++simpl_cnt, loc->id(), loc->name());
+            CHECK_NE(tree, nullptr);
+
+            z3::expr e = tree->build_zexpr(expr_strat);
+            e = e.simplify();
+            if (do_simpl) e = ctx()->zctx_solver_simplify(e);
+
+            for (const auto &d : vvp[dat->id()])
+                out << d->loc->name() << ", ";
+            out << "\n-\n" << e << "\n======\n";
+        }
+
+        if (out_to_file) {
+            str fout = ctx()->get_option_as<str>("output");
+            std::ofstream ofs(fout);
+            if (ofs.fail()) {
+                LOG(INFO, "OUTPUT: \n") << out.rdbuf();
+                CHECKF(0, "Can't open output file {}", fout);
+            }
+            ofs << out.rdbuf();
+        } else {
+            LOG(INFO, "OUTPUT: \n") << out.rdbuf();
+        }
     }
 
 private:
@@ -220,8 +277,8 @@ private:
             if (auto res = map_hash_locs.try_emplace(loc->hash(), dat); !res.second) {
                 dat->link_to(res.first->second);
             } else {
+                if (is_new || dat->linked()) v_new_locdat.emplace_back(dat);
                 dat->unlink();
-                if (is_new) v_new_locdat.emplace_back(dat);
                 v_uniq.emplace_back(dat);
             }
         }
@@ -263,16 +320,31 @@ private:
                 return a->depth() > b->depth();
         });
     }
+
+    bool is_no_dup(const vec<PLocData> &v) const {
+        set<hash_t> s;
+        for (const auto &d : v)
+            if (!s.insert(d->loc->hash()).second) return false;
+        return true;
+    }
+
+    void build_tree(const PLocData &d) {
+        auto &tree = d->tree;
+        tree = new CTree(ctx()), tree->prepare_data(d->loc), tree->build_tree();
+    }
 };
 
 int run_interative_algorithm_2(const boost::program_options::variables_map &vm) {
-    std::signal(SIGINT, [](int signal) {
-        if (gSignalStatus) {
+    const auto &sighandler = [](int signal) {
+        if (signal == SIGINT && gSignalStatus) {
             RAW_LOG(ERROR, "Force terminate");
             exit(1);
         }
         gSignalStatus = signal;
-    });
+    };
+    std::signal(SIGINT, sighandler);
+    std::signal(SIGUSR1, sighandler);
+    std::signal(SIGUSR2, sighandler);
 
     PMutContext ctx = new Context();
     for (const auto &kv : vm) {
