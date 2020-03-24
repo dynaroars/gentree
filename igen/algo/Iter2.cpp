@@ -92,6 +92,8 @@ public:
                     break;
                 }
                 v_next_iter = v_uniq;
+            } else {
+                terminate_counter = 0;
             }
             if (gSignalStatus == SIGINT) {
                 LOG(WARNING, "Requested break at iteration {}", iter);
@@ -148,19 +150,21 @@ public:
 
         vec<PMutConfig> cex;
         vec<PCNode> leaves;
-        tree->gather_nodes(leaves, 0, tree->n_min_cases() + 1), sort_leaves(leaves);
-        if (gen_cex(cex, leaves, 10) == 0) {
-            leaves.clear();
-            tree->gather_nodes(leaves, 0, cov()->n_configs() - 1), sort_leaves(leaves);
-            if (gen_cex(cex, leaves, 0, 10, 10) == 0) {
-                LOG(INFO, "Can't gen cex");
-                return true;
-            }
+        if (terminate_counter > 0) {
+            tree->gather_nodes(leaves, 0, std::max(tree->n_min_cases(), cov()->n_configs() - 1)), sort_leaves(leaves);
+            gen_cex(cex, leaves, 5, 5, 5);
+        } else {
+            tree->gather_nodes(leaves, 0, tree->n_min_cases() + 1), sort_leaves(leaves);
+            gen_cex(cex, leaves, 5);
+        }
+        const auto &loc = dat->loc;
+        if (cex.empty()) {
+            LOG(INFO, "Can't gen cex for loc ({}) {}", loc->id(), loc->name());
+            return true;
         }
 
         for (const auto &c : cex) run_config(c);
 
-        const auto &loc = dat->loc;
         bool ok = true;
         for (const PMutConfig &c : cex) {
             const vec<int> cov_ids = c->cov_loc_ids();
@@ -200,10 +204,10 @@ public:
             bool finished = false;
             int c_success = 0;
             meidx++;
-            for (int t = 1; t <= 100; ++t) {
+            for (int t = 1; t <= 50; ++t) {
                 if (gSignalStatus == SIGINT) return false;
                 if (run_one_loc(iter, meidx, t, dat)) {
-                    if (++c_success == 3) {
+                    if (++c_success == 10) {
                         finished = true;
                         break;
                     }
