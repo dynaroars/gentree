@@ -402,10 +402,12 @@ vec<ptr<Config>> CNode::gen_one_convering_configs(int lim) const {
     shash.reserve((size_t) n_total());
     // Note: either hit_configs() or miss_configs() is empty
     CHECK(hit_configs().empty() || miss_configs().empty());
-    for (const auto &c : hit_configs()) shash.insert(c->hash());
-    for (const auto &c : miss_configs()) shash.insert(c->hash());
-    for (const auto &c : new_configs_) shash.insert(c->hash());
-    bool use_solver = (shash.size() <= 1000);
+    bool use_solver = ((n_total() + sz(new_configs_)) <= 1000);
+    if (use_solver) {
+        for (const auto &c : hit_configs()) shash.insert(c->hash());
+        for (const auto &c : miss_configs()) shash.insert(c->hash());
+        for (const auto &c : new_configs_) shash.insert(c->hash());
+    }
     //====
     vec<sm_vec<int>> SetVAL;
     SetVAL.reserve((size_t) dom->n_vars());

@@ -153,7 +153,7 @@ public:
         vec<PMutConfig> cex;
         vec<PCNode> leaves;
         if (terminate_counter > 0) {
-            tree->gather_nodes(leaves, 0, std::max(tree->n_min_cases(), cov()->n_configs() - 1)), sort_leaves(leaves);
+            tree->gather_nodes(leaves), sort_leaves(leaves);
             gen_cex(cex, leaves, 5, 5, 5);
         } else {
             tree->gather_nodes(leaves, 0, std::max(16, tree->n_min_cases() + 1)), sort_leaves(leaves);
