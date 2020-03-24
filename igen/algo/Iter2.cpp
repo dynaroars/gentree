@@ -57,7 +57,8 @@ public:
         PLocData parent;
         PMutCTree tree;
 
-        bool queued_next = false;
+        bool queued_next = false, ignored = false;
+        int messed_up = 0;
     };
 
     vec<PLocData> v_loc_data, v_this_iter, v_next_iter, v_uniq;
@@ -93,7 +94,7 @@ public:
                     LOG(WARNING, "Early break at iteration {}", iter);
                     break;
                 }
-                v_next_iter = v_uniq;
+                enqueue_all();
             } else {
                 terminate_counter = 0;
             }
@@ -178,10 +179,10 @@ public:
             }
         }
 
-        LOG(INFO, "{:>4} {:>3} | {:>4} {:>5} {:>3} {} | "
+        LOG(INFO, "{:>4} {:>3} | {:>4} {:>2} {:>5} {:>3} {} | "
                   "{:>3} {:>3} {:>3} {:>2} | {:>5} {:>4} {:>3} | {:>5}",
             iter, t,
-            dat->loc->id(), leaves.size(), cex.size(), ok ? ' ' : '*',
+            dat->loc->id(), dat->messed_up, leaves.size(), cex.size(), ok ? ' ' : '*',
             meidx, v_this_iter.size(), v_next_iter.size(), terminate_counter,
             cov()->n_configs(), cov()->n_locs(), v_uniq.size(),
             ctx()->program_runner()->n_cache_hit()
@@ -220,7 +221,7 @@ public:
                     c_success = 0;
                 }
             }
-            if (!finished) v_next_iter.emplace_back(dat), dat->queued_next = true;
+            if (!finished) enqueue_next(dat);
         }
         int add_loc = 0;
         for (int i = 0; i < prev_n_conf; ++i) {
@@ -232,18 +233,34 @@ public:
                 bool new_truth = false;
                 if (it != cov_ids.end() && *it == loc->id()) new_truth = true, ++it;
                 const auto &dat = v_loc_data[loc->id()];
-                if (dat->linked() || dat->queued_next) continue;
+                if (dat->linked() || dat->queued_next || dat->ignored) continue;
                 CHECK_NE(dat->tree, nullptr) << fmt::format("({}) {}", loc->id(), loc->name());
 
                 bool tree_eval = dat->tree->test_config(c).first;
                 if (new_truth != tree_eval) {
                     add_loc++;
-                    v_next_iter.emplace_back(dat), dat->queued_next = true;
+                    enqueue_next(dat);
                 }
             }
         }
         LOG(INFO, "Added {} locs not in v_this_iter", add_loc);
         return v_next_iter.empty();
+    }
+
+    void enqueue_next(const PLocData &dat) {
+        CHECK(!dat->ignored);
+        if (terminate_counter > 0 && ++dat->messed_up == 10) {
+            LOG(WARNING, "Ignore loc ({}) {}", dat->id(), dat->loc->name());
+            dat->ignored = true;
+            return;
+        }
+        v_next_iter.emplace_back(dat), dat->queued_next = true;
+    }
+
+    void enqueue_all() {
+        v_next_iter.reserve(v_uniq.size());
+        for (const auto &dat : v_uniq)
+            if (!dat->ignored) v_next_iter.emplace_back(dat);
     }
 
     void finish_alg(str header = "FINAL RESULT", bool expensive_simplify = true) {
@@ -274,6 +291,7 @@ public:
             e = e.simplify();
             if (do_simpl) e = ctx()->zctx_solver_simplify(e);
 
+            if (dat->ignored) out << "# IGNORED\n";
             for (const auto &d : vvp[dat->id()])
                 out << d->loc->name() << ", ";
             out << "\n-\n" << e << "\n======\n";
