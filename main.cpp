@@ -122,6 +122,8 @@ int prog(int argc, char *argv[]) {
         switch (vm["c50"].as<int>()) {
             case 0:
                 return igen::run_interative_algorithm(vm);
+            case 2:
+                return igen::run_interative_algorithm_2(vm);
             default:
                 CHECK(0) << "Invalid C50 version";
         }

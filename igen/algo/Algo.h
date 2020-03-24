@@ -11,6 +11,8 @@ namespace igen {
 
 int run_interative_algorithm(const boost::program_options::variables_map &vm);
 
+int run_interative_algorithm_2(const boost::program_options::variables_map &vm);
+
 int run_analyzer(const boost::program_options::variables_map &vm);
 
 }
