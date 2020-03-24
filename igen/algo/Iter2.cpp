@@ -56,6 +56,8 @@ public:
         PLocation loc;
         PLocData parent;
         PMutCTree tree;
+
+        bool queued_next = false, this_iter = false;
     };
 
     vec<PLocData> v_loc_data, v_this_iter, v_next_iter, v_uniq;
@@ -154,7 +156,7 @@ public:
             tree->gather_nodes(leaves, 0, std::max(tree->n_min_cases(), cov()->n_configs() - 1)), sort_leaves(leaves);
             gen_cex(cex, leaves, 5, 5, 5);
         } else {
-            tree->gather_nodes(leaves, 0, tree->n_min_cases() + 1), sort_leaves(leaves);
+            tree->gather_nodes(leaves, 0, std::max(16, tree->n_min_cases() + 1)), sort_leaves(leaves);
             gen_cex(cex, leaves, 5);
         }
         const auto &loc = dat->loc;
@@ -198,9 +200,11 @@ public:
             log << "}";
         });
         CHECK(is_no_dup(v_this_iter));
-        int meidx = 0;
+        int meidx = 0, prev_n_conf = cov()->n_configs();
+        for (const auto &dat : v_loc_data) dat->queued_next = dat->this_iter = false;
         for (const auto &dat : v_this_iter) {
             CHECK(!dat->linked());
+            dat->this_iter = true;
             bool finished = false;
             int c_success = 0;
             meidx++;
@@ -215,8 +219,29 @@ public:
                     c_success = 0;
                 }
             }
-            if (!finished) v_next_iter.emplace_back(dat);
+            if (!finished) v_next_iter.emplace_back(dat), dat->queued_next = true;
         }
+        int add_loc = 0;
+        for (int i = 0; i < prev_n_conf; ++i) {
+            const auto &c = cov()->config(i);
+            const vec<int> cov_ids = c->cov_loc_ids();
+            auto it = cov_ids.begin();
+            for (const PLocation &loc : cov()->locs()) {
+                if (loc->id() >= sz(v_loc_data)) continue;
+                bool new_truth = false;
+                if (it != cov_ids.end() && *it == loc->id()) new_truth = true, ++it;
+                const auto &dat = v_loc_data[loc->id()];
+                if (dat->linked() || dat->queued_next || dat->this_iter) continue;
+                CHECK_NE(dat->tree, nullptr) << fmt::format("({}) {}", loc->id(), loc->name());
+
+                bool tree_eval = dat->tree->test_config(c).first;
+                if (new_truth != tree_eval) {
+                    add_loc++;
+                    v_next_iter.emplace_back(dat), dat->queued_next = true;
+                }
+            }
+        }
+        LOG(INFO, "Added {} locs not in v_this_iter", add_loc);
         return v_next_iter.empty();
     }
 
@@ -282,7 +307,7 @@ private:
                 dat->link_to(res.first->second);
             } else {
                 if (is_new || dat->linked()) v_new_locdat.emplace_back(dat);
-                dat->unlink();
+                if (dat->linked()) dat->unlink();
                 v_uniq.emplace_back(dat);
             }
         }

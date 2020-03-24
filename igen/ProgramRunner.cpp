@@ -201,12 +201,12 @@ int ProgramRunner::n_locs() const {
 void ProgramRunner::flush_compact_cachedb() {
     if (cachedb_ != nullptr && n_cache_write_ > 0) {
         using namespace rocksdb;
-        LOG(INFO, "Start flushing & compacting cache db ({} writes, {} hits)", n_cache_write_, n_cache_hit_);
+        LOG(INFO, "Start flushing cache db ({} writes, {} hits)", n_cache_write_, n_cache_hit_);
         Status s = cachedb_->Flush({});
         CHECKF(s.ok(), "Fail to flush cachedb");
-        s = cachedb_->CompactRange(CompactRangeOptions{}, nullptr, nullptr);
-        CHECKF(s.ok(), "Fail to compact cachedb");
-        LOG(INFO, "Done flushing & compacting cache db");
+        //s = cachedb_->CompactRange(CompactRangeOptions{}, nullptr, nullptr);
+        //CHECKF(s.ok(), "Fail to compact cachedb");
+        LOG(INFO, "Done flushing cache db");
 
         n_cache_write_ = 0;
     }
