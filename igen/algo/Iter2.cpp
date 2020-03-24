@@ -57,7 +57,7 @@ public:
         PLocData parent;
         PMutCTree tree;
 
-        bool queued_next = false, this_iter = false;
+        bool queued_next = false;
     };
 
     vec<PLocData> v_loc_data, v_this_iter, v_next_iter, v_uniq;
@@ -201,10 +201,9 @@ public:
         });
         CHECK(is_no_dup(v_this_iter));
         int meidx = 0, prev_n_conf = cov()->n_configs();
-        for (const auto &dat : v_loc_data) dat->queued_next = dat->this_iter = false;
+        for (const auto &dat : v_loc_data) dat->queued_next = false;
         for (const auto &dat : v_this_iter) {
             CHECK(!dat->linked());
-            dat->this_iter = true;
             bool finished = false;
             int c_success = 0;
             meidx++;
@@ -231,7 +230,7 @@ public:
                 bool new_truth = false;
                 if (it != cov_ids.end() && *it == loc->id()) new_truth = true, ++it;
                 const auto &dat = v_loc_data[loc->id()];
-                if (dat->linked() || dat->queued_next || dat->this_iter) continue;
+                if (dat->linked() || dat->queued_next) continue;
                 CHECK_NE(dat->tree, nullptr) << fmt::format("({}) {}", loc->id(), loc->name());
 
                 bool tree_eval = dat->tree->test_config(c).first;
