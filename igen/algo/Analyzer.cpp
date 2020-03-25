@@ -7,17 +7,19 @@
 #include <igen/Context.h>
 #include <igen/Domain.h>
 #include <igen/Config.h>
-#include <igen/ProgramRunner.h>
+#include <igen/ProgramRunnerMt.h>
 #include <igen/CoverageStore.h>
+#include <igen/c50/CTree.h>
 
 #include <klib/print_stl.h>
 #include <klib/vecutils.h>
-#include <igen/c50/CTree.h>
+#include <klib/random.h>
+
 #include <fstream>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/container/flat_map.hpp>
-#include <klib/random.h>
+#include <boost/container/flat_set.hpp>
 
 namespace igen {
 
@@ -155,17 +157,37 @@ public:
         auto finp = get_inp();
         CHECK_EQ(finp.size(), 1) << "Need 1 input file";
         auto ma = read_file(finp.at(0));
-        int n_inter = ctx()->get_option_as<int>("rounds");
-        PMutConfig c = new Config(ctx_mut());
+        int n_iter = ctx()->get_option_as<int>("rounds");
+        int n_batch = ctx()->get_option_as<int>("batch-size");
+        if (n_batch == 0) n_batch = 100;
+        CHECK_GT(n_batch, 0);
+
         set<hash_t> all_configs, wrong_configs;
         set<str> wrong_locs, wrong_locs_uniq, empty_set, missing_locs;
-        for (int iter = 1; iter <= n_inter; ++iter) {
-            do {
-                for (int i = 0; i < dom()->n_vars(); ++i)
-                    c->set(i, Rand.get(dom()->n_values(i)));
-            } while (!all_configs.insert(c->hash(true)).second);
 
-            set<str> e = ctx()->runner()->run(c);
+        vec<PMutConfig> batch_confs(n_batch);
+        vec<set<str>> batch_locs;
+        for (auto &c : batch_confs) c = new Config(ctx_mut());
+        int it = n_batch;
+
+        for (int iter = 1; iter <= n_iter; ++iter) {
+            if (it == n_batch) {
+                for (int i = 0; i < n_batch; ++i) {
+                    const PMutConfig &c = batch_confs[i];
+                    do {
+                        for (int var = 0; var < dom()->n_vars(); ++var)
+                            c->set(var, Rand.get(dom()->n_values(var)));
+                    } while (!all_configs.insert(c->hash(true)).second);
+                }
+                batch_locs = ctx_mut()->runner()->run(batch_confs);
+                CHECK_EQ(batch_confs.size(), batch_locs.size());
+                it = 0;
+            }
+
+            const PMutConfig &c = batch_confs[it];
+            const set<str> &e = batch_locs[it];
+            ++it;
+
             map<unsigned, bool> eval_cache;
             for (const auto &p : ma) {
                 auto eid = p.second.id();
@@ -182,9 +204,8 @@ public:
                 }
             }
             for (const auto &s : e) if (!ma.contains(s)) missing_locs.insert(s);
-            if (iter % 10 == 0) {
-                LOG(INFO, "{:>4} | {:>4} {:>4} | {:>4} {:>4} {:>4} | ",
-                    iter,
+            if (it == 1) {
+                LOG(INFO, "{:>4} {:>4} | {:>4} {:>4} {:>4} | ",
                     all_configs.size(), wrong_configs.size(),
                     wrong_locs_uniq.size(), wrong_locs.size(), missing_locs.size())
                         << (sz(wrong_locs_uniq) <= 10 ? wrong_locs_uniq : empty_set)
@@ -216,11 +237,9 @@ public:
 };
 
 
-int run_analyzer(const boost::program_options::variables_map &vm) {
+int run_analyzer(const map<str, boost::any> &opts) {
     PMutContext ctx = new Context();
-    for (const auto &kv : vm) {
-        ctx->set_option(kv.first, kv.second.value());
-    }
+    ctx->set_options(opts);
     ctx->init();
     //ctx->runner()->init();
     {

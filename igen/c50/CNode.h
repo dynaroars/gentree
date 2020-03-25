@@ -18,7 +18,7 @@ class CNode;
 using PCNode = ptr<const CNode>;
 using PMutCNode = ptr<CNode>;
 
-class CNode : public intrusive_ref_base_st<CNode> {
+class CNode : public intrusive_ref_base_mt<CNode> {
 public:
     CNode(CTree *tree, CNode *parent, int id, std::array<boost::sub_range<vec<PConfig>>, 2> configs);
 

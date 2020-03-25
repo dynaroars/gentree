@@ -4,7 +4,7 @@
 
 #include "Context.h"
 #include "Domain.h"
-#include "ProgramRunner.h"
+#include "ProgramRunnerMt.h"
 #include "CoverageStore.h"
 
 #include <fstream>
@@ -23,6 +23,10 @@ void Context::set_option(const str &key, boost::any val) {
     options[key] = val;
 }
 
+void Context::set_options(map<str, boost::any> opts) {
+    options = std::move(opts);
+}
+
 bool Context::has_option(const str &key) const {
     return options.contains(key);
 }
@@ -35,7 +39,7 @@ boost::any Context::get_option(const str &key) const {
 
 void Context::init() {
     c_dom_ = dom_ = new Domain(this);
-    program_runner_ = new ProgramRunner(this);
+    program_runner_ = new ProgramRunnerMt(this);
     c_coverage_store_ = coverage_store_ = new CoverageStore(this);
 }
 

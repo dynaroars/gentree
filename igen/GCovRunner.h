@@ -14,7 +14,7 @@ namespace igen {
 
 class GCovRunner : public Object {
 public:
-    GCovRunner(PMutContext ctx);
+    GCovRunner(PMutContext ctx, map<str, str> default_vars = {});
 
     void init();
 
@@ -32,6 +32,7 @@ public:
 
 private:
     str f_bin, f_wd, f_gcov_wd, f_gcov_bin, f_gcov_prog_name, f_gcov_gcda_file, f_loc_trim_prefix;
+    map<str, str> vars_;
 
     boost::process::environment bp_env;
 

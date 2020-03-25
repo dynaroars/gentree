@@ -21,6 +21,7 @@ typedef unsigned long DWORD;
 #endif
 
 #define BOOST_POSIX_HAS_VFORK 1
+
 #include <boost/process/child.hpp>
 #include <boost/process/pipe.hpp>
 #include <boost/process/io.hpp>
@@ -43,13 +44,12 @@ void intrusive_ptr_release(GCovRunner *g) {
     boost::sp_adl_block::intrusive_ptr_release(g);
 }
 
-GCovRunner::GCovRunner(PMutContext ctx) : Object(move(ctx)) {
-
+GCovRunner::GCovRunner(PMutContext ctx, map<str, str> default_vars) :
+        Object(move(ctx)), vars_(move(default_vars)) {
 }
 
 void GCovRunner::parse(const str &filename) {
-    map<str, str> varmap;
-    parse(filename, varmap);
+    parse(filename, vars_);
 }
 
 void GCovRunner::parse(const str &filename, map<str, str> &varmap) {

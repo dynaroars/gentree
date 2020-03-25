@@ -18,11 +18,11 @@ class Domain;
 
 void intrusive_ptr_release(const Domain *);
 
-class ProgramRunner;
+class ProgramRunnerMt;
 
-void intrusive_ptr_add_ref(const ProgramRunner *);
+void intrusive_ptr_add_ref(const ProgramRunnerMt *);
 
-void intrusive_ptr_release(const ProgramRunner *);
+void intrusive_ptr_release(const ProgramRunnerMt *);
 
 class CoverageStore;
 
@@ -30,13 +30,15 @@ void intrusive_ptr_add_ref(const CoverageStore *);
 
 void intrusive_ptr_release(const CoverageStore *);
 
-class Context : public intrusive_ref_base_st<Context> {
+class Context : public intrusive_ref_base_mt<Context> {
 public:
     Context();
 
     virtual ~Context();
 
     void set_option(const str &key, boost::any val);
+
+    void set_options(map<str, boost::any> opts);
 
     bool has_option(const str &key) const;
 
@@ -53,9 +55,9 @@ public:
 
     //const ptr<Domain> &dom() { return dom_; };
 
-    ptr<const ProgramRunner> program_runner() const { return program_runner_; };
+    // ptr<const ProgramRunnerMt> runner() const { return program_runner_; };
 
-    const ptr<ProgramRunner> &runner() { return program_runner_; };
+    const ptr<ProgramRunnerMt> &runner() { return program_runner_; };
 
     const ptr<const CoverageStore> &cov() const { return c_coverage_store_; };
 
@@ -88,7 +90,7 @@ private:
 
     ptr<Domain> dom_;
     ptr<const Domain> c_dom_;
-    ptr<ProgramRunner> program_runner_;
+    ptr<ProgramRunnerMt> program_runner_;
     ptr<CoverageStore> coverage_store_;
     ptr<const CoverageStore> c_coverage_store_;
 };
@@ -96,7 +98,7 @@ private:
 using PContext = ptr<const Context>;
 using PMutContext = ptr<Context>;
 
-class Object : public intrusive_ref_base_st<Object> {
+class Object : public intrusive_ref_base_mt<Object> {
 public:
     PContext ctx() const { return ctx_; }
 

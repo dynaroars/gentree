@@ -7,19 +7,21 @@
 #include <igen/Context.h>
 #include <igen/Domain.h>
 #include <igen/Config.h>
-#include <igen/ProgramRunner.h>
+#include <igen/ProgramRunnerMt.h>
 #include <igen/CoverageStore.h>
+#include <igen/c50/CTree.h>
 
 #include <klib/print_stl.h>
 #include <klib/vecutils.h>
-#include <igen/c50/CTree.h>
+#include <klib/random.h>
+
 #include <fstream>
 #include <csignal>
 #include <glog/raw_logging.h>
 
 #include <boost/range/adaptor/reversed.hpp>
 #include <boost/circular_buffer.hpp>
-#include <klib/random.h>
+#include <boost/container/flat_set.hpp>
 
 namespace igen {
 
@@ -194,7 +196,7 @@ public:
 
         // ============================================================================================================
 
-        for (const auto &c : cex) run_config(c);
+        run_configs(cex);
 
         int n_new_locs = cov()->n_locs() - int(vec_loc_data.size());
         int n_rebuilds = 0, n_rebuilds_uniq = 0;
@@ -275,7 +277,8 @@ public:
         }
 
         LOG(INFO, "Running {} init configs", init_configs.size());
-        for (const auto &c : init_configs) set_conf_hash.insert(c->hash()), run_config(c);
+        for (const auto &c : init_configs) set_conf_hash.insert(c->hash());
+        run_configs(init_configs);
         LOG(INFO, "Done run {} init configs", init_configs.size());
 
         int N_ROUNDS = ctx()->get_option_as<int>("rounds");
@@ -287,7 +290,7 @@ public:
             }
             if (gSignalStatus == SIGINT) {
                 LOG(WARNING, "Requested break at iteration {}", iter);
-                ctx()->runner()->flush_compact_cachedb();
+                ctx()->runner()->flush_cachedb();
                 break;
             }
             if (iter % 100 == 0) {
@@ -382,15 +385,20 @@ public:
         }
     }
 
-    void run_config(const PMutConfig &c) {
-        auto e = ctx()->runner()->run(c);
-        cov_mut()->register_cov(c, e);
-        bool insert_new = set_ran_conf_hash.insert(c->hash()).second;
-        CHECK(insert_new);
-        if (dom()->n_vars() <= 16 && e.size() <= 16) {
-            VLOG(50, "{}  ==>  ", *c) << e;
-        } else {
-            VLOG(50, "Config {}  ==>  {} locs", c->id(), e.size());// << e;
+    void run_configs(const vec<PMutConfig> &configs) {
+        auto v_loc_names = ctx()->runner()->run(configs);
+        CHECK_EQ(configs.size(), v_loc_names.size());
+        for (int i = 0; i < sz(configs); ++i) {
+            const auto &c = configs[i];
+            const auto &loc_names = v_loc_names[i];
+            cov_mut()->register_cov(c, loc_names);
+            bool insert_new = set_ran_conf_hash.insert(c->hash()).second;
+            CHECK(insert_new);
+            if (dom()->n_vars() <= 16 && loc_names.size() <= 16) {
+                VLOG(50, "{}  ==>  ", *c) << loc_names;
+            } else {
+                VLOG(50, "Config {}  ==>  {} locs", c->id(), loc_names.size());
+            }
         }
     }
 
@@ -423,11 +431,9 @@ public:
 private:
 };
 
-int run_interative_algorithm(const boost::program_options::variables_map &vm) {
+int run_interative_algorithm(const map<str, boost::any> &opts) {
     PMutContext ctx = new Context();
-    for (const auto &kv : vm) {
-        ctx->set_option(kv.first, kv.second.value());
-    }
+    ctx->set_options(opts);
     ctx->init();
     ctx->runner()->init();
     {

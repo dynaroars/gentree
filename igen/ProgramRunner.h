@@ -7,19 +7,13 @@
 
 #include <igen/Context.h>
 #include <igen/Config.h>
+#include <igen/builtin/programs.h>
 
 #include <boost/timer/timer.hpp>
 #include <boost/container/flat_set.hpp>
+#include <boost/container/flat_map.hpp>
+
 #include <klib/enum.h>
-#include <igen/builtin/programs.h>
-
-namespace rocksdb {
-class DB;
-
-class ReadOptions;
-
-class WriteOptions;
-}
 
 namespace igen {
 
@@ -31,21 +25,17 @@ void intrusive_ptr_release(GCovRunner *);
 
 class ProgramRunner : public Object {
 public:
-    explicit ProgramRunner(PMutContext ctx);
+    explicit ProgramRunner(PMutContext ctx, map<str, str> default_vars = {});
 
     void init();
 
     set<str> run(const PConfig &config);
 
-    void reset_stat() { n_runs_ = n_cache_hit_ = 0; }
+    void reset_stat() { n_runs_ = 0, timer_.start(), timer_.stop(); }
 
     int n_runs() const { return n_runs_; };
 
-    int n_cache_hit() const { return n_cache_hit_; }
-
     void cleanup() override;
-
-    void flush_compact_cachedb();
 
     int n_locs() const;
 
@@ -55,11 +45,9 @@ private:
     RunnerType type;
     str target;
     builtin::BuiltinRunnerFn builtin_fn;
-    int n_runs_ = 0, n_cache_hit_ = 0, n_cache_write_ = 0;
-    std::unique_ptr<rocksdb::DB> cachedb_;
-    std::unique_ptr<rocksdb::ReadOptions> cachedb_readopts_{};
-    std::unique_ptr<rocksdb::WriteOptions> cachedb_writeopts_{};
+    int n_runs_ = 0;
     boost::timer::cpu_timer timer_;
+    map<str, str> default_vars_;
 
     set<str> _run_simple(const PConfig &config) const;
 

@@ -6,14 +6,16 @@
 
 #include <fstream>
 #include <csignal>
+#include <utility>
+
 #include <boost/range/adaptor/reversed.hpp>
 #include <boost/circular_buffer.hpp>
-#include <utility>
+#include <boost/container/flat_set.hpp>
 
 #include <igen/Context.h>
 #include <igen/Domain.h>
 #include <igen/Config.h>
-#include <igen/ProgramRunner.h>
+#include <igen/ProgramRunnerMt.h>
 #include <igen/CoverageStore.h>
 #include <igen/c50/CTree.h>
 
@@ -43,7 +45,7 @@ public:
     struct LocData;
     using PLocData = ptr<LocData>;
 
-    struct LocData : public intrusive_ref_base_st<LocData> {
+    struct LocData : public intrusive_ref_base_mt<LocData> {
         LocData(PLocation loc) : loc(std::move(loc)) {}
 
         void link_to(PLocData p) { parent = p, tree = nullptr; }
@@ -87,7 +89,9 @@ public:
             LOG(INFO, "Running initial configs (n_one_covering = {}, n_seed_configs = {})", n_one_covering,
                 n_seed_configs);
         }
-        for (const auto &c : init_configs) set_conf_hash.insert(c->hash()), run_config(c);
+        for (const auto &c : init_configs) set_conf_hash.insert(c->hash());
+        run_configs(init_configs);
+
         LOG(INFO, "Done running {} init configs", init_configs.size());
         // ====
         int iter;
@@ -106,20 +110,20 @@ public:
             }
             if (gSignalStatus == SIGINT) {
                 LOG(WARNING, "Requested break at iteration {}", iter);
-                ctx()->runner()->flush_compact_cachedb();
+                ctx()->runner()->flush_cachedb();
                 break;
             } else if (gSignalStatus == SIGUSR1 || gSignalStatus == SIGUSR2) {
                 finish_alg(iter, "TEMP FINISH", gSignalStatus == SIGUSR2);
                 gSignalStatus = 0;
             }
             LOG(INFO, "Total  time: {}", timer.format(0));
-            LOG(INFO, "Runner time: {}", ctx()->runner()->timer().format(0));
+            LOG(INFO, "Runner time: {}", boost::timer::format(ctx()->runner()->timer_elapsed(), 0));
             LOG(WARNING, "{:>4} | {:>3} {:>3} {:>2} | {:>5} {:>4} {:>3} | {:>5} | {:>5} {:>5}",
                 iter,
                 v_this_iter.size(), v_next_iter.size(), terminate_counter,
                 cov()->n_configs(), cov()->n_locs(), v_uniq.size(),
                 ctx()->runner()->n_cache_hit(),
-                timer.elapsed().wall / NS, ctx()->runner()->timer().elapsed().wall / NS
+                timer.elapsed().wall / NS, ctx()->runner()->timer_elapsed().wall / NS
             );
         }
         // ====
@@ -186,7 +190,7 @@ public:
             return true;
         }
 
-        for (const auto &c : cex) run_config(c);
+        run_configs(cex);
 
         bool ok = true;
         for (const PMutConfig &c : cex) {
@@ -207,7 +211,7 @@ public:
             meidx, v_this_iter.size(), v_next_iter.size(), terminate_counter,
             cov()->n_configs(), cov()->n_locs(), v_uniq.size(),
             ctx()->runner()->n_cache_hit(),
-            timer.elapsed().wall / NS, ctx()->runner()->timer().elapsed().wall / NS
+            timer.elapsed().wall / NS, ctx()->runner()->timer_elapsed().wall / NS
         );
         return ok;
     }
@@ -303,10 +307,11 @@ public:
 
         LOG(INFO, "{:=^80}", "  " + header + "  ");
         std::stringstream out;
-        fmt::print(out, "# {:>8} {:>4} {:>4} | {:>5} {:>5} | {:>4} {:>4}\n======\n",
+        fmt::print(out, "# {}\n", fmt::join(ctx()->get_option_as<vec<str>>("_args"), " "));
+        fmt::print(out, "# {:>8} {:>4} {:>4} | {:>5} {:>5} | {:>4}\n======\n",
                    cov()->n_configs(), cov()->n_locs(), v_uniq.size(),
                    ctx()->runner()->n_cache_hit(), ctx()->runner()->n_locs(),
-                   ctx()->get_option_as<uint64_t>("seed"), iter
+                   iter
         );
         int simpl_cnt = 0;
         for (const PLocData &dat : v_loc_data) {
@@ -365,17 +370,22 @@ private:
         return v_new_locdat;
     }
 
-    void run_config(const PMutConfig &c) {
-        auto loc_names = ctx()->runner()->run(c);
-        cov_mut()->register_cov(c, loc_names);
-        CHECK(set_ran_conf_hash.insert(c->hash()).second);
-        if (dom()->n_vars() <= 16 && loc_names.size() <= 16) {
-            VLOG(50, "{}  ==>  ", *c) << loc_names;
-        } else {
-            VLOG(50, "Config {}  ==>  {} locs", c->id(), loc_names.size());
+    void run_configs(const vec<PMutConfig> &configs) {
+        auto v_loc_names = ctx()->runner()->run(configs);
+        CHECK_EQ(configs.size(), v_loc_names.size());
+        for (int i = 0; i < sz(configs); ++i) {
+            const auto &c = configs[i];
+            const auto &loc_names = v_loc_names[i];
+            cov_mut()->register_cov(c, loc_names);
+            CHECK(set_ran_conf_hash.insert(c->hash()).second);
+            if (dom()->n_vars() <= 16 && loc_names.size() <= 16) {
+                VLOG(50, "{}  ==>  ", *c) << loc_names;
+            } else {
+                VLOG(50, "Config {}  ==>  {} locs", c->id(), loc_names.size());
+            }
+            if (pregen_configs && set_ran_conf_hash.size() % 100 == 0)
+                LOG(INFO, "Ran {:>6} configs", set_ran_conf_hash.size());
         }
-        if (pregen_configs && set_ran_conf_hash.size() % 100 == 0)
-            LOG(INFO, "Ran {:>6} configs", set_ran_conf_hash.size());
     }
 
     vec<PMutConfig> get_seed_configs() const {
@@ -431,7 +441,7 @@ private:
     }
 };
 
-int run_interative_algorithm_2(const boost::program_options::variables_map &vm) {
+int run_interative_algorithm_2(const map<str, boost::any> &opts) {
     const auto &sighandler = [](int signal) {
         if (signal == SIGINT && gSignalStatus) {
             RAW_LOG(ERROR, "Force terminate");
@@ -444,9 +454,7 @@ int run_interative_algorithm_2(const boost::program_options::variables_map &vm) 
     std::signal(SIGUSR2, sighandler);
 
     PMutContext ctx = new Context();
-    for (const auto &kv : vm) {
-        ctx->set_option(kv.first, kv.second.value());
-    }
+    ctx->set_options(opts);
     ctx->init();
     ctx->runner()->init();
     {

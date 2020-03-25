@@ -44,13 +44,18 @@ int prog(int argc, char *argv[]) {
             ("seed,s", po::value<uint64_t>()->default_value(123), "Random seed")
             ("output,O", po::value<str>(), "Output result")
             ("disj-conj", "Gen expr strat DisjOfConj")
-            ("cache,c", po::value<str>()->implicit_value(""), "Cache run result")
+            ("cache,c", po::value<str>()->implicit_value(""), "Use cachedb")
+            ("no-cache-read", "Do not read from cachedb")
+            ("no-cache-write", "Do not write to cachedb")
+            ("cache-only", "Only use cached result")
+            ("runner-threads,j", po::value<int>()->default_value(1), "Number of program runner threads")
 
             ("full", "Run with full configs")
             ("rand", po::value<int>(), "Run with random configs")
             ("analyze,A", po::value<int>()->implicit_value(0), "Run anaylzer")
             ("c50,J", po::value<int>()->implicit_value(0), "Run the ML algorithm")
             ("alg-version,T", po::value<int>()->default_value(0), "Select algo version")
+            ("batch-size", po::value<int>()->default_value(0), "Batch size")
             ("input,I", po::value<str>()->default_value(""), "Algorithm input")
             ("term-cnt", po::value<int>()->default_value(10), "Termination counter")
 
@@ -108,7 +113,14 @@ int prog(int argc, char *argv[]) {
     }
 
     init_glog(argc, argv);
+    // ====
+    std::vector<str> all_args{argv, argv + argc};
+    igen::map<str, boost::any> opts;
+    LOG(INFO, "Args: {}", fmt::join(all_args, " "));
+    for (const auto &kv : vm) opts[kv.first] = kv.second.value();
+    opts["_args"] = all_args;
 
+    // ====
     if (vm.count("seed")) {
         uint64_t s = vm["seed"].as<uint64_t>();
         std::seed_seq sseq{uint32_t(s), uint32_t(s >> 32u)};
@@ -125,9 +137,9 @@ int prog(int argc, char *argv[]) {
     if (vm.count("c50")) {
         switch (vm["c50"].as<int>()) {
             case 0:
-                return igen::run_interative_algorithm(vm);
+                return igen::run_interative_algorithm(opts);
             case 2:
-                return igen::run_interative_algorithm_2(vm);
+                return igen::run_interative_algorithm_2(opts);
             default:
                 CHECK(0) << "Invalid C50 version";
         }
@@ -136,7 +148,7 @@ int prog(int argc, char *argv[]) {
     if (vm.count("analyze")) {
         switch (vm["analyze"].as<int>()) {
             case 0:
-                return igen::run_analyzer(vm);
+                return igen::run_analyzer(opts);
             default:
                 CHECK(0) << "Invalid analyzer version";
         }

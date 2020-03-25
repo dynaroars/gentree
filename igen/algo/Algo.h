@@ -5,15 +5,18 @@
 #ifndef IGEN4_ALGO_H
 #define IGEN4_ALGO_H
 
-#include <boost/program_options/variables_map.hpp>
+#include <klib/common.h>
+
+#include <boost/container/flat_map.hpp>
+#include <boost/any.hpp>
 
 namespace igen {
 
-int run_interative_algorithm(const boost::program_options::variables_map &vm);
+int run_interative_algorithm(const map<str, boost::any> &opts);
 
-int run_interative_algorithm_2(const boost::program_options::variables_map &vm);
+int run_interative_algorithm_2(const map<str, boost::any> &opts);
 
-int run_analyzer(const boost::program_options::variables_map &vm);
+int run_analyzer(const map<str, boost::any> &opts);
 
 }
 
