@@ -55,7 +55,7 @@ public:
 
     ptr<const ProgramRunner> program_runner() const { return program_runner_; };
 
-    const ptr<ProgramRunner> &program_runner() { return program_runner_; };
+    const ptr<ProgramRunner> &runner() { return program_runner_; };
 
     const ptr<const CoverageStore> &cov() const { return c_coverage_store_; };
 

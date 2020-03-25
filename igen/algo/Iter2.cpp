@@ -38,6 +38,7 @@ public:
     int terminate_counter = 0, max_terminate_counter = 0, n_iterations = 0;
     bool pregen_configs = false;
     set<hash_t> set_conf_hash, set_ran_conf_hash;
+    boost::timer::cpu_timer timer;
 
     struct LocData;
     using PLocData = ptr<LocData>;
@@ -63,8 +64,10 @@ public:
 
     vec<PLocData> v_loc_data, v_this_iter, v_next_iter, v_uniq;
 
+    static constexpr int NS = 1e9;
 public:
     void run_alg() {
+        timer.start();
         max_terminate_counter = ctx()->get_option_as<int>("term-cnt");
         bool run_full = ctx()->has_option("full"), run_rand = ctx()->has_option("rand");
         pregen_configs = run_full || run_rand;
@@ -103,12 +106,21 @@ public:
             }
             if (gSignalStatus == SIGINT) {
                 LOG(WARNING, "Requested break at iteration {}", iter);
-                ctx()->program_runner()->flush_compact_cachedb();
+                ctx()->runner()->flush_compact_cachedb();
                 break;
             } else if (gSignalStatus == SIGUSR1 || gSignalStatus == SIGUSR2) {
                 finish_alg(iter, "TEMP FINISH", gSignalStatus == SIGUSR2);
                 gSignalStatus = 0;
             }
+            LOG(INFO, "Total  time: {}", timer.format(0));
+            LOG(INFO, "Runner time: {}", ctx()->runner()->timer().format(0));
+            LOG(WARNING, "{:>4} | {:>3} {:>3} {:>2} | {:>5} {:>4} {:>3} | {:>5} | {:>5} {:>5}",
+                iter,
+                v_this_iter.size(), v_next_iter.size(), terminate_counter,
+                cov()->n_configs(), cov()->n_locs(), v_uniq.size(),
+                ctx()->runner()->n_cache_hit(),
+                timer.elapsed().wall / NS, ctx()->runner()->timer().elapsed().wall / NS
+            );
         }
         // ====
         if (v_loc_data.empty()) prepare_vec_loc_data();
@@ -188,12 +200,14 @@ public:
         }
 
         LOG(INFO, "{:>4} {:>3} | {:>4} {:>2} {:>2} {:>5} {:>3} {} | "
-                  "{:>3} {:>3} {:>3} {:>2} | {:>5} {:>4} {:>3} | {:>5}",
+                  "{:>3} {:>3} {:>3} {:>2} | {:>5} {:>4} {:>3} | {:>5} | "
+                  "{:>5} {:>5}",
             iter, t,
             dat->loc->id(), dat->messed_up, dat->n_stuck, leaves.size(), cex.size(), ok ? ' ' : '*',
             meidx, v_this_iter.size(), v_next_iter.size(), terminate_counter,
             cov()->n_configs(), cov()->n_locs(), v_uniq.size(),
-            ctx()->program_runner()->n_cache_hit()
+            ctx()->runner()->n_cache_hit(),
+            timer.elapsed().wall / NS, ctx()->runner()->timer().elapsed().wall / NS
         );
         return ok;
     }
@@ -291,7 +305,7 @@ public:
         std::stringstream out;
         fmt::print(out, "# {:>8} {:>4} {:>4} | {:>5} {:>5} | {:>4} {:>4}\n======\n",
                    cov()->n_configs(), cov()->n_locs(), v_uniq.size(),
-                   ctx()->program_runner()->n_cache_hit(), ctx()->program_runner()->n_locs(),
+                   ctx()->runner()->n_cache_hit(), ctx()->runner()->n_locs(),
                    ctx()->get_option_as<uint64_t>("seed"), iter
         );
         int simpl_cnt = 0;
@@ -352,7 +366,7 @@ private:
     }
 
     void run_config(const PMutConfig &c) {
-        auto loc_names = ctx()->program_runner()->run(c);
+        auto loc_names = ctx()->runner()->run(c);
         cov_mut()->register_cov(c, loc_names);
         CHECK(set_ran_conf_hash.insert(c->hash()).second);
         if (dom()->n_vars() <= 16 && loc_names.size() <= 16) {
@@ -434,7 +448,7 @@ int run_interative_algorithm_2(const boost::program_options::variables_map &vm) 
         ctx->set_option(kv.first, kv.second.value());
     }
     ctx->init();
-    ctx->program_runner()->init();
+    ctx->runner()->init();
     {
         ptr<Iter2> ite_alg = new Iter2(ctx);
         ite_alg->run_alg();

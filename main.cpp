@@ -22,8 +22,9 @@ namespace po = boost::program_options;
 void init_glog(int argc, char **argv) {
     (void) argc;
     FLAGS_colorlogtostderr = true;
-    FLAGS_timestamp_in_logfile_name = false;
+    //FLAGS_timestamp_in_logfile_name = false;
     FLAGS_max_log_size = 32;
+    FLAGS_logbuflevel = google::GLOG_INFO;
     google::SetStderrLogging(0);
     //google::SetVLOGLevel("*", 20);
     google::InitGoogleLogging(argv[0]);
@@ -60,7 +61,7 @@ int prog(int argc, char *argv[]) {
             ("vmodule,V", po::value<str>(), "Verbose logging. eg -V mapreduce=2,file=1,gfs*=3")
             ("verbose,v", po::value<int>(), "Verbose level")
             ("no-buf,N", "Do not buffer log")
-            ("log-file,L", po::value<str>(), "Log to file")
+            ("log-dir,L", po::value<str>(), "Log to file")
             ("help,h", "Print usage");
 
     po::variables_map vm;
@@ -96,11 +97,13 @@ int prog(int argc, char *argv[]) {
             google::SetVLOGLevel(p2.at(0).c_str(), boost::lexical_cast<int>(p2.at(1)));
         }
     }
-    if (vm.count("log-file")) {
-        str logFile = vm["log-file"].as<str>();
-        RAW_VLOG(0, "Log to file %s", logFile.c_str());
+    if (vm.count("log-dir")) {
+        str logFile = vm["log-dir"].as<str>();
+        RAW_VLOG(0, "Log to dir %s", logFile.c_str());
+        FLAGS_log_dir = logFile;
+    } else {
         for (int i = 0; i < google::NUM_SEVERITIES; ++i) {
-            google::SetLogDestination(i, logFile.c_str());
+            google::SetLogDestination(i, "");
         }
     }
 

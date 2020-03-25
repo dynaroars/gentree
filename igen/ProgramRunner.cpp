@@ -14,11 +14,14 @@ typedef unsigned long DWORD;
 #endif
 
 #define BOOST_POSIX_HAS_VFORK 1
+
 #include <boost/process/child.hpp>
 #include <boost/process/pipe.hpp>
 #include <boost/process/io.hpp>
 #include <boost/process/args.hpp>
 #include <boost/process/posix.hpp>
+
+#include <boost/scope_exit.hpp>
 
 #include <rocksdb/db.h>
 #include <rocksdb/slice.h>
@@ -32,6 +35,7 @@ namespace igen {
 
 
 ProgramRunner::ProgramRunner(PMutContext _ctx) : Object(move(_ctx)), type(RunnerType::Invalid) {
+    timer_.stop();
     if (ctx()->has_option("simple-runner")) {
         type = RunnerType::Simple;
     } else if (ctx()->has_option("builtin-runner")) {
@@ -90,6 +94,9 @@ static inline rocksdb::Slice to_key(const PConfig &config) {
 
 set<str> ProgramRunner::run(const PConfig &config) {
     using namespace rocksdb;
+    timer_.resume();
+    BOOST_SCOPE_EXIT(this_) { this_->timer_.stop(); }
+    BOOST_SCOPE_EXIT_END
 
     set<str> ret;
     n_runs_++;

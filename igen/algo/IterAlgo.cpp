@@ -236,7 +236,7 @@ public:
             }
         }
 
-        const auto &prunner = ctx()->program_runner();
+        const auto &prunner = ctx()->runner();
         LOG(INFO, "    {:^10}{:^6}{:^10}{:^10}{:^8}{:^7} {:^8}{:^7}{:^6} {:^8}{:^9}{:^10}",
             "rebuilds", "uniq", "new_locs", "min_cases", "leaves", "ig_th",
             "configs", "locs", "uniq",
@@ -287,7 +287,7 @@ public:
             }
             if (gSignalStatus == SIGINT) {
                 LOG(WARNING, "Requested break at iteration {}", iter);
-                ctx()->program_runner()->flush_compact_cachedb();
+                ctx()->runner()->flush_compact_cachedb();
                 break;
             }
             if (iter % 100 == 0) {
@@ -356,7 +356,7 @@ public:
         }
         LOG(INFO, "configs = {}, locs = {}, uniq_locs = {}",
             cov()->n_configs(), cov()->n_locs(), map_loc_hash.size());
-        const auto &prunner = ctx()->program_runner();
+        const auto &prunner = ctx()->runner();
         LOG(INFO, "Runner stat: n_runs = {}, n_total_locs = {}, cache_hit = {}",
             prunner->n_runs(), prunner->n_locs(), prunner->n_cache_hit());
 
@@ -370,7 +370,7 @@ public:
             fmt::print(outstream,
                        "# configs = {}, locs = {}, uniq_locs = {}\n# n_runs = {}, n_total_locs = {}\n======\n",
                        cov()->n_configs(), cov()->n_locs(), map_loc_hash.size(),
-                       ctx()->program_runner()->n_runs(), ctx()->program_runner()->n_locs());
+                       ctx()->runner()->n_runs(), ctx()->runner()->n_locs());
             for (const auto &e : ents) {
                 if (e.locs.empty()) continue;
                 fmt::print(outstream, "# rebuild_iter = {:>5} / {}{}\n", e.rebuild_iter, REBUILD_THR,
@@ -383,7 +383,7 @@ public:
     }
 
     void run_config(const PMutConfig &c) {
-        auto e = ctx()->program_runner()->run(c);
+        auto e = ctx()->runner()->run(c);
         cov_mut()->register_cov(c, e);
         bool insert_new = set_ran_conf_hash.insert(c->hash()).second;
         CHECK(insert_new);
@@ -429,7 +429,7 @@ int run_interative_algorithm(const boost::program_options::variables_map &vm) {
         ctx->set_option(kv.first, kv.second.value());
     }
     ctx->init();
-    ctx->program_runner()->init();
+    ctx->runner()->init();
     {
         ptr<IterativeAlgorithm> ite_alg = new IterativeAlgorithm(ctx);
         ite_alg->run_alg();

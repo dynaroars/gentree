@@ -150,7 +150,7 @@ public:
 
     // try random conf
     void run_analyze_1() {
-        ctx()->program_runner()->init();
+        ctx()->runner()->init();
 
         auto finp = get_inp();
         CHECK_EQ(finp.size(), 1) << "Need 1 input file";
@@ -165,7 +165,7 @@ public:
                     c->set(i, Rand.get(dom()->n_values(i)));
             } while (!all_configs.insert(c->hash(true)).second);
 
-            set<str> e = ctx()->program_runner()->run(c);
+            set<str> e = ctx()->runner()->run(c);
             map<unsigned, bool> eval_cache;
             for (const auto &p : ma) {
                 auto eid = p.second.id();
@@ -222,7 +222,7 @@ int run_analyzer(const boost::program_options::variables_map &vm) {
         ctx->set_option(kv.first, kv.second.value());
     }
     ctx->init();
-    //ctx->program_runner()->init();
+    //ctx->runner()->init();
     {
         ptr<Analyzer> ite_alg = new Analyzer(ctx);
         ite_alg->run_alg();

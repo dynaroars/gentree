@@ -8,6 +8,7 @@
 #include <igen/Context.h>
 #include <igen/Config.h>
 
+#include <boost/timer/timer.hpp>
 #include <boost/container/flat_set.hpp>
 #include <klib/enum.h>
 #include <igen/builtin/programs.h>
@@ -48,6 +49,8 @@ public:
 
     int n_locs() const;
 
+    const boost::timer::cpu_timer &timer() const { return timer_; }
+
 private:
     RunnerType type;
     str target;
@@ -56,6 +59,7 @@ private:
     std::unique_ptr<rocksdb::DB> cachedb_;
     std::unique_ptr<rocksdb::ReadOptions> cachedb_readopts_{};
     std::unique_ptr<rocksdb::WriteOptions> cachedb_writeopts_{};
+    boost::timer::cpu_timer timer_;
 
     set<str> _run_simple(const PConfig &config) const;
 
