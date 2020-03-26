@@ -97,6 +97,7 @@ public:
         bool ignored = false;
         set<unsigned> sexprid;
         unsigned cur_id = 0;
+        int cnt_ignored = 0;
         while (getline(f, line)) {
             boost::algorithm::trim(line);
             if (line.empty()) continue;
@@ -133,7 +134,7 @@ public:
                     CHECKF(!res.contains(s), "Duplicated location ({}): {}", path, s);
                     res.emplace(s, LocData{e, tree, ignored, cur_id});
                 }
-                cur_id++;
+                cur_id++, cnt_ignored += ignored;
                 ignored = false, read_state = 0, locs.clear(), sexpr.clear(), stree.clear();
                 continue;
             }
@@ -158,7 +159,7 @@ public:
                     CHECK(0);
             }
         }
-        LOG(INFO, "Read {} locs ({} uniq) from {}", res.size(), cur_id, path);
+        LOG(INFO, "Read {} locs ({} uniq, {} ignored) from {}", res.size(), cur_id, cnt_ignored, path);
         return res;
     }
 
