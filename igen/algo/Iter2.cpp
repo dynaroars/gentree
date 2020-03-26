@@ -313,10 +313,13 @@ public:
         LOG(INFO, "{:=^80}", "  " + header + "  ");
         std::stringstream out;
         fmt::print(out, "# {}\n", fmt::join(ctx()->get_option_as<vec<str>>("_args"), " "));
-        fmt::print(out, "# {:>8} {:>4} {:>4} | {:>5} {:>5} | {:>4}\n======\n",
+        fmt::print(out, "# {:>8} {:>4} {:>4} | {:>5} {:>5} | {:>4} | {:>3} {:>3} {:>3}\n======\n",
                    cov()->n_configs(), cov()->n_locs(), v_uniq.size(),
                    ctx()->runner()->n_cache_hit(), ctx()->runner()->n_locs(),
-                   iter
+                   iter,
+
+                   timer.elapsed().wall / NS, ctx()->runner()->timer().elapsed().wall / NS,
+                   ctx()->runner()->total_elapsed().wall / NS
         );
         int simpl_cnt = 0;
         for (const PLocData &dat : v_loc_data) {
