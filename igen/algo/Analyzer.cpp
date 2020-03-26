@@ -274,7 +274,10 @@ public:
                     if (!p.second.ignored) {
                         wrong_configs_nig.insert(c->hash());
                         wrong_locs_nig.insert(p.first);
-                        if (uniq_loc) wrong_locs_uniq_nig.insert(p.first);
+                        if (uniq_loc) {
+                            wrong_locs_uniq_nig.insert(p.first);
+                            LOG_FIRST_N(WARNING, 10000) << fmt::format("Wrong: loc {}, ", p.first) << *c;
+                        }
                     }
                 }
             }
