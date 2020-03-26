@@ -131,8 +131,9 @@ public:
                 CHECKF(count_cex(e, tree_e, 1) == 0, "Mismatch tree and expr: {}", path);
                 for (const str &s : locs) {
                     CHECKF(!res.contains(s), "Duplicated location ({}): {}", path, s);
-                    res.emplace(s, LocData{e, tree, ignored, cur_id++});
+                    res.emplace(s, LocData{e, tree, ignored, cur_id});
                 }
+                cur_id++;
                 read_state = 0, locs.clear(), sexpr.clear(), stree.clear();
                 continue;
             }
