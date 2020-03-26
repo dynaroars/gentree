@@ -43,7 +43,9 @@ public:
 
     int n_locs() const;
 
-    boost::timer::cpu_times timer_elapsed() const;
+    boost::timer::cpu_times total_elapsed() const;
+
+    const boost::timer::cpu_timer &timer() const { return timer_; }
 
 private:
     int n_threads_ = 1;
@@ -56,6 +58,7 @@ private:
 
     vec<PMutProgramRunner> runners_;
     WorkQueue work_queue_;
+    boost::timer::cpu_timer timer_;
 };
 
 }

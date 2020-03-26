@@ -289,6 +289,7 @@ void GCovRunner::init() {
     f_gcov_gcda_file = f_gcov_wd + "/" + f_gcov_prog_name + ".gcda";
 
     CHECK(boost::algorithm::starts_with(f_wd, allowed_prefix));
+    fs::remove_all(f_wd);
     fs::create_directories(f_wd);
 
     for (const auto &p : cp_replace_folder_cmds) {

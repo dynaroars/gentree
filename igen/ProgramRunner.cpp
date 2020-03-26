@@ -35,6 +35,7 @@ ProgramRunner::ProgramRunner(PMutContext _ctx, map<str, str> default_vars) :
         type(RunnerType::Invalid), default_vars_(move(default_vars)) {
 
     timer_.stop();
+
     if (ctx()->has_option("simple-runner")) {
         type = RunnerType::Simple;
     } else if (ctx()->has_option("builtin-runner")) {

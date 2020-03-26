@@ -9,10 +9,13 @@
 #include <rocksdb/options.h>
 
 #include <boost/container/flat_set.hpp>
+#include <boost/scope_exit.hpp>
 
 namespace igen {
 
 ProgramRunnerMt::ProgramRunnerMt(PMutContext _ctx) : Object(move(_ctx)) {
+    timer_.stop();
+
     n_threads_ = ctx()->get_option_as<int>("runner-threads");
     CHECK_GE(n_threads_, 1);
 
@@ -59,6 +62,11 @@ static inline rocksdb::Slice to_key(const PConfig &config) {
 
 vec<set<str>> ProgramRunnerMt::run(const vec<PMutConfig> &v_configs) {
     using namespace rocksdb;
+    timer_.resume();
+    BOOST_SCOPE_EXIT(this_) { this_->timer_.stop(); }
+    BOOST_SCOPE_EXIT_END
+
+    // ====
     vec<set<str>> v_locs(v_configs.size());
     vec<int> cid_to_run;
     cid_to_run.reserve(v_configs.size());
@@ -175,14 +183,12 @@ int ProgramRunnerMt::n_locs() const {
     return ret;
 }
 
-boost::timer::cpu_times ProgramRunnerMt::timer_elapsed() const {
-    boost::timer::cpu_times sum{};
-    sum.clear();
+boost::timer::cpu_times ProgramRunnerMt::total_elapsed() const {
+    const auto t = timer_.elapsed();
+    boost::timer::cpu_times sum{0, t.user, t.system};
     for (const auto &r: runners_) {
         auto elap = r->timer().elapsed();
         sum.wall += elap.wall;
-        sum.user += elap.user;
-        sum.system += elap.system;
     }
     return sum;
 }

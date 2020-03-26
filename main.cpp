@@ -12,6 +12,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/timer/timer.hpp>
 #include <boost/scope_exit.hpp>
+#include <boost/filesystem.hpp>
 
 #include <glog/raw_logging.h>
 
@@ -103,9 +104,11 @@ int prog(int argc, char *argv[]) {
         }
     }
     if (vm.count("log-dir")) {
-        str logFile = vm["log-dir"].as<str>();
-        RAW_VLOG(0, "Log to dir %s", logFile.c_str());
-        FLAGS_log_dir = logFile;
+        str dir = vm["log-dir"].as<str>();
+        RAW_VLOG(0, "Log to dir %s", dir.c_str());
+        CHECKF(boost::filesystem::exists(dir), "Logdir {} does not exist", dir);
+        CHECKF(boost::filesystem::is_directory(dir), "Logdir {} is not a directory", dir);
+        FLAGS_log_dir = dir;
     } else {
         for (int i = 0; i < google::NUM_SEVERITIES; ++i) {
             google::SetLogDestination(i, "");

@@ -99,7 +99,7 @@ public:
             CHECK_EQ(set_conf_hash.size(), set_ran_conf_hash.size());
             LOG(INFO, "{:=^80}", fmt::format("  Iteration {}  ", iter));
             if (run_iter(iter)) {
-                LOG(WARNING, "terminate_counter = {:>2}", terminate_counter + 1);
+                LOG(INFO, "terminate_counter = {:>2}", terminate_counter + 1);
                 if (++terminate_counter == max_terminate_counter) {
                     LOG(WARNING, "Early break at iteration {}", iter);
                     break;
@@ -117,13 +117,16 @@ public:
                 gSignalStatus = 0;
             }
             LOG(INFO, "Total  time: {}", timer.format(0));
-            LOG(INFO, "Runner time: {}", boost::timer::format(ctx()->runner()->timer_elapsed(), 0));
-            LOG(WARNING, "{:>4} | {:>3} {:>3} {:>2} | {:>5} {:>4} {:>3} | {:>5} | {:>5} {:>5}",
+            LOG(INFO, "Runner time: {}", ctx()->runner()->timer().format(0));
+            LOG(INFO, "       mt  : {}", boost::timer::format(ctx()->runner()->total_elapsed(), 0));
+            LOG(WARNING, "{:>4} | {:>3} {:>3} {:>2} | {:>5} {:>4} {:>3} | {:>5} | {:>5} {:>5} {:>5}",
                 iter,
                 v_this_iter.size(), v_next_iter.size(), terminate_counter,
                 cov()->n_configs(), cov()->n_locs(), v_uniq.size(),
                 ctx()->runner()->n_cache_hit(),
-                timer.elapsed().wall / NS, ctx()->runner()->timer_elapsed().wall / NS
+
+                timer.elapsed().wall / NS, ctx()->runner()->timer().elapsed().wall / NS,
+                ctx()->runner()->total_elapsed().wall / NS
             );
         }
         // ====
@@ -205,13 +208,15 @@ public:
 
         LOG(INFO, "{:>4} {:>3} | {:>4} {:>2} {:>2} {:>5} {:>3} {} | "
                   "{:>3} {:>3} {:>3} {:>2} | {:>5} {:>4} {:>3} | {:>5} | "
-                  "{:>5} {:>5}",
+                  "{:>5} {:>5} {:>5}",
             iter, t,
             dat->loc->id(), dat->messed_up, dat->n_stuck, leaves.size(), cex.size(), ok ? ' ' : '*',
             meidx, v_this_iter.size(), v_next_iter.size(), terminate_counter,
             cov()->n_configs(), cov()->n_locs(), v_uniq.size(),
             ctx()->runner()->n_cache_hit(),
-            timer.elapsed().wall / NS, ctx()->runner()->timer_elapsed().wall / NS
+
+            timer.elapsed().wall / NS, ctx()->runner()->timer().elapsed().wall / NS,
+            ctx()->runner()->total_elapsed().wall / NS
         );
         return ok;
     }
