@@ -9,7 +9,6 @@
 #include <utility>
 
 #include <boost/range/adaptor/reversed.hpp>
-#include <boost/circular_buffer.hpp>
 #include <boost/container/flat_set.hpp>
 
 #include <igen/Context.h>
