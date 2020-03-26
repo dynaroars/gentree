@@ -178,7 +178,7 @@ public:
             slocsa.insert(p.second.id());
             auto it = mb.find(p.first);
             if (it == mb.end()) {
-                VLOG(5, "{} not found in B", p.first);
+                VLOG(p.second.is_first ? 5 : 7, "{} not found in B", p.first);
                 smissing.insert(p.second.id()), cntmissing++;
                 continue;
             }
@@ -188,13 +188,13 @@ public:
                 if (p.second.is_first) {
                     LOG(WARNING, "Loc {} has more than {} cex", p.first, LIM);
                 } else {
-                    VLOG(5, "Loc {} has more than {} cex", p.first, LIM);
+                    VLOG(7, "Loc {} has more than {} cex", p.first, LIM);
                 }
             }
             if (num_cex == 0) {
                 //VLOG(0, "{} ok", p.first);
             } else {
-                VLOG(5, "{} diff (cex = {}) ({})", p.first, num_cex, p.second.id());
+                VLOG(p.second.is_first ? 5 : 7, "{} diff (cex = {}) ({})", p.first, num_cex, p.second.id());
                 if (sprintdiff.insert(p.second.id()).second) {
                     totalcex += num_cex;
                     GVLOG(10) << "\nA: " << p.second.e << "\nB: " << it->second.e;
@@ -205,7 +205,7 @@ public:
         for (const auto &p : mb) {
             slocsb.insert(p.second.id());
             if (!ma.contains(p.first)) {
-                VLOG(5, "{} not found in A", p.first);
+                VLOG(p.second.is_first ? 5 : 7, "{} not found in A", p.first);
                 smissing.insert(p.second.id()), cntmissing++;
             }
         }
