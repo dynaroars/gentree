@@ -24,6 +24,7 @@ ProgramRunnerMt::ProgramRunnerMt(PMutContext _ctx) : Object(move(_ctx)) {
     allow_cache_write = has_cache && !ctx()->has_option("no-cache-write");
     cache_only = ctx()->has_option("cache-only");
     CHECK(!cache_only || (has_cache && allow_cache_read)) << "Invalid argument for cache_only mode";
+    if (cache_only) allow_cache_write = false;
 
     if (has_cache) {
         str cachedir = ctx()->get_option_as<str>("cache");
@@ -43,8 +44,10 @@ ProgramRunnerMt::ProgramRunnerMt(PMutContext _ctx) : Object(move(_ctx)) {
         cachedb_.reset(db);
         CHECKF(s.ok(), "Fail to open cachedb at: {}", cachedir);
         cachedb_readopts_ = std::make_unique<ReadOptions>();
-        cachedb_writeopts_ = std::make_unique<WriteOptions>();
-        cachedb_writeopts_->disableWAL = true;
+        if (allow_cache_write) {
+            cachedb_writeopts_ = std::make_unique<WriteOptions>();
+            cachedb_writeopts_->disableWAL = true;
+        }
     }
 
     runners_.resize(n_threads_);

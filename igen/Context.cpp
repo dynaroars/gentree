@@ -50,11 +50,13 @@ void Context::cleanup() {
 }
 
 expr Context::zctx_solver_simplify(const expr &e) const {
+    constexpr int MAX_TIME = 30000;
+
     z3::context &ctx = const_cast<Context *>(this)->zctx();
     z3::tactic tactic(ctx, "ctx-solver-simplify");
-    tactic = z3::try_for(tactic, 20000);
+    tactic = z3::try_for(tactic, MAX_TIME);
     tactic = z3::repeat(tactic);
-    tactic = z3::try_for(tactic, 20000);
+    tactic = z3::try_for(tactic, MAX_TIME);
     z3::goal goal(ctx);
     expr simple_simpl = e.simplify();
     try {
