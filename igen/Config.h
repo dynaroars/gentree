@@ -70,6 +70,8 @@ public:
 
     hash_t hash(bool bypass_cache = false) const;
 
+    str to_str_raw() const;
+
 private:
     int id_;
     vec<short> values_;

@@ -105,6 +105,15 @@ void Config::add_cov_loc_id(int loc_id) {
     cov_loc_mut_ids().push_back(loc_id);
 }
 
+str Config::to_str_raw() const {
+    std::string s;
+    for (int i = 0; i < sz(values_); ++i) {
+        if (i > 0) s += ',';
+        s += std::to_string(values_[i]);
+    }
+    return s;
+}
+
 std::ostream &operator<<(std::ostream &output, const Config &d) {
     output << "Config " << d.id() << ": ";
     bool first_var = true;
