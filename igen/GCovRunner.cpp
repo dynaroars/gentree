@@ -164,14 +164,16 @@ void GCovRunner::exec(const vec<str> &config_values) {
                 }
                 LOG_IF(INFO, PRINT_VERBOSE, "Run: {} {}", f_bin, fmt::join(run_arg, " "));
 
+#if PRINT_VERBOSE
                 bp::ipstream out, err;
+#endif
                 bp::child proc_child(
                         f_bin, bp::posix::use_vfork, bp::posix::sig.ign(),
                         bp::args(run_arg), bp::start_dir(f_wd), bp::env(bp_env),
 #if PRINT_VERBOSE
                         bp::std_out > out, bp::std_err > err
 #else
-                        bp::std_out > bp::null, bp::std_err > err
+                        bp::std_out > bp::null, bp::std_err > bp::null
 #endif
                 );
                 CHECKF(proc_child, "Error running process: {} {}", f_bin, fmt::join(run_arg, " "));
@@ -180,10 +182,10 @@ void GCovRunner::exec(const vec<str> &config_values) {
                 //GLOG(INFO) << err.rdbuf();
 #if PRINT_VERBOSE
                 str str_out = read_stream_to_str(out);
-                VLOG(10, "Out: {}", str_out);
-#endif
+                VLOG(10, "Out (ec={}): {}", proc_child.exit_code(), str_out);
                 str str_err = read_stream_to_str(err);
-//                VLOG(10, "Err: {}", str_err);
+                VLOG(10, "Err: {}", str_err);
+#endif
                 // TODO: Check stderr
                 break;
             }
