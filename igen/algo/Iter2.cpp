@@ -418,7 +418,7 @@ private:
             tmp.assign(beg, ed);
             beg = ed, rem -= use;
             _run_configs(tmp);
-            LOG(WARNING, "{:>3} | {:>3} {:>3} {:>3}",
+            LOG(WARNING, "{:>7} | {:>3} {:>3} {:>3}",
                 sz(configs) - rem,
                 timer.elapsed().wall / NS, ctx()->runner()->timer().elapsed().wall / NS,
                 ctx()->runner()->total_elapsed().wall / NS);
