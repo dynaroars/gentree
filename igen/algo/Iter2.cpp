@@ -407,6 +407,25 @@ private:
     }
 
     void run_configs(const vec<PMutConfig> &configs) {
+        constexpr int SPLIT = 1000;
+        if (sz(configs) <= SPLIT) return _run_configs(configs);
+        auto beg = configs.begin();
+        int rem = sz(configs);
+        vec<PMutConfig> tmp;
+        while (rem > 0) {
+            int use = std::min(rem, SPLIT);
+            auto ed = beg + use;
+            tmp.assign(beg, ed);
+            beg = ed, rem -= use;
+            _run_configs(tmp);
+            LOG(WARNING, "{:>3} | {:>3} {:>3} {:>3}",
+                sz(configs) - rem,
+                timer.elapsed().wall / NS, ctx()->runner()->timer().elapsed().wall / NS,
+                ctx()->runner()->total_elapsed().wall / NS);
+        }
+    }
+
+    void _run_configs(const vec<PMutConfig> &configs) {
         auto v_loc_names = ctx()->runner()->run(configs);
         CHECK_EQ(configs.size(), v_loc_names.size());
         for (int i = 0; i < sz(configs); ++i) {
