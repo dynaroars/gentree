@@ -21,6 +21,8 @@
 #include <boost/container/flat_map.hpp>
 #include <boost/container/flat_set.hpp>
 
+#include <tsl/robin_set.h>
+
 namespace igen {
 
 
@@ -211,7 +213,9 @@ public:
         if (n_batch == 0) n_batch = 100;
         CHECK_GT(n_batch, 0);
 
-        set<hash_t> all_configs, wrong_configs, wrong_configs_nig;
+        tsl::robin_set<hash_t> all_configs;
+        all_configs.reserve(n_iter);
+        set<hash_t> wrong_configs, wrong_configs_nig;
         set<str> wrong_locs, wrong_locs_uniq, missing_locs, empty_set;
         set<str> wrong_locs_nig, wrong_locs_uniq_nig, missing_locs_nig;
 

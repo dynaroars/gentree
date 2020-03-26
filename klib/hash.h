@@ -22,5 +22,13 @@ hash_t calc_hash_128(const std::vector<T> &vec);
 
 }
 
+namespace std {
+template<>
+struct hash<igen::hash_t> {
+    size_t operator()(const igen::hash_t &x) const {
+        return x.first ^ x.second;
+    }
+};
+}
 
 #endif //IGEN4_HASH_H
