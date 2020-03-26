@@ -23,7 +23,9 @@
 #include <klib/vecutils.h>
 #include <klib/random.h>
 #include <klib/duktape.h>
+
 #include <glog/raw_logging.h>
+#include <tsl/robin_set.h>
 
 namespace igen {
 
@@ -44,7 +46,7 @@ public:
 public:
     int terminate_counter = 0, max_terminate_counter = 0, n_iterations = 0;
     bool pregen_configs = false;
-    set<hash_t> set_conf_hash, set_ran_conf_hash;
+    tsl::robin_set<hash_t> set_conf_hash, set_ran_conf_hash;
     boost::timer::cpu_timer timer;
 
     duk_context *dctx = nullptr;
@@ -447,9 +449,9 @@ private:
     }
 
     bool is_no_dup(const vec<PLocData> &v) const {
-        set<hash_t> s;
+        set<int> s;
         for (const auto &d : v)
-            if (!s.insert(d->loc->hash()).second) return false;
+            if (!s.insert(d->id()).second) return false;
         return true;
     }
 
@@ -460,7 +462,7 @@ private:
 
     vec<PMutConfig> gen_rand_configs(int num) const {
         vec<PMutConfig> ret;
-        set<hash_t> s;
+        tsl::robin_set<hash_t> s;
         PMutConfig c;
         while (sz(ret) < num) {
             c = new Config(ctx_mut());
