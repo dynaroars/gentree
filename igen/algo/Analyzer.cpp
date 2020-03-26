@@ -147,7 +147,7 @@ public:
                     CHECK(0);
             }
         }
-        LOG(INFO, "Read {} uniq locs from {}", res.size(), path);
+        LOG(INFO, "Read {} locs from {}", res.size(), path);
         return res;
     }
 
@@ -237,7 +237,7 @@ public:
                 bool eval_res, uniq_loc;
                 if (it == eval_cache.end()) {
                     eval_res = eval_cache[eid] = p.second.tree->test_config(c).first;
-                    CHECK_EQ(eval_res, c->eval(p.second.e));
+                    //CHECK_EQ(eval_res, c->eval(p.second.e));
                     uniq_loc = true;
                 } else {
                     eval_res = it->second;
@@ -253,8 +253,8 @@ public:
             }
             for (const auto &s : e) if (!ma.contains(s)) missing_locs.insert(s);
             if (it == 1) {
-                LOG(INFO, "{:>4} {:>4} | {:>4} {:>4} {:>4} | ",
-                    all_configs.size(), wrong_configs.size(),
+                LOG(INFO, "{:>4} {:>4} {:>4} | {:>4} {:>4} {:>4} | ",
+                    all_configs.size(), wrong_configs.size(), ctx()->runner()->n_cache_hit(),
                     wrong_locs_uniq.size(), wrong_locs.size(), missing_locs.size())
                         << (sz(wrong_locs_uniq) <= 10 ? wrong_locs_uniq : empty_set)
                         << (sz(missing_locs) <= 10 ? missing_locs : empty_set);
