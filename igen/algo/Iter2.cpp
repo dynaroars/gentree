@@ -283,8 +283,8 @@ public:
 
     void enqueue_next(const PLocData &dat) {
         CHECK(!dat->ignored);
-        bool ig_1 = terminate_counter > 0 && (dat->messed_up += (int) std::ceil(terminate_counter * 0.5)) >= 10;
-        bool ig_2 = ++dat->n_stuck >= 40;
+        bool ig_1 = (terminate_counter > 0) && (dat->messed_up += (int) std::ceil(terminate_counter * 0.5)) >= 10;
+        bool ig_2 = (cov()->n_configs() > int(1e5)) && (++dat->n_stuck >= 40);
         if (ig_1 || ig_2) {
             LOG(WARNING, "Ignore loc ({}) {}", dat->id(), dat->loc->name());
             dat->ignored = true;
