@@ -438,8 +438,8 @@ private:
             } else {
                 VLOG(50, "Config {}  ==>  {} locs", c->id(), loc_names.size());
             }
-            if (pregen_configs && set_ran_conf_hash.size() % 100 == 0)
-                LOG(INFO, "Ran {:>6} configs", set_ran_conf_hash.size());
+            // if (pregen_configs && set_ran_conf_hash.size() % 100 == 0)
+            //     LOG(INFO, "Ran {:>6} configs", set_ran_conf_hash.size());
         }
     }
 
