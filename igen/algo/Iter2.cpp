@@ -26,6 +26,7 @@
 
 #include <glog/raw_logging.h>
 #include <tsl/robin_set.h>
+#include <tsl/robin_map.h>
 
 namespace igen {
 
@@ -383,7 +384,7 @@ public:
     }
 
 private:
-    map<hash_t, PLocData> map_hash_locs;
+    tsl::robin_map<hash_t, PLocData> map_hash_locs;
 
     vec<PLocData> prepare_vec_loc_data() {
         vec<PLocData> v_new_locdat;

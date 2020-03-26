@@ -14,6 +14,8 @@
 #include <boost/container/flat_set.hpp>
 #include <boost/iterator/counting_iterator.hpp>
 
+#include <tsl/robin_set.h>
+
 namespace igen {
 
 
@@ -398,7 +400,7 @@ vec<ptr<Config>> CNode::gen_one_convering_configs(int lim) const {
     templ.set_all(-1);
     gen_tpl(templ);
     //====
-    set<hash_t> shash;
+    tsl::robin_set<hash_t> shash;
     shash.reserve((size_t) n_total());
     // Note: either hit_configs() or miss_configs() is empty
     CHECK(hit_configs().empty() || miss_configs().empty());

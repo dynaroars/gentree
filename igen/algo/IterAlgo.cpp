@@ -18,6 +18,8 @@
 #include <fstream>
 #include <csignal>
 #include <glog/raw_logging.h>
+#include <tsl/robin_set.h>
+#include <tsl/robin_map.h>
 
 #include <boost/range/adaptor/reversed.hpp>
 #include <boost/circular_buffer.hpp>
@@ -75,8 +77,8 @@ public:
         return (int) std::max(res, 1.0);
     }
 
-    set<hash_t> set_conf_hash, set_ran_conf_hash;
-    map<hash_t, PLocation> map_loc_hash;
+    tsl::robin_set<hash_t> set_conf_hash, set_ran_conf_hash;
+    tsl::robin_map<hash_t, PLocation> map_loc_hash;
 
     struct LocData {
         PMutCTree tree;
