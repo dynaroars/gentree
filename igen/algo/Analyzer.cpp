@@ -30,7 +30,7 @@ class Analyzer : public Object {
 public:
     explicit Analyzer(PMutContext ctx) : Object(move(ctx)) {}
 
-    map<std::pair<int, int>, int> map_count_cex;
+    map<std::pair<int, int>, double> map_count_cex;
 
     struct LocData {
         expr e;
@@ -42,22 +42,24 @@ public:
         [[nodiscard]] unsigned id() const { return id_; }
     };
 
-    static expr to_expr(const z3::model &m) {
+    expr to_expr(const z3::model &m, double &ncex) {
         z3::expr_vector vecExpr(m.ctx());
-        int nvars = m.num_consts();
-        vecExpr.resize(nvars);
-        for (int i = 0; i < nvars; ++i) {
-            const auto &de = m.get_const_decl(i);
-            z3::expr eqExpr = (de() == m.get_const_interp(de));
-            vecExpr.set(i, eqExpr);
+        for (int id = 0; id < dom()->n_vars(); ++id) {
+            expr v = m.get_const_interp(dom()->var(id)->zvar().decl());
+            if (v) {
+                dom()->var(id)->val_id_of(v);
+                vecExpr.push_back(dom()->var(id)->zvar() == v);
+            } else {
+                ncex *= dom()->n_values(id);
+            }
         }
         return z3::mk_and(vecExpr);
     }
 
-    int count_cex(const expr &a, const expr &b, int lim = 1000) {
+    double count_cex(const expr &a, const expr &b, double lim = 1000) {
         auto it = map_count_cex.find({a.id(), b.id()});
         if (it != map_count_cex.end()) return it->second;
-        int &ncex = map_count_cex[{a.id(), b.id()}];
+        double &ncex = map_count_cex[{a.id(), b.id()}];
 
         expr bi = (a != b);
         auto solver = ctx()->zscope();
@@ -69,13 +71,14 @@ public:
                 break;
             } else if (checkres == z3::unknown) {
                 LOG(WARNING, "Z3 solver returns unknown:\n") << *solver;
-                maxi(ncex, 1);
+                maxi(ncex, 1.0);
                 break;
             }
             CHECK_EQ(checkres, z3::sat);
-            ncex++;
             z3::model m = solver->get_model();
-            expr mexpr = to_expr(m);
+            double this_cex = 1;
+            expr mexpr = to_expr(m, this_cex);
+            ncex += this_cex;
             solver->add(!mexpr);
         }
         return ncex;
@@ -173,7 +176,8 @@ public:
         auto ma = read_file(finp.at(0));
         auto mb = read_file(finp.at(1));
         set<unsigned> sdiff, smissing, slocsa, slocsb, sprintdiff;
-        int cntdiff = 0, cntmissing = 0, totalcex = 0;
+        int cntdiff = 0, cntmissing = 0;
+        double totalcex = 0;
         for (const auto &p : ma) {
             slocsa.insert(p.second.id());
             auto it = mb.find(p.first);
@@ -182,19 +186,19 @@ public:
                 smissing.insert(p.second.id()), cntmissing++;
                 continue;
             }
-            const int LIM = 5000;
-            int num_cex = count_cex(p.second.e, it->second.e, LIM);
+            const double LIM = 1e18;
+            double num_cex = count_cex(p.second.e, it->second.e, LIM);
             if (num_cex == LIM) {
                 if (p.second.is_first) {
-                    LOG(WARNING, "Loc {} has more than {} cex", p.first, LIM);
+                    LOG(WARNING, "Loc {} has more than {:G} cex", p.first, LIM);
                 } else {
-                    VLOG(7, "Loc {} has more than {} cex", p.first, LIM);
+                    VLOG(7, "Loc {} has more than {:G} cex", p.first, LIM);
                 }
             }
             if (num_cex == 0) {
                 //VLOG(0, "{} ok", p.first);
             } else {
-                VLOG(p.second.is_first ? 5 : 7, "{} diff (cex = {}) ({})", p.first, num_cex, p.second.id());
+                VLOG(p.second.is_first ? 5 : 7, "{} diff (cex = {:G}) ({})", p.first, num_cex, p.second.id());
                 if (sprintdiff.insert(p.second.id()).second) {
                     totalcex += num_cex;
                     GVLOG(10) << "\nA: " << p.second.e << "\nB: " << it->second.e;
@@ -211,7 +215,7 @@ public:
         }
         LOG(INFO, "{:=^80}", "  FINAL RESULT  ");
         LOG(INFO, "Total: diff {:>4}, miss {:>4}, locs A {:>4}, B {:>4}", cntdiff, cntmissing, ma.size(), mb.size());
-        LOG(INFO, "Uniq : diff {:>4}, miss {:>4}, locs A {:>4}, B {:>4}, cex {:>4}", sdiff.size(), smissing.size(),
+        LOG(INFO, "Uniq : diff {:>4}, miss {:>4}, locs A {:>4}, B {:>4}, cex {:G}", sdiff.size(), smissing.size(),
             slocsa.size(), slocsb.size(), totalcex);
     }
 
