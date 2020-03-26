@@ -194,6 +194,7 @@ public:
 
     // try random conf
     void run_analyze_1() {
+        boost::timer::cpu_timer timer;
         ctx()->runner()->init();
 
         auto finp = get_inp();
@@ -260,6 +261,9 @@ public:
                         << (sz(missing_locs) <= 10 ? missing_locs : empty_set);
             }
         }
+        LOG(INFO, "Total        time: {}", timer.format(0));
+        LOG(INFO, "Runner       time: {}", ctx()->runner()->timer().format(0));
+        LOG(INFO, "Multi-runner time: {}", boost::timer::format(ctx()->runner()->total_elapsed(), 0));
     }
 
     vec<str> get_inp() {
