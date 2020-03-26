@@ -30,7 +30,14 @@ public:
 
     map<std::pair<int, int>, int> map_count_cex;
 
-    expr to_expr(const z3::model &m) {
+    struct LocData {
+        expr e;
+        PMutCTree tree;
+
+        [[nodiscard]] unsigned id() const { return e.id(); }
+    };
+
+    static expr to_expr(const z3::model &m) {
         z3::expr_vector vecExpr(m.ctx());
         int nvars = m.num_consts();
         vecExpr.resize(nvars);
@@ -69,43 +76,78 @@ public:
         return ncex;
     }
 
-    map<str, expr> read_file(const str &path) {
-        map<str, expr> res;
+    static bool is_all(const str &s, char c) {
+        if (s.empty()) return false;
+        for (char x : s) if (x != c) return false;
+        return true;
+    }
+
+    map<str, LocData> read_file(const str &path) {
+        map<str, LocData> res;
         std::ifstream f(path);
         CHECKF(!f.fail(), "Error reading file: {}", path);
         str line;
-        bool read_loc = true;
+        int read_state = 0;
         vec<str> locs;
-        str sexpr;
+        str sexpr, stree;
         set<unsigned> sexprid;
         while (getline(f, line)) {
             boost::algorithm::trim(line);
             if (line.empty() || line[0] == '#') continue;
-            if (read_loc && line[0] == '-') {
-                CHECKF(!locs.empty(), "Empty location set ({})", path);
-                read_loc = false;
+            if (is_all(line, '-')) {
+                switch (read_state) {
+                    case 0:
+                        CHECKF(!locs.empty(), "Empty location set ({})", path);
+                        break;
+                    case 1:
+                        boost::algorithm::trim(sexpr);
+                        CHECKF(!sexpr.empty(), "Empty sexpr location set ({})", path);
+                        break;
+                    default:
+                        CHECK(0);
+                }
+                read_state++;
+                CHECK_LE(read_state, 2);
                 continue;
-            } else if (line[0] == '=') {
+            } else if (is_all(line, '=')) {
                 if (locs.empty()) continue;
                 expr e = dom()->parse_string(move(sexpr));
+                PMutCTree tree = new CTree(ctx_mut());
+                std::stringstream stream_stree(stree);
+                tree->deserialize(stream_stree);
                 CHECKF(sexprid.insert(e.id()).second, "Duplicated expression ({})", path);
                 //LOG(INFO, "EXPR: ") << e;
+                expr tree_e = tree->build_zexpr(CTree::FreeMix);
+                CHECKF(count_cex(e, tree_e, 1) == 0, "Mismatch tree and expr: {}", path);
                 for (const str &s : locs) {
                     CHECKF(!res.contains(s), "Duplicated location ({}): {}", path, s);
-                    res.emplace(s, e);
+                    res.emplace(s, LocData{e, tree});
                 }
-                read_loc = true, locs.clear(), sexpr.clear();
+                read_state = 0, locs.clear(), sexpr.clear(), stree.clear();
                 continue;
             }
-            if (read_loc) {
-                for (char &c : line) if (c == ',') c = ' ';
-                std::stringstream ss(line);
-                str tok;
-                while (ss >> tok) locs.emplace_back(move(tok));
-            } else {
-                sexpr += line, sexpr += '\n';
+            switch (read_state) {
+                case 0: {
+                    for (char &c : line) if (c == ',') c = ' ';
+                    std::stringstream ss(line);
+                    str tok;
+                    while (ss >> tok) locs.emplace_back(move(tok));
+                    break;
+                }
+                case 1: {
+                    sexpr += line, sexpr += '\n';
+                    break;
+                }
+                case 2: {
+                    CHECKF(stree.empty(), "Invalid tree data ({})", path);
+                    stree = move(line);
+                    break;
+                }
+                default:
+                    CHECK(0);
             }
         }
+        LOG(INFO, "Read {} uniq locs from {}", res.size(), path);
         return res;
     }
 
@@ -125,14 +167,14 @@ public:
                 smissing.insert(p.second.id()), cntmissing++;
                 continue;
             }
-            int num_cex = count_cex(p.second, it->second);
+            int num_cex = count_cex(p.second.e, it->second.e);
             if (num_cex == 0) {
                 //VLOG(0, "{} ok", p.first);
             } else {
                 VLOG(5, "{} diff (cex = {}) ({})", p.first, num_cex, p.second.id());
                 if (sprintdiff.insert(p.second.id()).second) {
                     totalcex += num_cex;
-                    GVLOG(10) << "\nA: " << p.second << "\nB: " << it->second;
+                    GVLOG(10) << "\nA: " << p.second.e << "\nB: " << it->second.e;
                 }
                 sdiff.insert(p.second.id()), cntdiff++;
             }
@@ -193,8 +235,14 @@ public:
                 auto eid = p.second.id();
                 auto it = eval_cache.find(eid);
                 bool eval_res, uniq_loc;
-                if (it == eval_cache.end()) eval_res = eval_cache[eid] = c->eval(p.second), uniq_loc = true;
-                else eval_res = it->second, uniq_loc = false;
+                if (it == eval_cache.end()) {
+                    eval_res = eval_cache[eid] = p.second.tree->test_config(c).first;
+                    CHECK_EQ(eval_res, c->eval(p.second.e));
+                    uniq_loc = true;
+                } else {
+                    eval_res = it->second;
+                    uniq_loc = false;
+                }
 
                 bool truth = e.contains(p.first);
                 if (eval_res != truth) {

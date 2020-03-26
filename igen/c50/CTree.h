@@ -44,6 +44,10 @@ public:
 
     void cleanup() override;
 
+    std::ostream &serialize(std::ostream &out) const;
+
+    std::istream &deserialize(std::istream &inp);
+
 public: // For gen CEX
     int n_min_cases() const { return root_->min_cases_in_one_leaf_; };
 

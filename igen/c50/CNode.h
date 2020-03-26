@@ -50,6 +50,10 @@ public:
 
     vec<ptr<Config>> gen_one_convering_configs(int lim = std::numeric_limits<int>::max()) const;
 
+    std::ostream &serialize(std::ostream &out, bool &last_is_char) const;
+
+    std::istream &deserialize(std::istream &inp);
+
 private:
     bool evaluate_split();
 

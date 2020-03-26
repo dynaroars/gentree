@@ -484,4 +484,35 @@ vec<ptr<Config>> CNode::gen_one_convering_configs(int lim) const {
     return ret;
 }
 
+std::ostream &CNode::serialize(std::ostream &out, bool &last_is_char) const {
+    if (is_leaf()) {
+        out << "MH"[leaf_value()];
+        last_is_char = true;
+    } else {
+        if (last_is_char) out << ' ', last_is_char = false;
+        out << splitvar << ' ';
+        for (const auto &c : childs) c->serialize(out, last_is_char);
+    }
+    return out;
+}
+
+std::istream &CNode::deserialize(std::istream &inp) {
+    if (inp >> splitvar) {
+        CHECK(0 <= splitvar && splitvar < dom()->n_vars());
+        childs.resize(dom()->n_values(splitvar));
+        for (int i = 0; i < sz(childs); ++i) {
+            childs[i] = new CNode(tree, this, i, {hit_configs(), miss_configs()});
+            childs[i]->deserialize(inp);
+        }
+    } else if (char c; inp.clear(), inp >> c) {
+        CHECK(c == 'H' || c == 'M');
+        boost::sub_range<vec<PConfig>> empty = {tree->configs_[0].begin(), tree->configs_[0].begin()};
+        configs_[0] = configs_[1] = empty;
+        configs_[c == 'H'] = tree->configs_[0];
+    } else {
+        CHECK(0);
+    }
+    return inp;
+}
+
 }

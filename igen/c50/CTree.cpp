@@ -102,6 +102,19 @@ std::ostream &operator<<(std::ostream &output, const CTree &t) {
     return t.print_tree(output);
 }
 
+std::ostream &CTree::serialize(std::ostream &out) const {
+    CHECK(root_ != nullptr);
+    bool last_is_char = false;
+    return root_->serialize(out, last_is_char);
+}
+
+std::istream &CTree::deserialize(std::istream &inp) {
+    CHECK(root_ == nullptr);
+    configs_[0].clear(), configs_[0].resize(1);
+    root_ = new CNode(this, nullptr, 0, {configs_[0], configs_[0]});
+    return root_->deserialize(inp);
+}
+
 // =====================================new CNode================================================================================
 
 vec<PConfig> CTree::gather_small_leaves(int min_confs, int max_confs) const {

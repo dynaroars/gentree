@@ -116,10 +116,10 @@ public:
                 finish_alg(iter, "TEMP FINISH", gSignalStatus == SIGUSR2);
                 gSignalStatus = 0;
             }
-            LOG(INFO, "Total  time: {}", timer.format(0));
-            LOG(INFO, "Runner time: {}", ctx()->runner()->timer().format(0));
-            LOG(INFO, "       mt  : {}", boost::timer::format(ctx()->runner()->total_elapsed(), 0));
-            LOG(WARNING, "{:>4} | {:>3} {:>3} {:>2} | {:>5} {:>4} {:>3} | {:>5} | {:>5} {:>5} {:>5}",
+            LOG(INFO, "Total        time: {}", timer.format(0));
+            LOG(INFO, "Runner       time: {}", ctx()->runner()->timer().format(0));
+            LOG(INFO, "Multi-runner time: {}", boost::timer::format(ctx()->runner()->total_elapsed(), 0));
+            LOG(WARNING, "{:>4} | {:>3} {:>3} {:>2} | {:>5} {:>4} {:>3} | {:>5} | {:>3} {:>3} {:>3}",
                 iter,
                 v_this_iter.size(), v_next_iter.size(), terminate_counter,
                 cov()->n_configs(), cov()->n_locs(), v_uniq.size(),
@@ -208,7 +208,7 @@ public:
 
         LOG(INFO, "{:>4} {:>3} | {:>4} {:>2} {:>2} {:>5} {:>3} {} | "
                   "{:>3} {:>3} {:>3} {:>2} | {:>5} {:>4} {:>3} | {:>5} | "
-                  "{:>5} {:>5} {:>5}",
+                  "{:>3} {:>3} {:>3}",
             iter, t,
             dat->loc->id(), dat->messed_up, dat->n_stuck, leaves.size(), cex.size(), ok ? ' ' : '*',
             meidx, v_this_iter.size(), v_next_iter.size(), terminate_counter,
@@ -336,7 +336,9 @@ public:
             if (dat->ignored) out << "# IGNORED\n";
             for (const auto &d : vvp[dat->id()])
                 out << d->loc->name() << ", ";
-            out << "\n-\n" << e << "\n======\n";
+            out << "\n-\n" << e << "\n-\n";
+            dat->tree->serialize(out);
+            out << "\n======\n";
         }
 
         if (out_to_file) {
