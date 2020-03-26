@@ -119,7 +119,7 @@ int prog(int argc, char *argv[]) {
     // ====
     std::vector<str> all_args{argv, argv + argc};
     igen::map<str, boost::any> opts;
-    LOG(INFO, "Args: {}", fmt::join(all_args, " "));
+    LOG(WARNING, "Args: {}", fmt::join(all_args, " "));
     for (const auto &kv : vm) opts[kv.first] = kv.second.value();
     opts["_args"] = all_args;
 
