@@ -36,8 +36,9 @@ public:
         expr e;
         PMutCTree tree;
         bool ignored;
+        unsigned id_;
 
-        [[nodiscard]] unsigned id() const { return e.id(); }
+        [[nodiscard]] unsigned id() const { return id_; }
     };
 
     static expr to_expr(const z3::model &m) {
@@ -95,6 +96,7 @@ public:
         str sexpr, stree;
         bool ignored = false;
         set<unsigned> sexprid;
+        unsigned cur_id = 0;
         while (getline(f, line)) {
             boost::algorithm::trim(line);
             if (line.empty()) continue;
@@ -129,7 +131,7 @@ public:
                 CHECKF(count_cex(e, tree_e, 1) == 0, "Mismatch tree and expr: {}", path);
                 for (const str &s : locs) {
                     CHECKF(!res.contains(s), "Duplicated location ({}): {}", path, s);
-                    res.emplace(s, LocData{e, tree, ignored});
+                    res.emplace(s, LocData{e, tree, ignored, cur_id++});
                 }
                 read_state = 0, locs.clear(), sexpr.clear(), stree.clear();
                 continue;
@@ -155,7 +157,7 @@ public:
                     CHECK(0);
             }
         }
-        LOG(INFO, "Read {} locs from {}", res.size(), path);
+        LOG(INFO, "Read {} locs ({} uniq) from {}", res.size(), cur_id, path);
         return res;
     }
 
