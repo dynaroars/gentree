@@ -337,6 +337,7 @@ public:
             if (do_simpl) e = ctx()->zctx_solver_simplify(e);
 
             if (dat->ignored) out << "# IGNORED\n";
+            fmt::print(out, "# M/H: {} / {}\n", dat->tree->miss_configs().size(), dat->tree->hit_configs().size());
             for (const auto &d : vvp[dat->id()])
                 out << d->loc->name() << ", ";
             out << "\n-\n" << e << "\n-\n";
