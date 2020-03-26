@@ -134,7 +134,7 @@ public:
                     res.emplace(s, LocData{e, tree, ignored, cur_id});
                 }
                 cur_id++;
-                read_state = 0, locs.clear(), sexpr.clear(), stree.clear();
+                ignored = false, read_state = 0, locs.clear(), sexpr.clear(), stree.clear();
                 continue;
             }
             switch (read_state) {
