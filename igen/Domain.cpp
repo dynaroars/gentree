@@ -141,7 +141,7 @@ std::istream &operator>>(std::istream &input, Domain &d) {
 }
 
 std::ostream &operator<<(std::ostream &output, const Domain &d) {
-    fmt::print(output, "Domain[{} -> {}]: ", d.n_vars(), d.config_space());
+    fmt::print(output, "Domain[{} -> {:.5G}]: ", d.n_vars(), d.config_space());
     bool first_var = true;
     for (const auto &e : d) {
         if (!first_var) output << "; "; else first_var = false;
@@ -254,8 +254,8 @@ expr Domain::parse_string(str input) const {
     return evec[0];
 }
 
-uint64_t Domain::config_space() const {
-    uint64_t res = 1;
+double Domain::config_space() const {
+    double res = 1;
     for (const auto &v : vars_) res *= v->n_values();
     return res;
 }

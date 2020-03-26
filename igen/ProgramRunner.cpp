@@ -57,7 +57,7 @@ ProgramRunner::ProgramRunner(PMutContext _ctx, map<str, str> default_vars) :
     // LOG(INFO, "Program runner: type {}, target {}", type._to_string(), target);
     if (type == +RunnerType::BuiltIn) {
         builtin_fn = builtin::get_fn(target);
-        LOG(INFO, "Builtin runner source: ") << builtin::get_src(target);
+        // LOG(INFO, "Builtin runner source: ") << builtin::get_src(target);
     }
     if (type == +RunnerType::GCov) {
         gcov_runner_ = new GCovRunner(ctx_mut(), default_vars_);

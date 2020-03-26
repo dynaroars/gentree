@@ -22,6 +22,7 @@
 #include <klib/print_stl.h>
 #include <klib/vecutils.h>
 #include <klib/random.h>
+#include <klib/duktape.h>
 #include <glog/raw_logging.h>
 
 namespace igen {
@@ -32,15 +33,28 @@ static volatile std::sig_atomic_t gSignalStatus = 0;
 
 class Iter2 : public Object {
 public:
-    explicit Iter2(PMutContext ctx) : Object(move(ctx)) {}
+    explicit Iter2(PMutContext ctx) : Object(move(ctx)) {
+        dctx = duk_create_heap_default();
+    }
 
-    ~Iter2() override = default;
+    ~Iter2() override {
+        duk_destroy_heap(dctx);
+    }
 
 public:
     int terminate_counter = 0, max_terminate_counter = 0, n_iterations = 0;
     bool pregen_configs = false;
     set<hash_t> set_conf_hash, set_ran_conf_hash;
     boost::timer::cpu_timer timer;
+
+    duk_context *dctx = nullptr;
+    int p_max_terminate_counter{}, p_thr_messed_up_kickin{}, p_thr_stuck_kickin{};
+    int p_max_messed_up{}, p_max_stuck{};
+    double p_messed_up_factor{};
+    int p_lim_times{}, p_consecutive_success{}, p_thr_messed_up_switch{};
+    int p_messed_lim_times{}, p_messed_consecutive_success{};
+    int p_gen_cex_lim_leaves;
+    std::array<int, 3> p_gen_cex_heavy{}, p_gen_cex_normal{}, p_gen_cex_retry{};
 
     struct LocData;
     using PLocData = ptr<LocData>;
@@ -69,8 +83,11 @@ public:
     static constexpr int NS = 1e9;
 public:
     void run_alg() {
+        read_config_script();
         timer.start();
+
         max_terminate_counter = ctx()->get_option_as<int>("term-cnt");
+        if (max_terminate_counter == 0) max_terminate_counter = p_max_terminate_counter;
         bool run_full = ctx()->has_option("full"), run_rand = ctx()->has_option("rand");
         pregen_configs = run_full || run_rand;
         n_iterations = ctx()->get_option_as<int>("rounds");
@@ -134,7 +151,8 @@ public:
         finish_alg(iter);
     }
 
-    int gen_cex(vec<PMutConfig> &cex, const vec<PCNode> &leaves, int n_small, int n_rand = 0, int n_large = 0) {
+    int gen_cex(vec<PMutConfig> &cex, const vec<PCNode> &leaves, std::array<int, 3> n_gen) {
+        auto[n_small, n_rand, n_large] = n_gen;
         int gen_cnt = 0, skipped = 0, max_min_cases = -1;
         const auto gen_for = [this, &max_min_cases, &skipped, &cex, &gen_cnt](const PCNode &node, int lim = kMAX<int>) {
             int skipped_me = 0;
@@ -178,13 +196,13 @@ public:
         vec<PCNode> leaves;
         if (heavy) {
             tree->gather_nodes(leaves), sort_leaves(leaves);
-            gen_cex(cex, leaves, 5, 5, 5);
+            gen_cex(cex, leaves, p_gen_cex_heavy);
         } else {
-            tree->gather_nodes(leaves, 0, std::max(16, tree->n_min_cases() + 1)), sort_leaves(leaves);
-            gen_cex(cex, leaves, 5);
+            tree->gather_nodes(leaves, 0, std::max(p_gen_cex_lim_leaves, tree->n_min_cases() + 1)), sort_leaves(leaves);
+            gen_cex(cex, leaves, p_gen_cex_normal);
             if (cex.empty()) {
                 tree->gather_nodes(leaves), sort_leaves(leaves);
-                gen_cex(cex, leaves, 0, 5, 0);
+                gen_cex(cex, leaves, p_gen_cex_retry);
             }
         }
         const auto &loc = dat->loc;
@@ -239,8 +257,9 @@ public:
             bool finished = false, need_rebuild = true;
             int c_success = 0;
             meidx++;
-            int lim_times = 10, consecutive_success = 3;
-            if (dat->messed_up >= 5) lim_times = 20, consecutive_success = 6;
+            int lim_times = p_lim_times, consecutive_success = p_consecutive_success;
+            if (dat->messed_up >= p_thr_messed_up_switch)
+                lim_times = p_messed_lim_times, consecutive_success = p_messed_consecutive_success;
             for (int t = 1; t <= lim_times; ++t) {
                 if (gSignalStatus == SIGINT) return false;
                 if (run_one_loc(iter, meidx, t, dat, need_rebuild, c_success > 0)) {
@@ -283,10 +302,13 @@ public:
 
     void enqueue_next(const PLocData &dat) {
         CHECK(!dat->ignored);
-        bool ig_1 = (terminate_counter > 0) && (dat->messed_up += (int) std::ceil(terminate_counter * 0.5)) >= 10;
-        bool ig_2 = (cov()->n_configs() > int(1e5)) && (++dat->n_stuck >= 40);
+        bool ig_1 = (terminate_counter > 0 && cov()->n_configs() > p_thr_messed_up_kickin)
+                    && (dat->messed_up += (int) std::ceil(terminate_counter * p_messed_up_factor)) >= p_max_messed_up;
+        bool ig_2 = (cov()->n_configs() > p_thr_stuck_kickin)
+                    && (++dat->n_stuck >= p_max_stuck);
         if (ig_1 || ig_2) {
-            LOG(WARNING, "Ignore loc ({}) {}", dat->id(), dat->loc->name());
+            LOG(WARNING, "Ignore loc ({}) {} (messed={}/{}, stuck={}/{})", dat->id(), dat->loc->name(),
+                dat->messed_up, p_max_messed_up, dat->n_stuck, p_max_stuck);
             dat->ignored = true;
             return;
         }
@@ -449,6 +471,67 @@ private:
             ret.emplace_back(move(c));
         }
         return ret;
+    }
+
+    void read_config_script() {
+        str script_file = ctx()->get_option_as<str>("config-script");
+        if (script_file.empty()) script_file = "iter2_config.js";
+        std::ifstream ifs(script_file);
+        CHECKF(!ifs.fail(), "Error open script_file: {}", script_file);
+        std::stringstream sstr;
+        sstr << ifs.rdbuf();
+        str script = sstr.str();
+
+        duk_push_global_object(dctx);
+        duk_push_number(dctx, dom()->config_space());
+        bool ok = duk_put_global_string(dctx, "config_space");
+        CHECK(ok);
+        if (duk_peval_lstring(dctx, script.c_str(), script.size()) != 0) {
+            CHECKF(0, "Eval script {} failed: ", script_file) << duk_safe_to_string(dctx, -1);
+        }
+        duk_pop(dctx);
+
+        std::stringstream log;
+#define READ_P(name) name = duk_get_p<decltype(name)>(#name); log << #name " = " << name << "; "
+#define READ_A(name) name = duk_get_p<decltype(name), true>(#name); log << #name " = ["; \
+            for(size_t i = 0; i < size(name); i++) { if(i > 0) log << ','; log << name[i]; } log << "]; "
+        READ_P(p_max_terminate_counter);
+        READ_P(p_thr_messed_up_kickin);
+        READ_P(p_thr_stuck_kickin);
+        READ_P(p_max_messed_up);
+        READ_P(p_max_stuck);
+        READ_P(p_messed_up_factor);
+        READ_P(p_lim_times);
+        READ_P(p_consecutive_success);
+        READ_P(p_thr_messed_up_switch);
+        READ_P(p_messed_lim_times);
+        READ_P(p_messed_consecutive_success);
+
+        READ_P(p_gen_cex_lim_leaves);
+        READ_A(p_gen_cex_heavy);
+        READ_A(p_gen_cex_normal);
+        READ_A(p_gen_cex_retry);
+
+        LOG(WARNING, "Evaluated config: ") << log.rdbuf();
+    }
+
+    template<typename T, bool IS_ARR = false>
+    T duk_get_p(const char *key) {
+        bool ok = duk_get_prop_string(dctx, -1, key);
+        CHECKF(ok, "Error reading key '{}' from global object", key);
+        std::remove_reference_t<T> res{};
+        if constexpr (std::is_same_v<T, int>) res = duk_get_int(dctx, -1);
+        else if constexpr (std::is_same_v<T, double>) res = duk_get_number(dctx, -1);
+        else if constexpr (IS_ARR) {
+            for (size_t i = 0; i < size(res); ++i) {
+                ok = duk_get_prop_index(dctx, -1, (duk_uarridx_t) i);
+                CHECKF(ok, "Fail to read array {} with {} elements", key, res.size());
+                res[i] = duk_get_int(dctx, -1);
+                duk_pop(dctx);
+            }
+        } else abort();
+        duk_pop(dctx);
+        return res;
     }
 };
 

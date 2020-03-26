@@ -50,6 +50,7 @@ int prog(int argc, char *argv[]) {
             ("no-cache-write", "Do not write to cachedb")
             ("cache-only", "Only use cached result")
             ("runner-threads,j", po::value<int>()->default_value(1), "Number of program runner threads")
+            ("config-script", po::value<str>()->default_value(""), "JS configure script")
 
             ("full", "Run with full configs")
             ("rand", po::value<int>(), "Run with random configs")
@@ -58,7 +59,7 @@ int prog(int argc, char *argv[]) {
             ("alg-version,T", po::value<int>()->default_value(0), "Select algo version")
             ("batch-size", po::value<int>()->default_value(0), "Batch size")
             ("input,I", po::value<str>()->default_value(""), "Algorithm input")
-            ("term-cnt", po::value<int>()->default_value(10), "Termination counter")
+            ("term-cnt", po::value<int>()->default_value(0), "Termination counter")
 
             ("loc,X", po::value<str>(), "Interested location")
             ("rounds,R", po::value<int>(), "Number of iterations")
