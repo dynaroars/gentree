@@ -224,13 +224,18 @@ public:
         for (auto &c : batch_confs) c = new Config(ctx_mut());
         int it = n_batch;
 
+        int nvars = dom()->n_vars();
+        vec<int> dom_nvals(nvars);
+        for (int var = 0; var < nvars; ++var)
+            dom_nvals[var] = dom()->n_values(var);
+
         for (int iter = 1; iter <= n_iter; ++iter) {
             if (it == n_batch) {
                 for (int i = 0; i < n_batch; ++i) {
                     const PMutConfig &c = batch_confs[i];
                     do {
-                        for (int var = 0; var < dom()->n_vars(); ++var)
-                            c->set(var, Rand.get(dom()->n_values(var)));
+                        for (int var = 0; var < nvars; ++var)
+                            c->set(var, Rand.get(dom_nvals[var]));
                     } while (!all_configs.insert(c->hash(true)).second);
                 }
                 batch_locs = ctx_mut()->runner()->run(batch_confs);
