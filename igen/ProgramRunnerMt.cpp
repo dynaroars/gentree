@@ -43,7 +43,9 @@ ProgramRunnerMt::ProgramRunnerMt(PMutContext _ctx) : Object(move(_ctx)) {
         Status s = DB::Open(options, cachedir, &db);
         cachedb_.reset(db);
         CHECKF(s.ok(), "Fail to open cachedb at: {}", cachedir);
-        cachedb_readopts_ = std::make_unique<ReadOptions>();
+        if (allow_cache_read) {
+            cachedb_readopts_ = std::make_unique<ReadOptions>();
+        }
         if (allow_cache_write) {
             cachedb_writeopts_ = std::make_unique<WriteOptions>();
             cachedb_writeopts_->disableWAL = true;
