@@ -33,6 +33,7 @@ public:
     struct LocData {
         expr e;
         PMutCTree tree;
+        bool ignored;
 
         [[nodiscard]] unsigned id() const { return e.id(); }
     };
@@ -90,10 +91,15 @@ public:
         int read_state = 0;
         vec<str> locs;
         str sexpr, stree;
+        bool ignored = false;
         set<unsigned> sexprid;
         while (getline(f, line)) {
             boost::algorithm::trim(line);
-            if (line.empty() || line[0] == '#') continue;
+            if (line.empty()) continue;
+            if (line[0] == '#') {
+                if (line.find("IGNORED") != str::npos) ignored = true;
+                continue;
+            }
             if (is_all(line, '-')) {
                 switch (read_state) {
                     case 0:
@@ -121,7 +127,7 @@ public:
                 CHECKF(count_cex(e, tree_e, 1) == 0, "Mismatch tree and expr: {}", path);
                 for (const str &s : locs) {
                     CHECKF(!res.contains(s), "Duplicated location ({}): {}", path, s);
-                    res.emplace(s, LocData{e, tree});
+                    res.emplace(s, LocData{e, tree, ignored});
                 }
                 read_state = 0, locs.clear(), sexpr.clear(), stree.clear();
                 continue;
@@ -205,8 +211,9 @@ public:
         if (n_batch == 0) n_batch = 100;
         CHECK_GT(n_batch, 0);
 
-        set<hash_t> all_configs, wrong_configs;
-        set<str> wrong_locs, wrong_locs_uniq, empty_set, missing_locs;
+        set<hash_t> all_configs, wrong_configs, wrong_configs_nig;
+        set<str> wrong_locs, wrong_locs_uniq, missing_locs, empty_set;
+        set<str> wrong_locs_nig, wrong_locs_uniq_nig, missing_locs_nig;
 
         vec<PMutConfig> batch_confs(n_batch);
         vec<set<str>> batch_locs;
@@ -250,13 +257,21 @@ public:
                     wrong_configs.insert(c->hash());
                     wrong_locs.insert(p.first);
                     if (uniq_loc) wrong_locs_uniq.insert(p.first);
+
+                    if (!p.second.ignored) {
+                        wrong_configs_nig.insert(c->hash());
+                        wrong_locs_nig.insert(p.first);
+                        if (uniq_loc) wrong_locs_uniq_nig.insert(p.first);
+                    }
                 }
             }
             for (const auto &s : e) if (!ma.contains(s)) missing_locs.insert(s);
             if (it == 1) {
-                LOG(INFO, "{:>4} {:>4} {:>4} | {:>4} {:>4} {:>4} | ",
+                LOG(INFO, "{:>4} {:>4} {:>4} | {:>4} {:>4} {:>4} | {:>4} {:>4} {:>4} | ",
                     all_configs.size(), wrong_configs.size(), ctx()->runner()->n_cache_hit(),
-                    wrong_locs_uniq.size(), wrong_locs.size(), missing_locs.size())
+                    wrong_locs.size(), wrong_locs_uniq.size(), missing_locs.size(),
+                    wrong_configs_nig.size(), wrong_locs_nig.size(), wrong_locs_uniq_nig.size()
+                )
                         << (sz(wrong_locs_uniq) <= 10 ? wrong_locs_uniq : empty_set)
                         << (sz(missing_locs) <= 10 ? missing_locs : empty_set);
             }
