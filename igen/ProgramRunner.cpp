@@ -119,18 +119,24 @@ set<str> ProgramRunner::_run_gcov(const PConfig &config) const {
     vec<str> str_args;
     str_args.reserve(size_t(dom()->n_vars()) * 2);
     for (const auto &e : *config) {
-        bool on = e.label() == "on";
-        bool off = e.label() == "off";
+        const str &name = e.name(), &label = e.label();
+        bool on = label == "on";
+        bool off = label == "off";
         if (on || off) {
-            if (on) str_args.emplace_back(e.name());
+            if (on) str_args.emplace_back(name);
         } else {
-            if (e.name() == "+") {
-                str_args.emplace_back(e.name() + e.label());
-            } else if (e.name().size() > 2 && e.name()[0] == '-' && e.name()[1] == '-') {
-                str_args.emplace_back(e.name() + '=' + e.label());
+            if (name == "+") {
+                str tmp = name;
+                tmp += label;
+                str_args.emplace_back(move(tmp));
+            } else if (name.size() > 2 && name[0] == '-' && name[1] == '-') {
+                str tmp = name;
+                tmp += '=', tmp += label;
+                str_args.emplace_back(move(tmp));
             } else {
-                str_args.emplace_back(e.name());
-                str_args.emplace_back(e.label());
+                CHECKF(0, "Invalid name/lable pair: {} {}", name, label);
+                str_args.emplace_back(name);
+                str_args.emplace_back(label);
             }
         }
     }
