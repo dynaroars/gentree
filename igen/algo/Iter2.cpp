@@ -418,8 +418,8 @@ private:
             tmp.assign(beg, ed);
             beg = ed, rem -= use;
             _run_configs(tmp);
-            LOG(WARNING, "{:>7} | {:>3} {:>3} {:>3}",
-                sz(configs) - rem,
+            LOG(WARNING, "{:>7} {:>7} | {:>3} {:>3} {:>3}",
+                sz(configs) - rem, ctx()->runner()->n_cache_hit(),
                 timer.elapsed().wall / NS, ctx()->runner()->timer().elapsed().wall / NS,
                 ctx()->runner()->total_elapsed().wall / NS);
         }
