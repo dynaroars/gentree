@@ -36,6 +36,7 @@ public:
         expr e;
         PMutCTree tree;
         bool ignored;
+        bool is_first;
         unsigned id_;
 
         [[nodiscard]] unsigned id() const { return id_; }
@@ -68,7 +69,7 @@ public:
                 break;
             } else if (checkres == z3::unknown) {
                 LOG(WARNING, "Z3 solver returns unknown:\n") << *solver;
-                ncex = lim;
+                maxi(ncex, 1);
                 break;
             }
             CHECK_EQ(checkres, z3::sat);
@@ -130,9 +131,11 @@ public:
                 //LOG(INFO, "EXPR: ") << e;
                 expr tree_e = tree->build_zexpr(CTree::FreeMix);
                 CHECKF(count_cex(e, tree_e, 1) == 0, "Mismatch tree and expr: {}", path);
+                bool is_first = true;
                 for (const str &s : locs) {
                     CHECKF(!res.contains(s), "Duplicated location ({}): {}", path, s);
-                    res.emplace(s, LocData{e, tree, ignored, cur_id});
+                    res.emplace(s, LocData{e, tree, ignored, is_first, cur_id});
+                    is_first = false;
                 }
                 cur_id++, cnt_ignored += ignored;
                 ignored = false, read_state = 0, locs.clear(), sexpr.clear(), stree.clear();
@@ -179,7 +182,15 @@ public:
                 smissing.insert(p.second.id()), cntmissing++;
                 continue;
             }
-            int num_cex = count_cex(p.second.e, it->second.e);
+            const int LIM = 5000;
+            int num_cex = count_cex(p.second.e, it->second.e, LIM);
+            if (num_cex == LIM) {
+                if (p.second.is_first) {
+                    LOG(WARNING, "Loc {} has more than {} cex", p.first, LIM);
+                } else {
+                    VLOG(5, "Loc {} has more than {} cex", p.first, LIM);
+                }
+            }
             if (num_cex == 0) {
                 //VLOG(0, "{} ok", p.first);
             } else {
