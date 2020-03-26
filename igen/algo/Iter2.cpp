@@ -152,14 +152,14 @@ public:
         }
         VLOG(10, "Small: {:>2} cex, skipped {}, max_min_cases = {}", cex.size(), skipped, max_min_cases);
         // ====
-        n_rand += n_small, max_min_cases = -1;
+        n_rand += sz(cex), max_min_cases = -1;
         for (int i = 0; i < 10; ++i) {
             if (sz(cex) >= n_rand) break;
             gen_for(*Rand.get(leaves));
         }
         VLOG(10, "Rand : {:>2} cex, skipped {}, max_min_cases = {}", cex.size(), skipped, max_min_cases);
         // ====
-        n_large += n_rand, max_min_cases = -1;
+        n_large += sz(cex), max_min_cases = -1;
         for (const PCNode &node : boost::adaptors::reverse(leaves)) {
             if (sz(cex) >= n_large) break;
             gen_for(node);
