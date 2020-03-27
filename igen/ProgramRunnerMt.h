@@ -50,7 +50,7 @@ public:
 private:
     int n_threads_ = 1;
     int n_cache_hit_ = 0, n_unflushed_write_ = 0;
-    bool has_cache{}, allow_cache_read{}, allow_cache_write{}, cache_only{};
+    bool has_cache{}, allow_cache_read{}, allow_cache_write{}, allow_execute{};
 
     std::unique_ptr<rocksdb::DB> cachedb_;
     std::unique_ptr<rocksdb::ReadOptions> cachedb_readopts_{};

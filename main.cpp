@@ -46,9 +46,7 @@ int prog(int argc, char *argv[]) {
             ("output,O", po::value<str>(), "Output result")
             ("disj-conj", "Gen expr strat DisjOfConj")
             ("cache,c", po::value<str>()->implicit_value(""), "Use cachedb")
-            ("no-cache-read", "Do not read from cachedb")
-            ("no-cache-write", "Do not write to cachedb")
-            ("cache-only", "Only use cached result")
+            ("cache-control,p", po::value<str>()->default_value("rwx"), "Cache control: read/write/execute")
             ("runner-threads,j", po::value<int>()->default_value(1), "Number of program runner threads")
             ("config-script", po::value<str>()->default_value(""), "JS configure script")
 
