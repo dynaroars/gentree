@@ -523,7 +523,7 @@ void CNode::build_interpreter(vec<int> &dat) const {
     } else {
         dat.push_back(splitvar);
         CHECK_EQ(childs.size(), dom(splitvar)->n_values());
-        int beg = dat.size(), nchilds = sz(childs);
+        int beg = sz(dat), nchilds = sz(childs);
         dat.resize(beg + nchilds - 1);
         for (int i = 0; i < nchilds; ++i) {
             childs[i]->build_interpreter(dat);
