@@ -364,7 +364,7 @@ public:
             build_tree(dat);
 
             bool do_simpl = expensive_simplify;
-            LOG_IF(INFO, do_simpl, "Simplifying expr: {:>3} ({}) {}", ++simpl_cnt, loc->id(), loc->name());
+            LOG_IF(INFO, do_simpl, "Generating expr: {:>3} ({}) {}", ++simpl_cnt, loc->id(), loc->name());
             CHECK_NE(tree, nullptr);
 
             z3::expr e = tree->build_zexpr(expr_strat);

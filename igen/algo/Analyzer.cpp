@@ -227,7 +227,13 @@ public:
         auto finp = get_inp();
         CHECK_EQ(finp.size(), 1) << "Need 1 input file";
         auto ma = read_file(finp.at(0));
-        int n_iter = ctx()->get_option_as<int>("rounds");
+
+        int n_iter = 0;
+        bool run_full = false;
+        if (ctx()->has_option("rand")) n_iter = ctx()->get_option_as<int>("rand");
+        else if (ctx()->has_option("full")) n_iter = (int) dom()->config_space(), run_full = true;
+        CHECK_GT(n_iter, 0) << "Invalid arguments";
+
         int n_batch = ctx()->get_option_as<int>("batch-size");
         if (n_batch == 0) n_batch = 100;
         CHECK_GT(n_batch, 0);
@@ -238,7 +244,7 @@ public:
         set<str> wrong_locs, wrong_locs_uniq, missing_locs, empty_set;
         set<str> wrong_locs_nig, wrong_locs_uniq_nig, missing_locs_nig;
 
-        vec<PMutConfig> batch_confs(n_batch);
+        vec<PMutConfig> batch_confs(n_batch), generated_full_configs;
         vec<set<str>> batch_locs;
         for (auto &c : batch_confs) c = new Config(ctx_mut());
         int it = n_batch;
@@ -248,22 +254,40 @@ public:
         for (int var = 0; var < nvars; ++var)
             dom_nvals[var] = dom()->n_values(var);
 
+        if (run_full) {
+            LOG(INFO, "Generating full {:G} configs", dom()->config_space());
+            generated_full_configs = dom()->gen_all_configs();
+        }
+        int it_full_configs = 0;
+
         for (int iter = 1; iter <= n_iter; ++iter) {
             if (it == n_batch) {
-                for (int i = 0; i < n_batch; ++i) {
-                    const PMutConfig &c = batch_confs[i];
-                    do {
-                        for (int var = 0; var < nvars; ++var)
-                            c->set(var, Rand.get(dom_nvals[var]));
-                    } while (!all_configs.insert(c->hash(true)).second);
+                if (run_full) {
+                    for (int i = 0; i < n_batch; ++i) {
+                        if (it_full_configs < sz(generated_full_configs)) {
+                            batch_confs[i] = move(generated_full_configs[it_full_configs++]);
+                            all_configs.insert(batch_confs[i]->hash());
+                        } else {
+                            batch_confs[i] = nullptr;
+                        }
+                    }
+                } else {
+                    for (int i = 0; i < n_batch; ++i) {
+                        const PMutConfig &c = batch_confs[i];
+                        do {
+                            for (int var = 0; var < nvars; ++var)
+                                c->set(var, Rand.get(dom_nvals[var]));
+                        } while (!all_configs.insert(c->hash(true)).second);
+                    }
                 }
                 batch_locs = ctx_mut()->runner()->run(batch_confs);
                 CHECK_EQ(batch_confs.size(), batch_locs.size());
                 it = 0;
             }
 
-            const PMutConfig &c = batch_confs[it];
-            const set<str> &e = batch_locs[it];
+            const PMutConfig &c = batch_confs.at(it);
+            CHECK_NE(c, nullptr);
+            const set<str> &e = batch_locs.at(it);
             ++it;
 
             map<unsigned, bool> eval_cache;
@@ -272,7 +296,8 @@ public:
                 auto it = eval_cache.find(eid);
                 bool eval_res, uniq_loc;
                 if (it == eval_cache.end()) {
-                    eval_res = eval_cache[eid] = p.second.tree->test_config(c).first;
+                    p.second.tree->build_interpreter();
+                    eval_res = eval_cache[eid] = p.second.tree->interpret(*c);
                     //CHECK_EQ(eval_res, c->eval(p.second.e));
                     uniq_loc = true;
                 } else {
@@ -291,7 +316,7 @@ public:
                         wrong_locs_nig.insert(p.first);
                         if (uniq_loc) {
                             wrong_locs_uniq_nig.insert(p.first);
-                            LOG_FIRST_N(WARNING, 10000)
+                            LOG_FIRST_N(WARNING, 1000)
                                 << fmt::format("Wrong: loc {}, ", p.first) << *c
                                 << "  #    " << c->to_str_raw();
                         }
