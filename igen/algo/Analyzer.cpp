@@ -258,6 +258,7 @@ public:
         if (run_full) {
             LOG(INFO, "Generating full {:G} configs", dom()->config_space());
             generated_full_configs = dom()->gen_all_configs();
+            CHECK_EQ(n_iter, generated_full_configs.size());
         }
         int it_full_configs = 0;
 
@@ -269,7 +270,8 @@ public:
                             batch_confs[i] = move(generated_full_configs[it_full_configs++]);
                             all_configs.insert(batch_confs[i]->hash());
                         } else {
-                            batch_confs[i] = nullptr;
+                            batch_confs.erase(batch_confs.begin() + i, batch_confs.end());
+                            break;
                         }
                     }
                 } else {
