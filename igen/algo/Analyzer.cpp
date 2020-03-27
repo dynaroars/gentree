@@ -293,19 +293,19 @@ public:
             const set<str> &e = batch_locs.at(it);
             ++it;
 
-            tsl::robin_map<unsigned, bool> eval_cache;
+            vec<int8_t> eval_cache(ma.size(), -1);
             eval_cache.reserve(ma.size());
             for (const auto &p : ma) {
-                auto eid = p.second.id();
-                auto it = eval_cache.find(eid);
+                const auto &dat = p.second;
+                int8_t &cache_val = eval_cache[dat.id()];
                 bool eval_res, uniq_loc;
-                if (it == eval_cache.end()) {
-                    p.second.tree->build_interpreter();
-                    eval_res = eval_cache[eid] = p.second.tree->interpret(*c);
-                    //CHECK_EQ(eval_res, c->eval(p.second.e));
+                if (cache_val == -1) {
+                    dat.tree->build_interpreter();
+                    cache_val = (eval_res = dat.tree->interpret(*c));
+                    //CHECK_EQ(eval_res, c->eval(dat.e));
                     uniq_loc = true;
                 } else {
-                    eval_res = it->second;
+                    eval_res = (bool) cache_val;
                     uniq_loc = false;
                 }
 
@@ -315,7 +315,7 @@ public:
                     wrong_locs.insert(p.first);
                     if (uniq_loc) wrong_locs_uniq.insert(p.first);
 
-                    if (!p.second.ignored) {
+                    if (!dat.ignored) {
                         wrong_configs_nig.insert(c->hash());
                         wrong_locs_nig.insert(p.first);
                         if (uniq_loc) {
