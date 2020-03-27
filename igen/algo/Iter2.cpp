@@ -358,9 +358,9 @@ public:
         int simpl_cnt = 0;
         for (const PLocData &dat : v_loc_data) {
             const auto &loc = dat->loc;
-            const auto &tree = dat->tree;
-            build_tree(dat);
+            auto &tree = dat->tree;
             if (dat->linked()) continue;
+            build_tree(dat);
 
             bool do_simpl = expensive_simplify;
             LOG_IF(INFO, do_simpl, "Simplifying expr: {:>3} ({}) {}", ++simpl_cnt, loc->id(), loc->name());
@@ -371,14 +371,14 @@ public:
             if (do_simpl) e = ctx()->zctx_solver_simplify(e);
 
             if (dat->ignored) out << "# IGNORED\n";
-            fmt::print(out, "# M/H: {} / {}\n", dat->tree->miss_configs().size(), dat->tree->hit_configs().size());
+            fmt::print(out, "# M/H: {} / {}\n", tree->miss_configs().size(), tree->hit_configs().size());
             for (const auto &d : vvp[dat->id()])
                 out << d->loc->name() << ", ";
             out << "\n-\n" << e << "\n-\n";
             dat->tree->serialize(out);
             out << "\n======\n";
 
-            if (pregen_configs) dat->tree = nullptr;
+            if (pregen_configs) tree = nullptr;
         }
 
         if (!out_to_file) {
