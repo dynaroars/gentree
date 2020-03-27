@@ -58,7 +58,9 @@ public:
 
     tsl::robin_map<unsigned, double> cache_count_models;
 
-    double count_models(const expr &ex, double lim = 1e18) {
+    static constexpr double DEF_LIM_MODELS = 1e18;
+
+    double count_models(const expr &ex, double lim = DEF_LIM_MODELS, z3::expr_vector *v_models = nullptr) {
         auto it = cache_count_models.find(ex.id());
         if (it != cache_count_models.end()) return it->second;
         double &ncex = cache_count_models[ex.id()];
@@ -81,6 +83,7 @@ public:
             expr mexpr = to_expr(m, this_cex);
             ncex += this_cex;
             solver->add(!mexpr);
+            if (v_models != nullptr) v_models->push_back(mexpr);
         }
         return ncex;
     }
@@ -189,10 +192,10 @@ public:
                 smissing.insert(dat.id()), cntmissing++;
                 continue;
             }
-            const double LIM = 1e18;
+            const double LIM = DEF_LIM_MODELS;
             expr expr_cex = dat.e != it->second.e;
             ve_cex.push_back(expr_cex);
-            double num_cex = count_models(expr_cex, LIM);
+            double num_cex = count_models(expr_cex, LIM, &ve_cex);
             if (num_cex == LIM) {
                 if (dat.is_first) {
                     LOG(WARNING, "Loc {} has more than {:G} cex", p.first, LIM);
