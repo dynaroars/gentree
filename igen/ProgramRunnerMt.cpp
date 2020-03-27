@@ -109,7 +109,7 @@ vec<set<str>> ProgramRunnerMt::run(const vec<PMutConfig> &v_configs) {
         cid_to_run.push_back(cid);
     }
 
-    CHECK(allow_execute);
+    CHECK(allow_execute || cid_to_run.empty());
     if (n_threads_ > 1) {
         work_queue_.run_batch_job([&v_locs,
                                           &v_configs = std::as_const(v_configs),

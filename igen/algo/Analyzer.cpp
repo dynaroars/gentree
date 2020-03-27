@@ -70,7 +70,7 @@ public:
             if (checkres == z3::unsat) {
                 break;
             } else if (checkres == z3::unknown) {
-                LOG(WARNING, "Z3 solver returns unknown:\n") << *solver;
+                LOG(WARNING, "Z3 solver returns unknown");
                 maxi(ncex, 1.0);
                 break;
             }
