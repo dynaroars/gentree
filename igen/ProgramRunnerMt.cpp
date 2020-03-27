@@ -25,14 +25,16 @@ ProgramRunnerMt::ProgramRunnerMt(PMutContext _ctx) : Object(move(_ctx)) {
     CHECK_GE(n_threads_, 1);
 
     has_cache = ctx()->has_option("cache");
-    str cache_ctl = ctx()->get_option_as<str>("cache-control");
-    allow_cache_read = has_cache && has_char(cache_ctl, 'r');
-    allow_cache_write = has_cache && has_char(cache_ctl, 'w');
-    allow_execute = has_char(cache_ctl, 'x');
-    CHECKF(allow_execute || (has_cache && allow_cache_read), "Invalid argument for cache control: ", cache_ctl);
+    if (has_cache) {
+        str cache_ctl = ctx()->get_option_as<str>("cache");
+        allow_cache_read = has_cache && has_char(cache_ctl, 'r');
+        allow_cache_write = has_cache && has_char(cache_ctl, 'w');
+        allow_execute = has_char(cache_ctl, 'x');
+        CHECKF(allow_execute || (has_cache && allow_cache_read), "Invalid argument for cache control: ", cache_ctl);
+    }
 
     if (has_cache) {
-        str cachedir = ctx()->get_option_as<str>("cache");
+        str cachedir = ctx()->get_option_as<str>("cache-path");
         if (cachedir.empty()) cachedir = ctx()->get_option_as<str>("filestem") + ".cachedb";
 
         using namespace rocksdb;
