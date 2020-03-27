@@ -335,7 +335,17 @@ public:
             else vvp[d->id()].push_back(d);
 
         LOG(INFO, "{:=^80}", "  " + header + "  ");
-        std::stringstream out;
+        std::ofstream ofs;
+        std::stringstream outss;
+        if (out_to_file) {
+            str fout = ctx()->get_option_as<str>("output");
+            ofs.open(fout);
+            if (ofs.fail()) {
+                LOG(ERROR, "Can't open output file {}", fout);
+                out_to_file = false;
+            }
+        }
+        std::ostream &out = (out_to_file ? static_cast<std::ostream &>(ofs) : outss);
         fmt::print(out, "# {}\n", fmt::join(ctx()->get_option_as<vec<str>>("_args"), " "));
         fmt::print(out, "# {:>8} {:>4} {:>4} | {:>5} {:>5} | {:>4} | {:>3} {:>3} {:>3}\n======\n",
                    cov()->n_configs(), cov()->n_locs(), v_uniq.size(),
@@ -367,18 +377,12 @@ public:
             out << "\n-\n" << e << "\n-\n";
             dat->tree->serialize(out);
             out << "\n======\n";
+
+            if (pregen_configs) dat->tree = nullptr;
         }
 
-        if (out_to_file) {
-            str fout = ctx()->get_option_as<str>("output");
-            std::ofstream ofs(fout);
-            if (ofs.fail()) {
-                LOG(INFO, "OUTPUT: \n") << out.rdbuf();
-                CHECKF(0, "Can't open output file {}", fout);
-            }
-            ofs << out.rdbuf();
-        } else {
-            LOG(INFO, "OUTPUT: \n") << out.rdbuf();
+        if (!out_to_file) {
+            LOG(INFO, "OUTPUT: \n") << outss.rdbuf();
         }
     }
 
