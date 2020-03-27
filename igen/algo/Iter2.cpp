@@ -110,8 +110,8 @@ public:
         }
         for (const auto &c : init_configs) set_conf_hash.insert(c->hash());
         run_configs(init_configs);
-
         LOG(INFO, "Done running {} init configs", init_configs.size());
+        if (pregen_configs) ctx()->runner()->flush_cachedb();
         // ====
         int iter;
         for (iter = 1; iter <= n_iterations; ++iter) {
