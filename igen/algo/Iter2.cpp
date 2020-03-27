@@ -55,7 +55,7 @@ public:
     double p_messed_up_factor{};
     int p_lim_times{}, p_consecutive_success{}, p_thr_messed_up_switch{};
     int p_messed_lim_times{}, p_messed_consecutive_success{};
-    int p_gen_cex_lim_leaves;
+    int p_gen_cex_lim_leaves{};
     std::array<int, 3> p_gen_cex_heavy{}, p_gen_cex_normal{}, p_gen_cex_retry{};
 
     struct LocData;
