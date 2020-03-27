@@ -22,6 +22,7 @@
 #include <boost/container/flat_set.hpp>
 
 #include <tsl/robin_set.h>
+#include <tsl/robin_map.h>
 
 namespace igen {
 
@@ -290,7 +291,8 @@ public:
             const set<str> &e = batch_locs.at(it);
             ++it;
 
-            map<unsigned, bool> eval_cache;
+            tsl::robin_map<unsigned, bool> eval_cache;
+            eval_cache.reserve(ma.size());
             for (const auto &p : ma) {
                 auto eid = p.second.id();
                 auto it = eval_cache.find(eid);
