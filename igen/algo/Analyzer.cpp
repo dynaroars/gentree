@@ -327,7 +327,14 @@ public:
                     }
                 }
             }
-            for (const auto &s : e) if (!ma.contains(s)) missing_locs.insert(s);
+            for (const auto &s : e) {
+                if (!ma.contains(s)) {
+                    LOG_FIRST_N(ERROR, 1000)
+                        << fmt::format("Missing: loc {}, ", s) << *c
+                        << "  #    " << c->to_str_raw();
+                    missing_locs.insert(s);
+                }
+            }
             if (it == 1) {
                 LOG(INFO, "{:>4} {:>4} {:>4} | {:>4} {:>4} {:>4} | {:>4} {:>4} {:>4} | ",
                     all_configs.size(), wrong_configs.size(), ctx()->runner()->n_cache_hit(),
