@@ -44,6 +44,7 @@ int CoverageStore::register_cov(const PMutConfig &config, const set<str> &loc_na
         plocs.emplace_back(move(loc));
     }
     std::sort(plocs.begin(), plocs.end(), [](const auto &a, const auto &b) { return a->id() < b->id(); });
+    config->cov_loc_mut_ids().reserve(plocs.size());
     for (const auto &loc : plocs) {
         link(config, loc);
     }
