@@ -332,8 +332,7 @@ public:
                         if (uniq_loc) {
                             wrong_locs_uniq_nig.insert(p.first);
                             LOG_FIRST_N(WARNING, 1000)
-                                << fmt::format("Wrong: loc {}{}, ",
-                                               p.first, dat.ignored ? " (IGNORED)" : "")
+                                << fmt::format("Wrong: loc {}, ", p.first)
                                 << *c << "  #    " << c->to_str_raw();
                         }
                     }
