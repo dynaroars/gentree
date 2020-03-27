@@ -31,8 +31,6 @@ class Analyzer : public Object {
 public:
     explicit Analyzer(PMutContext ctx) : Object(move(ctx)) {}
 
-    map<std::pair<int, int>, double> map_count_cex;
-
     struct LocData {
         expr e;
         PMutCTree tree;
@@ -57,14 +55,15 @@ public:
         return z3::mk_and(vecExpr);
     }
 
-    double count_cex(const expr &a, const expr &b, double lim = 1000) {
-        auto it = map_count_cex.find({a.id(), b.id()});
-        if (it != map_count_cex.end()) return it->second;
-        double &ncex = map_count_cex[{a.id(), b.id()}];
+    tsl::robin_map<unsigned, double> cache_count_models;
 
-        expr bi = (a != b);
+    double count_models(const expr &ex, double lim = 1e18) {
+        auto it = cache_count_models.find(ex.id());
+        if (it != cache_count_models.end()) return it->second;
+        double &ncex = cache_count_models[ex.id()];
+
         auto solver = ctx()->zscope();
-        solver->add(a != b);
+        solver->add(ex);
 
         while (ncex < lim) {
             z3::check_result checkres = solver->check();
@@ -134,7 +133,7 @@ public:
                 CHECKF(sexprid.insert(e.id()).second, "Duplicated expression ({})", path);
                 //LOG(INFO, "EXPR: ") << e;
                 expr tree_e = tree->build_zexpr(CTree::FreeMix);
-                CHECKF(count_cex(e, tree_e, 1) == 0, "Mismatch tree and expr: {}", path);
+                CHECKF(count_models(e != tree_e, 1) == 0, "Mismatch tree and expr: {}", path);
                 bool is_first = true;
                 for (const str &s : locs) {
                     CHECKF(!res.contains(s), "Duplicated location ({}): {}", path, s);
@@ -179,6 +178,7 @@ public:
         set<unsigned> sdiff, smissing, slocsa, slocsb, sprintdiff;
         int cntdiff = 0, cntmissing = 0;
         double totalcex = 0;
+        z3::expr_vector ve_cex(zctx());
         for (const auto &p : ma) {
             slocsa.insert(p.second.id());
             auto it = mb.find(p.first);
@@ -188,7 +188,9 @@ public:
                 continue;
             }
             const double LIM = 1e18;
-            double num_cex = count_cex(p.second.e, it->second.e, LIM);
+            expr expr_cex = p.second.e != it->second.e;
+            ve_cex.push_back(expr_cex);
+            double num_cex = count_models(expr_cex, LIM);
             if (num_cex == LIM) {
                 if (p.second.is_first) {
                     LOG(WARNING, "Loc {} has more than {:G} cex", p.first, LIM);
@@ -214,10 +216,14 @@ public:
                 smissing.insert(p.second.id()), cntmissing++;
             }
         }
+        LOG(INFO, "Counting total cex");
+        double total_cex = count_models(z3::mk_or(ve_cex));
+
         LOG(INFO, "{:=^80}", "  FINAL RESULT  ");
         LOG(INFO, "Total: diff {:>4}, miss {:>4}, locs A {:>4}, B {:>4}", cntdiff, cntmissing, ma.size(), mb.size());
         LOG(INFO, "Uniq : diff {:>4}, miss {:>4}, locs A {:>4}, B {:>4}, cex {:G}", sdiff.size(), smissing.size(),
             slocsa.size(), slocsb.size(), totalcex);
+        LOG(INFO, "Total CEX: {:G}", total_cex);
     }
 
     // try random conf
