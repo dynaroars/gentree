@@ -59,6 +59,7 @@ void CTree::build_tree() {
 void CTree::cleanup() {
     configs_ = {};
     root_ = {};
+    interpreter_.clear();
     default_hit_ = {};
     multi_val_ = {};
     n_cases_ = {};
@@ -113,6 +114,28 @@ std::istream &CTree::deserialize(std::istream &inp) {
     configs_[0].clear(), configs_[0].resize(1);
     root_ = new CNode(this, nullptr, 0, {configs_[0], configs_[0]});
     return root_->deserialize(inp);
+}
+
+void CTree::build_interpreter() {
+    // CHECK(interpreter_.empty());
+    if (!interpreter_.empty()) return;
+    interpreter_.reserve(2 * (hit_configs().size() + miss_configs().size()));
+    root_->build_interpreter(interpreter_);
+    interpreter_.shrink_to_fit();
+}
+
+bool CTree::interpret(const Config &conf) const {
+    int it = 0;
+    for (;;) {
+        CHECK(0 <= it && it < sz(interpreter_));
+        int instr = interpreter_[it];
+        if (instr == kInterpretHit) return true;
+        else if (instr == kInterpretMiss) return false;
+        int v = conf.get(instr);
+        if (v == 0) it += dom()->n_values(instr);
+        else it = interpreter_[it + v];
+    }
+    CHECK(0);
 }
 
 // =====================================new CNode================================================================================

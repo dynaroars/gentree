@@ -517,4 +517,20 @@ std::istream &CNode::deserialize(std::istream &inp) {
     return inp;
 }
 
+void CNode::build_interpreter(vec<int> &dat) const {
+    if (is_leaf()) {
+        dat.push_back(leaf_value() ? CTree::kInterpretHit : CTree::kInterpretMiss);
+    } else {
+        dat.push_back(splitvar);
+        CHECK_EQ(childs.size(), dom(splitvar)->n_values());
+        int beg = dat.size(), nchilds = sz(childs);
+        dat.resize(beg + nchilds - 1);
+        for (int i = 0; i < nchilds; ++i) {
+            childs[i]->build_interpreter(dat);
+            if (i < nchilds - 1)
+                dat[beg + i] = sz(dat);
+        }
+    }
+}
+
 }

@@ -69,6 +69,8 @@ private:
 
     std::pair<bool, int> test_add_config(const PConfig &conf, bool val);
 
+    void build_interpreter(vec<int> &dat) const;
+
 private:
     CTree *tree;
     CNode *parent;

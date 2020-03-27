@@ -50,6 +50,10 @@ public:
 
     std::istream &deserialize(std::istream &inp);
 
+    void build_interpreter();
+
+    bool interpret(const Config &conf) const;
+
 public: // For gen CEX
     int n_min_cases() const { return root_->min_cases_in_one_leaf_; };
 
@@ -66,11 +70,15 @@ private:
     vec<double> t_info, t_gain;
 
     PMutCNode root_;
+    vec<int> interpreter_;
 
     bool default_hit_;
     bool multi_val_;
     int n_cases_;
     double avgain_wt_, mdl_wt_;
+
+    static constexpr int kInterpretMiss = -2;
+    static constexpr int kInterpretHit = -1;
 
     friend class CNode;
 };

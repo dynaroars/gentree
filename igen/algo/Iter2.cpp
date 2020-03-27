@@ -291,7 +291,8 @@ public:
                 if (dat->linked() || dat->queued_next || dat->ignored) continue;
                 CHECK_NE(dat->tree, nullptr) << fmt::format("({}) {}", loc->id(), loc->name());
 
-                bool tree_eval = dat->tree->test_config(c).first;
+                dat->tree->build_interpreter();
+                bool tree_eval = dat->tree->interpret(*c);
                 if (new_truth != tree_eval) {
                     add_loc++;
                     enqueue_next(dat);
