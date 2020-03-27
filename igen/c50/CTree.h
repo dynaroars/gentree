@@ -22,6 +22,8 @@ public:
 
     explicit CTree(PMutContext ctx);
 
+    ~CTree() override = default;
+
     void prepare_data(const PLocation &loc);
 
     void build_tree();

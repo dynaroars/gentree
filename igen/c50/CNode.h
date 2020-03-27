@@ -22,6 +22,8 @@ class CNode : public intrusive_ref_base_mt<CNode> {
 public:
     CNode(CTree *tree, CNode *parent, int id, std::array<boost::sub_range<vec<PConfig>>, 2> configs);
 
+    ~CNode() = default;
+
     [[nodiscard]] boost::sub_range<vec<PConfig>> &miss_configs() { return configs_[0]; }
 
     [[nodiscard]] const boost::sub_range<vec<PConfig>> &miss_configs() const { return configs_[0]; }
