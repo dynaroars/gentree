@@ -52,6 +52,7 @@ public:
                 ncex *= dom()->n_values(id);
             }
         }
+        LOG_IF(INFO, ncex > 1, "Has free variable");
         return z3::mk_and(vecExpr);
     }
 
