@@ -181,19 +181,20 @@ public:
         double totalcex = 0;
         z3::expr_vector ve_cex(zctx());
         for (const auto &p : ma) {
-            slocsa.insert(p.second.id());
+            const auto &dat = p.second;
+            slocsa.insert(dat.id());
             auto it = mb.find(p.first);
             if (it == mb.end()) {
-                VLOG(p.second.is_first ? 5 : 7, "{} not found in B", p.first);
-                smissing.insert(p.second.id()), cntmissing++;
+                VLOG(dat.is_first ? 5 : 7, "{} not found in B", p.first);
+                smissing.insert(dat.id()), cntmissing++;
                 continue;
             }
             const double LIM = 1e18;
-            expr expr_cex = p.second.e != it->second.e;
+            expr expr_cex = dat.e != it->second.e;
             ve_cex.push_back(expr_cex);
             double num_cex = count_models(expr_cex, LIM);
             if (num_cex == LIM) {
-                if (p.second.is_first) {
+                if (dat.is_first) {
                     LOG(WARNING, "Loc {} has more than {:G} cex", p.first, LIM);
                 } else {
                     VLOG(7, "Loc {} has more than {:G} cex", p.first, LIM);
@@ -202,12 +203,15 @@ public:
             if (num_cex == 0) {
                 //VLOG(0, "{} ok", p.first);
             } else {
-                VLOG(p.second.is_first ? 5 : 7, "{} diff (cex = {:G}) ({})", p.first, num_cex, p.second.id());
-                if (sprintdiff.insert(p.second.id()).second) {
+                VLOG(dat.is_first ? 5 : 7, "{} diff (cex = {:G}){} (id={})",
+                     p.first, num_cex,
+                     dat.ignored || it->second.ignored ? " (IGNORED)" : "",
+                     dat.id());
+                if (sprintdiff.insert(dat.id()).second) {
                     totalcex += num_cex;
-                    GVLOG(10) << "\nA: " << p.second.e << "\nB: " << it->second.e;
+                    GVLOG(10) << "\nA: " << dat.e << "\nB: " << it->second.e;
                 }
-                sdiff.insert(p.second.id()), cntdiff++;
+                sdiff.insert(dat.id()), cntdiff++;
             }
         }
         for (const auto &p : mb) {
@@ -328,8 +332,9 @@ public:
                         if (uniq_loc) {
                             wrong_locs_uniq_nig.insert(p.first);
                             LOG_FIRST_N(WARNING, 1000)
-                                << fmt::format("Wrong: loc {}, ", p.first) << *c
-                                << "  #    " << c->to_str_raw();
+                                << fmt::format("Wrong: loc {}{}, ",
+                                               p.first, dat.ignored ? " (IGNORED)" : "")
+                                << *c << "  #    " << c->to_str_raw();
                         }
                     }
                 }
