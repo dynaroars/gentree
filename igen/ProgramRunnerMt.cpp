@@ -83,16 +83,18 @@ static inline rocksdb::Slice to_key(const PConfig &config) {
 }
 
 vec<set<str>> ProgramRunnerMt::run(const vec<PMutConfig> &v_configs) {
-    ReadLock r_uniq_lock_flushdb(flushdb_lock_);
+    ReadLock r_run_entrance_lock(run_entrance_lock_);
 
     using namespace rocksdb;
     {
         WriteLock w_stat_lock(stat_lock_);
-        timer_.resume();
+        CHECK_GE(n_started_timer, 0);
+        if (++n_started_timer == 1) timer_.resume();
     }
     BOOST_SCOPE_EXIT(this_) {
             WriteLock w_stat_lock(this_->stat_lock_);
-            this_->timer_.stop();
+            CHECK_GE(this_->n_started_timer, 1);
+            if (--this_->n_started_timer == 0) this_->timer_.stop();
         }
     BOOST_SCOPE_EXIT_END
 
@@ -172,7 +174,7 @@ vec<set<str>> ProgramRunnerMt::run(const vec<PMutConfig> &v_configs) {
 }
 
 void ProgramRunnerMt::cleanup() {
-    WriteLock w_uniq_lock_flushdb(flushdb_lock_);
+    WriteLock w_run_entrance_lock(run_entrance_lock_);
     UniqueLock run_lock(run_lock_);
     WriteLock w_stat_lock(stat_lock_);
 
@@ -181,7 +183,7 @@ void ProgramRunnerMt::cleanup() {
 }
 
 void ProgramRunnerMt::flush_cachedb() {
-    WriteLock w_uniq_lock_flushdb(flushdb_lock_);
+    WriteLock w_run_entrance_lock(run_entrance_lock_);
     UniqueLock run_lock(run_lock_);
     WriteLock w_stat_lock(stat_lock_);
 
@@ -211,9 +213,12 @@ void ProgramRunnerMt::init() {
 }
 
 void ProgramRunnerMt::reset_stat() {
+    WriteLock w_run_entrance_lock(run_entrance_lock_);
     UniqueLock run_lock(run_lock_);
     WriteLock w_stat_lock(stat_lock_);
 
+    n_cache_hit_ = n_started_timer = 0;
+    timer_.start(), timer_.stop();
     for (const auto &r: runners_) r->reset_stat();
 }
 

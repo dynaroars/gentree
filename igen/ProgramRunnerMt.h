@@ -61,13 +61,14 @@ private:
     vec<PMutProgramRunner> runners_;
     WorkQueue work_queue_;
     boost::timer::cpu_timer timer_;
+    int n_started_timer = 0;
 
     typedef std::mutex Lock;
     typedef std::unique_lock<Lock> UniqueLock;
     typedef std::shared_mutex RwLock;
     typedef std::unique_lock<RwLock> WriteLock;
     typedef std::shared_lock<RwLock> ReadLock;
-    mutable RwLock flushdb_lock_;
+    mutable RwLock run_entrance_lock_;
     mutable Lock run_lock_;
     mutable RwLock stat_lock_;
 };
