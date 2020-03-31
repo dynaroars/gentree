@@ -48,7 +48,7 @@ int prog(int argc, char *argv[]) {
             ("seed,s", po::value<uint64_t>()->default_value(123), "Random seed")
             ("output,O", po::value<str>(), "Output result")
             ("disj-conj", "Gen expr strat DisjOfConj")
-            ("cache,c", po::value<str>(), "Cache control: read/write/execute")
+            ("cache,c", po::value<str>()->default_value(""), "Cache control: read/write/execute")
             ("cache-path,p", po::value<str>()->default_value(""), "Custom cachedb path")
             ("runner-threads,j", po::value<int>()->default_value(1), "Number of program runner threads")
             ("config-script", po::value<str>()->default_value(""), "JS configure script")
