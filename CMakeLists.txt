@@ -84,3 +84,4 @@ else ()
     target_compile_options(igen4 PUBLIC -flto)
 endif ()
 
+add_subdirectory(kutil)
