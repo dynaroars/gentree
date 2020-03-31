@@ -39,7 +39,7 @@ SOFTWARE.
 #include <utility> // std::forward, std::declval
 #include <algorithm> // std::shuffle, std::next, std::distance
 #include <iterator> // std::begin, std::end, std::iterator_traits
-#include <limits> // std::numeric_limits
+// #include <limits> // std::numeric_limits
 #include <ostream>
 #include <istream>
 
@@ -304,8 +304,7 @@ public:
     */
     template<typename T>
     static typename std::enable_if<details::is_uniform_real<T>::value, T>::type
-    get(T from = std::numeric_limits<T>::min(),
-        T to = std::numeric_limits<T>::max()) {
+    get(T from, T to) {
         if (from < to) // Allow range from higher to lower
             return RealDist<T>{from, to}(engine_instance());
         return RealDist<T>{to, from}(engine_instance());
@@ -320,8 +319,7 @@ public:
     * \note Prevent implicit type conversion
     */
     template<typename T>
-    static typename std::enable_if<details::is_byte<T>::value, T>::type get(T from = std::numeric_limits<T>::min(),
-                                                                            T to = std::numeric_limits<T>::max()) {
+    static typename std::enable_if<details::is_byte<T>::value, T>::type get(T from, T to) {
         // Choose between short and unsigned short for byte conversion
         using short_t = typename std::conditional<std::is_signed<T>::value,
                 short, unsigned short>::type;
@@ -356,8 +354,7 @@ public:
             && details::is_supported_number<B>::value
             // Prevent implicit type conversion from singed to unsigned types
             && std::is_signed<A>::value != std::is_unsigned<B>::value, C>::type
-    get(A from = std::numeric_limits<A>::min(),
-        B to = std::numeric_limits<B>::max()) {
+    get(A from, B to) {
         return get(static_cast<C>( from ), static_cast<C>( to ));
     }
 
@@ -372,8 +369,7 @@ public:
     */
     template<typename T>
     static typename std::enable_if<details::is_supported_character<T>::value, T>::type
-    get(T from = std::numeric_limits<T>::min(),
-        T to = std::numeric_limits<T>::max()) {
+    get(T from, T to) {
         if (from < to) // Allow range from higher to lower
             return static_cast<T>(IntegerDist<std::int64_t>{static_cast<std::int64_t>(from),
                                                             static_cast<std::int64_t>(to)}(engine_instance()));
@@ -660,11 +656,17 @@ public:
     * \note Prevent implicit type conversion
     */
     template<typename T>
-    static typename std::enable_if<details::is_uniform_int<T>::value, T>::type
-    get(T from, T to) {
+    static typename std::enable_if<details::is_uniform_int<T>::value, T>::type get(T from, T to) {
         if (from < to) // Allow range from higher to lower
             return IntegerDist<T>{from, to}(engine_instance());
         return IntegerDist<T>{to, from}(engine_instance());
+    }
+
+    // Random [0, to)
+    template<typename T>
+    static typename std::enable_if<details::is_uniform_int<T>::value, T>::type get(T to) {
+        assert(to >= 1);
+        return IntegerDist<T>{0, to - 1}(engine_instance());
     }
 
     /**
@@ -677,9 +679,7 @@ public:
     * \note Prevent implicit type conversion
     */
     template<typename T>
-    static typename std::enable_if<details::is_uniform_real<T>::value, T>::type
-    get(T from = std::numeric_limits<T>::min(),
-        T to = std::numeric_limits<T>::max()) {
+    static typename std::enable_if<details::is_uniform_real<T>::value, T>::type get(T from, T to) {
         if (from < to) // Allow range from higher to lower
             return RealDist<T>{from, to}(engine_instance());
         return RealDist<T>{to, from}(engine_instance());
@@ -694,8 +694,7 @@ public:
     * \note Prevent implicit type conversion
     */
     template<typename T>
-    static typename std::enable_if<details::is_byte<T>::value, T>::type get(T from = std::numeric_limits<T>::min(),
-                                                                            T to = std::numeric_limits<T>::max()) {
+    static typename std::enable_if<details::is_byte<T>::value, T>::type get(T from, T to) {
         // Choose between short and unsigned short for byte conversion
         using short_t = typename std::conditional<std::is_signed<T>::value,
                 short, unsigned short>::type;
@@ -730,8 +729,7 @@ public:
             && details::is_supported_number<B>::value
             // Prevent implicit type conversion from singed to unsigned types
             && std::is_signed<A>::value != std::is_unsigned<B>::value, C>::type
-    get(A from = std::numeric_limits<A>::min(),
-        B to = std::numeric_limits<B>::max()) {
+    get(A from, B to) {
         return get(static_cast<C>( from ), static_cast<C>( to ));
     }
 
@@ -746,8 +744,7 @@ public:
     */
     template<typename T>
     static typename std::enable_if<details::is_supported_character<T>::value, T>::type
-    get(T from = std::numeric_limits<T>::min(),
-        T to = std::numeric_limits<T>::max()) {
+    get(T from ,T to ) {
         if (from < to) // Allow range from higher to lower
             return static_cast<T>(IntegerDist<std::int64_t>{static_cast<std::int64_t>(from),
                                                             static_cast<std::int64_t>(to)}(engine_instance()));
@@ -1070,8 +1067,7 @@ public:
     * \note Prevent implicit type conversion
     */
     template<typename T>
-    typename std::enable_if<details::is_byte<T>::value, T>::type get(T from = std::numeric_limits<T>::min(),
-                                                                     T to = std::numeric_limits<T>::max()) {
+    typename std::enable_if<details::is_byte<T>::value, T>::type get(T from , T to ) {
         // Choose between short and unsigned short for byte conversion
         using short_t = typename std::conditional<std::is_signed<T>::value,
                 short, unsigned short>::type;
@@ -1106,8 +1102,7 @@ public:
             && details::is_supported_number<B>::value
             // Prevent implicit type conversion from singed to unsigned types
             && std::is_signed<A>::value != std::is_unsigned<B>::value, C>::type
-    get(A from = std::numeric_limits<A>::min(),
-        B to = std::numeric_limits<B>::max()) {
+    get(A from ,B to ) {
         return get(static_cast<C>( from ), static_cast<C>( to ));
     }
 
@@ -1122,8 +1117,7 @@ public:
     */
     template<typename T>
     typename std::enable_if<details::is_supported_character<T>::value, T>::type
-    get(T from = std::numeric_limits<T>::min(),
-        T to = std::numeric_limits<T>::max()) {
+    get(T from ,T to ) {
         if (from < to) // Allow range from higher to lower
             return static_cast<T>(IntegerDist<std::int64_t>{static_cast<std::int64_t>(from),
                                                             static_cast<std::int64_t>(to)}(m_engine));
@@ -1291,7 +1285,7 @@ using random_local = basic_random_local<std::mt19937>;
 
 namespace igen {
 
-extern effolkronium::random_local Rand;
+extern effolkronium::random_thread_local Rand;
 
 }
 

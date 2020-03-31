@@ -47,9 +47,15 @@ ProgramRunnerMt::ProgramRunnerMt(PMutContext _ctx) : Object(move(_ctx)) {
         options.bottommost_compression = options.compression = CompressionType::kZSTD;
 
         DB *db;
-        Status s = DB::Open(options, cachedir, &db);
+        if (allow_cache_write) {
+            Status s = DB::Open(options, cachedir, &db);
+            CHECKF(s.ok(), "Fail to open cachedb (r/w) at: {}", cachedir);
+        } else {
+            Status s = DB::OpenForReadOnly(options, cachedir, &db);
+            CHECKF(s.ok(), "Fail to open cachedb (read only) at: {}", cachedir);
+        }
         cachedb_.reset(db);
-        CHECKF(s.ok(), "Fail to open cachedb at: {}", cachedir);
+
         if (allow_cache_read) {
             cachedb_readopts_ = std::make_unique<ReadOptions>();
         }
@@ -59,11 +65,13 @@ ProgramRunnerMt::ProgramRunnerMt(PMutContext _ctx) : Object(move(_ctx)) {
         }
     }
 
-    runners_.resize(n_threads_);
-    for (int i = 0; i < n_threads_; ++i) {
-        map<str, str> vars;
-        vars["tid"] = fmt::format("{:0>2}", i);
-        runners_[i] = new ProgramRunner(ctx_mut(), move(vars));
+    if (allow_execute) {
+        runners_.resize(n_threads_);
+        for (int i = 0; i < n_threads_; ++i) {
+            map<str, str> vars;
+            vars["tid"] = fmt::format("{:0>2}", i);
+            runners_[i] = new ProgramRunner(ctx_mut(), move(vars));
+        }
     }
 }
 
@@ -112,7 +120,7 @@ vec<set<str>> ProgramRunnerMt::run(const vec<PMutConfig> &v_configs) {
     }
 
     CHECK(allow_execute || cid_to_run.empty());
-    if (n_threads_ > 1) {
+    if (allow_execute && n_threads_ > 1) {
         work_queue_.run_batch_job([&v_locs,
                                           &v_configs = std::as_const(v_configs),
                                           &cid_to_run = std::as_const(cid_to_run),
@@ -124,7 +132,7 @@ vec<set<str>> ProgramRunnerMt::run(const vec<PMutConfig> &v_configs) {
             auto &runner = runners.at(thread_id);
             locs = runner->run(config);
         }, sz(cid_to_run));
-    } else {
+    } else if (allow_execute) {
         auto &runner = runners_.at(0);
         for (int cid : cid_to_run) {
             const auto &config = v_configs.at(cid);
@@ -170,10 +178,12 @@ void ProgramRunnerMt::flush_cachedb() {
 }
 
 void ProgramRunnerMt::init() {
-    for (const auto &r: runners_) r->init();
-    if (n_threads_ > 1)
-        work_queue_.init(n_threads_), work_queue_.start();
-    LOG(INFO, "Inited {} runners", n_threads_);
+    if (allow_execute) {
+        for (const auto &r: runners_) r->init();
+        if (n_threads_ > 1)
+            work_queue_.init(n_threads_), work_queue_.start();
+        LOG(INFO, "Inited {} runners", n_threads_);
+    }
 }
 
 void ProgramRunnerMt::reset_stat() {

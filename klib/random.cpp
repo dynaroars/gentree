@@ -7,6 +7,6 @@
 
 namespace igen {
 
-effolkronium::random_local Rand{};
+effolkronium::random_thread_local Rand{};
 
 }

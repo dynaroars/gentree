@@ -2,6 +2,7 @@
 
 #include <klib/common.h>
 #include <klib/random.h>
+#include <klib/WorkQueue.h>
 #include <z3++.h>
 
 #include <boost/program_options/options_description.hpp>
@@ -62,6 +63,9 @@ int prog(int argc, char *argv[]) {
             ("loc,X", po::value<str>(), "Interested location")
             ("rounds,R", po::value<int>(), "Number of iterations")
             ("seed-configs,C", po::value<std::vector<str>>()->default_value(std::vector<str>(), "none"), "Seed configs")
+            ("repeat", po::value<int>()->default_value(1), "Repeat the experiment")
+            ("repeat-parallel", po::value<int>()->default_value(1), "Repeat multithreaded")
+            ("fixed-seed", "Keep seed fixed")
 
             ("vmodule,V", po::value<str>(), "Verbose logging. eg -V mapreduce=2,file=1,gfs*=3")
             ("verbose,v", po::value<int>(), "Verbose level")
@@ -115,20 +119,9 @@ int prog(int argc, char *argv[]) {
     }
 
     init_glog(argc, argv);
-    // ====
-    std::vector<str> all_args{argv, argv + argc};
-    igen::map<str, boost::any> opts;
-    LOG(WARNING, "Args: {}", fmt::join(all_args, " "));
-    for (const auto &kv : vm) opts[kv.first] = kv.second.value();
-    opts["_args"] = all_args;
 
-    // ====
-    if (vm.count("seed")) {
-        uint64_t s = vm["seed"].as<uint64_t>();
-        std::seed_seq sseq{uint32_t(s), uint32_t(s >> 32u)};
-        igen::Rand.seed(sseq);
-        LOG(INFO, "Use random seed: {}", s);
-    }
+    std::vector<str> all_args{argv, argv + argc};
+    LOG(WARNING, "Args: {}", fmt::join(all_args, " "));
 
     boost::timer::cpu_timer timer;
     BOOST_SCOPE_EXIT(&timer) {
@@ -136,25 +129,75 @@ int prog(int argc, char *argv[]) {
         }
     BOOST_SCOPE_EXIT_END
 
-    if (vm.count("c50")) {
-        switch (vm["c50"].as<int>()) {
-            case 0:
-                return igen::run_interative_algorithm(opts);
-            case 2:
-                return igen::run_interative_algorithm_2(opts);
-            default:
-                CHECK(0) << "Invalid C50 version";
+    // == BEGIN REAL PROGRAM ==
+
+    const int n_repeats = vm["repeat"].as<int>();
+    const int n_threads = vm["repeat-parallel"].as<int>();
+    const bool fixed_seed = vm.count("fixed-seed");
+
+    using namespace igen;
+    WorkQueue work_queue;
+    if (n_threads > 1) work_queue.init(n_threads);
+    vec<map<str, boost::any>> v_results(n_repeats);
+    const auto fn_each = [&vm = std::as_const(vm), &all_args = std::as_const(all_args), fixed_seed, &v_results]
+            (int thread_id, int repeat_id) {
+        LOG(WARNING, "@@@ Running repeat, repeat_id = {}, thread_id = {}", repeat_id, thread_id);
+
+        // ====
+        igen::map<str, boost::any> opts;
+        for (const auto &kv : vm) opts[kv.first] = kv.second.value();
+        opts["_args"] = all_args;
+        opts["_thread_id"] = thread_id;
+        opts["_repeat_id"] = repeat_id;
+
+        // ====
+        str str_item_id = std::to_string(repeat_id);
+        for (auto &kv : opts) {
+            if (kv.second.type() == typeid(str)) {
+                str s = boost::any_cast<str>(kv.second);
+                boost::algorithm::replace_all(s, "{i}", str_item_id);
+                kv.second = s;
+            }
         }
+
+        // ====
+        {
+            uint64_t seed64 = vm["seed"].as<uint64_t>();
+            if (!fixed_seed) seed64 += uint64_t(repeat_id);
+            std::seed_seq sseq{uint32_t(seed64), uint32_t(seed64 >> 32u)};
+            igen::Rand.seed(sseq);
+            LOG(INFO, "Use random seed: {} (repeat_id = {}, thread_id = {})", seed64, repeat_id, thread_id);
+            opts["seed"] = seed64;
+        }
+
+        // ====
+        if (vm.count("c50")) {
+            switch (vm["c50"].as<int>()) {
+                case 2:
+                    v_results.at(repeat_id) = igen::run_interative_algorithm_2(opts);
+                    break;
+                default:
+                    CHECK(0) << "Invalid C50 version";
+            }
+        }
+
+        if (vm.count("analyze")) {
+            switch (vm["analyze"].as<int>()) {
+                case 0:
+                    v_results.at(repeat_id) = igen::run_analyzer(opts);
+                    break;
+                default:
+                    CHECK(0) << "Invalid analyzer version";
+            }
+        }
+    };
+    if (n_threads > 1) {
+        work_queue.start();
+        work_queue.run_batch_job(fn_each, n_repeats);
+    } else {
+        for (int i = 0; i < n_repeats; ++i) fn_each(0, i);
     }
 
-    if (vm.count("analyze")) {
-        switch (vm["analyze"].as<int>()) {
-            case 0:
-                return igen::run_analyzer(opts);
-            default:
-                CHECK(0) << "Invalid analyzer version";
-        }
-    }
 
     return 0;
 }

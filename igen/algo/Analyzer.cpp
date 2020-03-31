@@ -374,12 +374,14 @@ public:
         return res;
     }
 
-    void run_alg() {
+    map<str, boost::any> run_alg() {
         switch (ctx()->get_option_as<int>("alg-version")) {
             case 0:
-                return run_analyzer_0();
+                run_analyzer_0();
+                return {};
             case 1:
-                return run_analyze_1();
+                run_analyze_1();
+                return {};
             default:
                 CHECK(0);
         }
@@ -387,17 +389,18 @@ public:
 };
 
 
-int run_analyzer(const map<str, boost::any> &opts) {
+map<str, boost::any> run_analyzer(const map<str, boost::any> &opts) {
+    map<str, boost::any> ret;
     PMutContext ctx = new Context();
     ctx->set_options(opts);
     ctx->init();
     //ctx->runner()->init();
     {
         ptr<Analyzer> ite_alg = new Analyzer(ctx);
-        ite_alg->run_alg();
+        ret = ite_alg->run_alg();
     }
     ctx->cleanup();
-    return 0;
+    return ret;
 }
 
 

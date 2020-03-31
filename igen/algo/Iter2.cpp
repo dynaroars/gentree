@@ -84,7 +84,7 @@ public:
 
     static constexpr int NS = 1e9;
 public:
-    void run_alg() {
+    map<str, boost::any> run_alg() {
         read_config_script();
         timer.start();
 
@@ -151,6 +151,8 @@ public:
         // ====
         if (v_loc_data.empty()) prepare_vec_loc_data();
         finish_alg(iter);
+
+        return {};
     }
 
     int gen_cex(vec<PMutConfig> &cex, const vec<PCNode> &leaves, std::array<int, 3> n_gen) {
@@ -348,6 +350,9 @@ public:
         }
         std::ostream &out = (out_to_file ? static_cast<std::ostream &>(ofs) : outss);
         fmt::print(out, "# {}\n", fmt::join(ctx()->get_option_as<vec<str>>("_args"), " "));
+        fmt::print(out, "# seed = {}, repeat_id = {}, thread_id = {}\n",
+                   ctx()->get_option_as<uint64_t>("seed"),
+                   ctx()->get_option_as<int>("_repeat_id"), ctx()->get_option_as<int>("_thread_id"));
         fmt::print(out, "# {:>8} {:>4} {:>4} | {:>5} {:>5} | {:>4} | {:>3} {:>3} {:>3}\n======\n",
                    cov()->n_configs(), cov()->n_locs(), v_uniq.size(),
                    ctx()->runner()->n_cache_hit(), ctx()->runner()->n_locs(),
@@ -561,7 +566,7 @@ private:
     }
 };
 
-int run_interative_algorithm_2(const map<str, boost::any> &opts) {
+map<str, boost::any> run_interative_algorithm_2(const map<str, boost::any> &opts) {
     const auto &sighandler = [](int signal) {
         if (signal == SIGINT && gSignalStatus) {
             RAW_LOG(ERROR, "Force terminate");
@@ -573,16 +578,17 @@ int run_interative_algorithm_2(const map<str, boost::any> &opts) {
     std::signal(SIGUSR1, sighandler);
     std::signal(SIGUSR2, sighandler);
 
+    map<str, boost::any> ret;
     PMutContext ctx = new Context();
     ctx->set_options(opts);
     ctx->init();
     ctx->runner()->init();
     {
         ptr<Iter2> ite_alg = new Iter2(ctx);
-        ite_alg->run_alg();
+        ret = ite_alg->run_alg();
     }
     ctx->cleanup();
-    return 0;
+    return ret;
 }
 
 }

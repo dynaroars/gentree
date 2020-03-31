@@ -47,6 +47,8 @@ public:
     template<class T>
     T get_option_as(const str &key) const { return boost::any_cast<T>(get_option(key)); }
 
+    const map<str, boost::any>& get_all_options() const { return options; };
+
     void init();
 
     void cleanup();
