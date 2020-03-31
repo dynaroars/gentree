@@ -57,7 +57,7 @@ public:
     void run_batch_job(const Fn &fn, int num);
 
 protected:
-    void _add(const Item &item);
+    void _add_nolock(const Item &item);
 
     void _process(int tid, const Item &item);
 

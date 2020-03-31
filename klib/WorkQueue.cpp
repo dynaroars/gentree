@@ -56,8 +56,8 @@ void WorkQueue::_run(int tid) {
     }
 }
 
-void WorkQueue::_add(const WorkQueue::Item &item) {
-    UniqueLock lck(mtx_);
+void WorkQueue::_add_nolock(const WorkQueue::Item &item) {
+    // UniqueLock lck(mtx_);
     deque_.push_back(item);
     if (n_idle_ > 0) cv_.notify_one();
 }
@@ -74,7 +74,10 @@ void WorkQueue::_process(int tid, const Item &item) {
 void WorkQueue::run_batch_job(const Fn &fn, int num) {
     CHECK(!threads.empty());
     PCtl ctl = new WorkCtl(fn, num);
-    for (int i = 0; i < num; ++i) _add({i, ctl});
+    {
+        UniqueLock lck(mtx_);
+        for (int i = 0; i < num; ++i) _add_nolock({i, ctl});
+    }
 
     UniqueLock lock(ctl->mtx);
     while (!ctl->done()) ctl->cv.wait(lock);
