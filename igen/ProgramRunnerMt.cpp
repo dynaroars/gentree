@@ -175,11 +175,13 @@ vec<set<str>> ProgramRunnerMt::run(const vec<PMutConfig> &v_configs) {
 }
 
 void ProgramRunnerMt::cleanup() {
-    WriteLock w_run_entrance_lock(run_entrance_lock_);
-    UniqueLock run_lock(run_lock_);
-    WriteLock w_stat_lock(stat_lock_);
+    {
+        WriteLock w_run_entrance_lock(run_entrance_lock_);
+        UniqueLock run_lock(run_lock_);
+        WriteLock w_stat_lock(stat_lock_);
 
-    work_queue_.stop();
+        work_queue_.stop();
+    }
     flush_cachedb(), cachedb_.reset();
 }
 
