@@ -92,8 +92,8 @@ int prog(int argc, char *argv[]) {
         FLAGS_logbuflevel = -1;
         std::cout.setf(std::ios::unitbuf);
         std::cerr.setf(std::ios::unitbuf);
-        setvbuf(stdout, NULL, _IONBF, 0);
-        setvbuf(stderr, NULL, _IONBF, 0);
+        setvbuf(stdout, nullptr, _IONBF, 0);
+        setvbuf(stderr, nullptr, _IONBF, 0);
     }
     if (vm.count("verbose")) {
         FLAGS_v = vm["verbose"].as<int>();
@@ -160,8 +160,11 @@ int prog(int argc, char *argv[]) {
         }
         return opts;
     };
+
+    str cache_ctl = vm["cache"].as<str>();
+    bool allow_execute = (cache_ctl.find('x') != str::npos);
     PMutContext shared_ctx;
-    if (n_repeats > 1 && n_threads > 1) {
+    if (allow_execute && n_repeats > 1 && n_threads > 1) {
         shared_ctx = new Context();
         shared_ctx->set_options(get_opts(-1, -1));
         shared_ctx->init();
