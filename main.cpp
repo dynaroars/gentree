@@ -169,7 +169,7 @@ int prog(int argc, char *argv[]) {
         shared_ctx->set_options(get_opts(-1, -1));
         shared_ctx->init();
         shared_ctx->init_runner();
-        LOG(WARNING, "Use shared program runner");
+        LOG(WARNING, "Inited shared program runner");
     }
     BOOST_SCOPE_EXIT(&shared_ctx) {
             if (shared_ctx != nullptr) shared_ctx->cleanup();

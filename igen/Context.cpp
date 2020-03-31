@@ -43,6 +43,7 @@ void Context::init() {
     c_dom_ = dom_ = new Domain(this);
     if (shared_program_runner_) {
         program_runner_ = get_option_as<PMutProgramRunnerMt>("_shared_program_runner");
+        LOG(WARNING, "Use shared program runner");
     } else {
         program_runner_ = new ProgramRunnerMt(this);
     }
