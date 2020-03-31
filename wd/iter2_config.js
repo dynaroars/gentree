@@ -1,5 +1,5 @@
 p_max_terminate_counter       =   10
-p_thr_messed_up_kickin        =   0
+p_thr_messed_up_kickin        =   1e5
 p_thr_stuck_kickin            =   1e5
 p_max_messed_up               =   10
 p_max_stuck                   =   40
