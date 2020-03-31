@@ -121,7 +121,7 @@ void CTree::build_interpreter() {
     if (!interpreter_.empty()) return;
     interpreter_.reserve(2 * (hit_configs().size() + miss_configs().size()));
     root_->build_interpreter(interpreter_);
-    interpreter_.shrink_to_fit();
+    // interpreter_.shrink_to_fit();
 }
 
 bool CTree::interpret(const Config &conf) const {
