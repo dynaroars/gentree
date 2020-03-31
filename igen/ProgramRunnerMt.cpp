@@ -132,7 +132,6 @@ vec<set<str>> ProgramRunnerMt::run(const vec<PMutConfig> &v_configs) {
     }
 
     {
-        UniqueLock run_lock(run_lock_);
         CHECK(allow_execute || cid_to_run.empty());
         if (allow_execute && n_threads_ > 1) {
             work_queue_.run_batch_job([&v_locs,
@@ -147,6 +146,8 @@ vec<set<str>> ProgramRunnerMt::run(const vec<PMutConfig> &v_configs) {
                 locs = runner->run(config);
             }, sz(cid_to_run));
         } else if (allow_execute) {
+            UniqueLock run_lock(run_lock_);
+
             auto &runner = runners_.at(0);
             for (int cid : cid_to_run) {
                 const auto &config = v_configs.at(cid);
@@ -257,7 +258,6 @@ boost::timer::cpu_times ProgramRunnerMt::timer() const {
 }
 
 int ProgramRunnerMt::n_cache_hit() const {
-    // ReadLock scoped_rlock(run_lock_);
     return n_cache_hit_; // atomic
 }
 
