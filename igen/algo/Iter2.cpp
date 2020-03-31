@@ -136,7 +136,7 @@ public:
                 gSignalStatus = 0;
             }
             LOG(INFO, "Total        time: {}", timer.format(0));
-            LOG(INFO, "Runner       time: {}", ctx()->runner()->timer().format(0));
+            LOG(INFO, "Runner       time: {}", boost::timer::format(ctx()->runner()->timer(), 0));
             LOG(INFO, "Multi-runner time: {}", boost::timer::format(ctx()->runner()->total_elapsed(), 0));
             LOG(WARNING, "{:>4} | {:>3} {:>3} {:>2} | {:>5} {:>4} {:>3} | {:>5} | {:>3} {:>3} {:>3}",
                 iter,
@@ -144,7 +144,7 @@ public:
                 cov()->n_configs(), cov()->n_locs(), v_uniq.size(),
                 ctx()->runner()->n_cache_hit(),
 
-                timer.elapsed().wall / NS, ctx()->runner()->timer().elapsed().wall / NS,
+                timer.elapsed().wall / NS, ctx()->runner()->timer().wall / NS,
                 ctx()->runner()->total_elapsed().wall / NS
             );
         }
@@ -237,7 +237,7 @@ public:
             cov()->n_configs(), cov()->n_locs(), v_uniq.size(),
             ctx()->runner()->n_cache_hit(),
 
-            timer.elapsed().wall / NS, ctx()->runner()->timer().elapsed().wall / NS,
+            timer.elapsed().wall / NS, ctx()->runner()->timer().wall / NS,
             ctx()->runner()->total_elapsed().wall / NS
         );
         return ok;
@@ -358,7 +358,7 @@ public:
                    ctx()->runner()->n_cache_hit(), ctx()->runner()->n_locs(),
                    iter,
 
-                   timer.elapsed().wall / NS, ctx()->runner()->timer().elapsed().wall / NS,
+                   timer.elapsed().wall / NS, ctx()->runner()->timer().wall / NS,
                    ctx()->runner()->total_elapsed().wall / NS
         );
         int simpl_cnt = 0;
@@ -429,7 +429,7 @@ private:
             _run_configs(tmp);
             LOG(INFO, "{:>7} {:>7} | {:>3} {:>3} {:>3}",
                 sz(configs) - rem, ctx()->runner()->n_cache_hit(),
-                timer.elapsed().wall / NS, ctx()->runner()->timer().elapsed().wall / NS,
+                timer.elapsed().wall / NS, ctx()->runner()->timer().wall / NS,
                 ctx()->runner()->total_elapsed().wall / NS);
         }
     }
@@ -582,7 +582,7 @@ map<str, boost::any> run_interative_algorithm_2(const map<str, boost::any> &opts
     PMutContext ctx = new Context();
     ctx->set_options(opts);
     ctx->init();
-    ctx->runner()->init();
+    ctx->init_runner();
     {
         ptr<Iter2> ite_alg = new Iter2(ctx);
         ret = ite_alg->run_alg();

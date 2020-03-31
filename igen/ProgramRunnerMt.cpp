@@ -20,6 +20,7 @@ static bool has_char(const str &s, char c) {
 
 ProgramRunnerMt::ProgramRunnerMt(PMutContext _ctx) : Object(move(_ctx)) {
     timer_.stop();
+    WriteLock scoped_wlock(lock_);
 
     n_threads_ = ctx()->get_option_as<int>("runner-threads");
     CHECK_GE(n_threads_, 1);
@@ -81,6 +82,7 @@ static inline rocksdb::Slice to_key(const PConfig &config) {
 }
 
 vec<set<str>> ProgramRunnerMt::run(const vec<PMutConfig> &v_configs) {
+    WriteLock scoped_wlock(lock_);
     using namespace rocksdb;
     timer_.resume();
     BOOST_SCOPE_EXIT(this_) { this_->timer_.stop(); }
@@ -159,11 +161,13 @@ vec<set<str>> ProgramRunnerMt::run(const vec<PMutConfig> &v_configs) {
 }
 
 void ProgramRunnerMt::cleanup() {
+    WriteLock scoped_wlock(lock_);
     work_queue_.stop();
     flush_cachedb(), cachedb_.reset();
 }
 
 void ProgramRunnerMt::flush_cachedb() {
+    WriteLock scoped_wlock(lock_);
     if (has_cache && n_unflushed_write_ > 0) {
         using namespace rocksdb;
         LOG(INFO, "Start flushing cache db ({} unflushed writes, {} hits)", n_unflushed_write_, n_cache_hit_);
@@ -178,6 +182,7 @@ void ProgramRunnerMt::flush_cachedb() {
 }
 
 void ProgramRunnerMt::init() {
+    WriteLock scoped_wlock(lock_);
     if (allow_execute) {
         for (const auto &r: runners_) r->init();
         if (n_threads_ > 1)
@@ -187,16 +192,19 @@ void ProgramRunnerMt::init() {
 }
 
 void ProgramRunnerMt::reset_stat() {
+    WriteLock scoped_wlock(lock_);
     for (const auto &r: runners_) r->reset_stat();
 }
 
 int ProgramRunnerMt::n_runs() const {
+    ReadLock scoped_rlock(lock_);
     int sum = 0;
     for (const auto &r: runners_) sum += r->n_runs();
     return sum;
 }
 
 int ProgramRunnerMt::n_locs() const {
+    ReadLock scoped_rlock(lock_);
     int ret = -1;
     for (const auto &r: runners_) {
         int n = r->n_locs();
@@ -207,6 +215,7 @@ int ProgramRunnerMt::n_locs() const {
 }
 
 boost::timer::cpu_times ProgramRunnerMt::total_elapsed() const {
+    ReadLock scoped_rlock(lock_);
     const auto t = timer_.elapsed();
     boost::timer::cpu_times sum{0, t.user, t.system};
     for (const auto &r: runners_) {
@@ -214,6 +223,16 @@ boost::timer::cpu_times ProgramRunnerMt::total_elapsed() const {
         sum.wall += elap.wall;
     }
     return sum;
+}
+
+boost::timer::cpu_times ProgramRunnerMt::timer() const {
+    ReadLock scoped_rlock(lock_);
+    return timer_.elapsed();
+}
+
+int ProgramRunnerMt::n_cache_hit() const {
+    ReadLock scoped_rlock(lock_);
+    return n_cache_hit_;
 }
 
 void intrusive_ptr_release(const ProgramRunnerMt *p) { boost::sp_adl_block::intrusive_ptr_release(p); }

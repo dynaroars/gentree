@@ -117,7 +117,7 @@ set<str> ProgramRunner::_run_builtin(const PConfig &config) const {
 
 set<str> ProgramRunner::_run_gcov(const PConfig &config) const {
     vec<str> str_args;
-    str_args.reserve(size_t(dom()->n_vars()) * 2);
+    str_args.reserve(size_t(config->ctx()->dom()->n_vars()) * 2);
     for (const auto &e : *config) {
         const str &name = e.name(), &label = e.label();
         bool on = label == "on";

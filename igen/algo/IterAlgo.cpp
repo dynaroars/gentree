@@ -437,7 +437,7 @@ int run_interative_algorithm(const map<str, boost::any> &opts) {
     PMutContext ctx = new Context();
     ctx->set_options(opts);
     ctx->init();
-    ctx->runner()->init();
+    ctx->init_runner();
     {
         ptr<IterativeAlgorithm> ite_alg = new IterativeAlgorithm(ctx);
         ite_alg->run_alg();

@@ -39,14 +39,31 @@ boost::any Context::get_option(const str &key) const {
 }
 
 void Context::init() {
+    shared_program_runner_ = has_option("_shared_program_runner");
     c_dom_ = dom_ = new Domain(this);
-    program_runner_ = new ProgramRunnerMt(this);
+    if (shared_program_runner_) {
+        program_runner_ = get_option_as<PMutProgramRunnerMt>("_shared_program_runner");
+    } else {
+        program_runner_ = new ProgramRunnerMt(this);
+    }
+    CHECK_NE(program_runner_, nullptr);
     c_coverage_store_ = coverage_store_ = new CoverageStore(this);
+}
+
+void Context::init_runner() {
+    if (!shared_program_runner_) {
+        program_runner_->init();
+    }
 }
 
 void Context::cleanup() {
     coverage_store_->cleanup(), coverage_store_ = nullptr, c_coverage_store_ = nullptr;
-    program_runner_->cleanup(), program_runner_ = nullptr;
+    if (shared_program_runner_) {
+        program_runner_->flush_cachedb();
+    } else {
+        program_runner_->cleanup();
+    }
+    program_runner_ = nullptr;
     dom_->cleanup(), dom_ = nullptr, c_dom_ = nullptr;
 }
 

@@ -237,7 +237,7 @@ public:
     // try random conf
     void run_analyze_1() {
         boost::timer::cpu_timer timer;
-        ctx()->runner()->init();
+        ctx()->init_runner();
 
         auto finp = get_inp();
         CHECK_EQ(finp.size(), 1) << "Need 1 input file";
@@ -360,7 +360,7 @@ public:
             }
         }
         LOG(INFO, "Total        time: {}", timer.format(0));
-        LOG(INFO, "Runner       time: {}", ctx()->runner()->timer().format(0));
+        LOG(INFO, "Runner       time: {}", boost::timer::format(ctx()->runner()->timer(), 0));
         LOG(INFO, "Multi-runner time: {}", boost::timer::format(ctx()->runner()->total_elapsed(), 0));
     }
 
@@ -394,7 +394,7 @@ map<str, boost::any> run_analyzer(const map<str, boost::any> &opts) {
     PMutContext ctx = new Context();
     ctx->set_options(opts);
     ctx->init();
-    //ctx->runner()->init();
+    //ctx->init_runner();
     {
         ptr<Analyzer> ite_alg = new Analyzer(ctx);
         ret = ite_alg->run_alg();

@@ -18,6 +18,8 @@
 #include <glog/raw_logging.h>
 
 #include <igen/algo/Algo.h>
+#include <igen/Context.h>
+#include <igen/ProgramRunnerMt.h>
 
 namespace po = boost::program_options;
 
@@ -139,11 +141,8 @@ int prog(int argc, char *argv[]) {
     WorkQueue work_queue;
     if (n_threads > 1) work_queue.init(n_threads);
     vec<map<str, boost::any>> v_results(n_repeats);
-    const auto fn_each = [&vm = std::as_const(vm), &all_args = std::as_const(all_args), fixed_seed, &v_results]
+    const auto get_opts = [&vm = std::as_const(vm), &all_args = std::as_const(all_args)]
             (int thread_id, int repeat_id) {
-        LOG(WARNING, "@@@ Running repeat, repeat_id = {}, thread_id = {}", repeat_id, thread_id);
-
-        // ====
         igen::map<str, boost::any> opts;
         for (const auto &kv : vm) opts[kv.first] = kv.second.value();
         opts["_args"] = all_args;
@@ -159,8 +158,26 @@ int prog(int argc, char *argv[]) {
                 kv.second = s;
             }
         }
+        return opts;
+    };
+    PMutContext shared_ctx;
+    if (n_repeats > 1 && n_threads > 1) {
+        shared_ctx = new Context();
+        shared_ctx->set_options(get_opts(-1, -1));
+        shared_ctx->init();
+        shared_ctx->init_runner();
+        LOG(WARNING, "Use shared program runner");
+    }
+    BOOST_SCOPE_EXIT(&shared_ctx) {
+            if (shared_ctx != nullptr) shared_ctx->cleanup();
+        }
+    BOOST_SCOPE_EXIT_END
+    const auto fn_each = [&vm = std::as_const(vm), &all_args = std::as_const(all_args),
+            fixed_seed, &v_results, &get_opts, &shared_ctx = std::as_const(shared_ctx)]
+            (int thread_id, int repeat_id) {
+        LOG(WARNING, "@@@ Running repeat, repeat_id = {}, thread_id = {}", repeat_id, thread_id);
+        auto opts = get_opts(thread_id, repeat_id);
 
-        // ====
         {
             uint64_t seed64 = vm["seed"].as<uint64_t>();
             if (!fixed_seed) seed64 += uint64_t(repeat_id);
@@ -168,6 +185,10 @@ int prog(int argc, char *argv[]) {
             igen::Rand.seed(sseq);
             LOG(INFO, "Use random seed: {} (repeat_id = {}, thread_id = {})", seed64, repeat_id, thread_id);
             opts["seed"] = seed64;
+        }
+
+        if (shared_ctx != nullptr) {
+            opts["_shared_program_runner"] = shared_ctx->runner();
         }
 
         // ====

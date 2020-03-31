@@ -13,6 +13,8 @@
 
 #include <boost/timer/timer.hpp>
 
+#include <shared_mutex>
+
 namespace rocksdb {
 class DB;
 
@@ -35,7 +37,7 @@ public:
 
     int n_runs() const;
 
-    int n_cache_hit() const { return n_cache_hit_; };
+    int n_cache_hit() const;
 
     void cleanup() override;
 
@@ -45,7 +47,7 @@ public:
 
     boost::timer::cpu_times total_elapsed() const;
 
-    const boost::timer::cpu_timer &timer() const { return timer_; }
+    boost::timer::cpu_times timer() const;
 
 private:
     int n_threads_ = 1;
@@ -59,7 +61,15 @@ private:
     vec<PMutProgramRunner> runners_;
     WorkQueue work_queue_;
     boost::timer::cpu_timer timer_;
+
+    typedef std::shared_mutex Lock;
+    typedef std::unique_lock<Lock> WriteLock;
+    typedef std::shared_lock<Lock> ReadLock;
+    mutable Lock lock_;
 };
+
+using PProgramRunnerMt = ptr<const ProgramRunnerMt>;
+using PMutProgramRunnerMt = ptr<ProgramRunnerMt>;
 
 }
 

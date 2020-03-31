@@ -47,7 +47,7 @@ public:
     template<class T>
     T get_option_as(const str &key) const { return boost::any_cast<T>(get_option(key)); }
 
-    const map<str, boost::any>& get_all_options() const { return options; };
+    const map<str, boost::any> &get_all_options() const { return options; };
 
     void init();
 
@@ -60,6 +60,8 @@ public:
     // ptr<const ProgramRunnerMt> runner() const { return program_runner_; };
 
     const ptr<ProgramRunnerMt> &runner() { return program_runner_; };
+
+    void init_runner();
 
     const ptr<const CoverageStore> &cov() const { return c_coverage_store_; };
 
@@ -95,6 +97,8 @@ private:
     ptr<ProgramRunnerMt> program_runner_;
     ptr<CoverageStore> coverage_store_;
     ptr<const CoverageStore> c_coverage_store_;
+
+    bool shared_program_runner_{};
 };
 
 using PContext = ptr<const Context>;
