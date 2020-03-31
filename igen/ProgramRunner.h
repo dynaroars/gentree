@@ -45,7 +45,7 @@ private:
     RunnerType type;
     str target;
     builtin::BuiltinRunnerFn builtin_fn;
-    int n_runs_ = 0;
+    std::atomic<int> n_runs_ = 0;
     boost::timer::cpu_timer timer_;
     map<str, str> default_vars_;
 

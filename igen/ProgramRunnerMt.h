@@ -51,7 +51,7 @@ public:
 
 private:
     int n_threads_ = 1;
-    int n_cache_hit_ = 0, n_unflushed_write_ = 0;
+    std::atomic<int> n_cache_hit_ = 0, n_unflushed_write_ = 0;
     bool has_cache{}, allow_cache_read{}, allow_cache_write{}, allow_execute{};
 
     std::unique_ptr<rocksdb::DB> cachedb_;
@@ -62,10 +62,14 @@ private:
     WorkQueue work_queue_;
     boost::timer::cpu_timer timer_;
 
-    typedef std::shared_mutex Lock;
-    typedef std::unique_lock<Lock> WriteLock;
-    typedef std::shared_lock<Lock> ReadLock;
-    mutable Lock lock_;
+    typedef std::mutex Lock;
+    typedef std::unique_lock<Lock> UniqueLock;
+    typedef std::shared_mutex RwLock;
+    typedef std::unique_lock<RwLock> WriteLock;
+    typedef std::shared_lock<RwLock> ReadLock;
+    mutable RwLock flushdb_lock_;
+    mutable Lock run_lock_;
+    mutable RwLock stat_lock_;
 };
 
 using PProgramRunnerMt = ptr<const ProgramRunnerMt>;

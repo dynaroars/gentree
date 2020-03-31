@@ -20,7 +20,8 @@ static bool has_char(const str &s, char c) {
 
 ProgramRunnerMt::ProgramRunnerMt(PMutContext _ctx) : Object(move(_ctx)) {
     timer_.stop();
-    WriteLock scoped_wlock(lock_);
+    UniqueLock run_lock(run_lock_);
+    WriteLock w_stat_lock(stat_lock_);
 
     n_threads_ = ctx()->get_option_as<int>("runner-threads");
     CHECK_GE(n_threads_, 1);
@@ -82,10 +83,17 @@ static inline rocksdb::Slice to_key(const PConfig &config) {
 }
 
 vec<set<str>> ProgramRunnerMt::run(const vec<PMutConfig> &v_configs) {
-    WriteLock scoped_wlock(lock_);
+    ReadLock r_uniq_lock_flushdb(flushdb_lock_);
+
     using namespace rocksdb;
-    timer_.resume();
-    BOOST_SCOPE_EXIT(this_) { this_->timer_.stop(); }
+    {
+        WriteLock w_stat_lock(stat_lock_);
+        timer_.resume();
+    }
+    BOOST_SCOPE_EXIT(this_) {
+            WriteLock w_stat_lock(this_->stat_lock_);
+            this_->timer_.stop();
+        }
     BOOST_SCOPE_EXIT_END
 
     // ====
@@ -121,25 +129,28 @@ vec<set<str>> ProgramRunnerMt::run(const vec<PMutConfig> &v_configs) {
         cid_to_run.push_back(cid);
     }
 
-    CHECK(allow_execute || cid_to_run.empty());
-    if (allow_execute && n_threads_ > 1) {
-        work_queue_.run_batch_job([&v_locs,
-                                          &v_configs = std::as_const(v_configs),
-                                          &cid_to_run = std::as_const(cid_to_run),
-                                          &runners = std::as_const(this->runners_)]
-                                          (int thread_id, int item_id) {
-            int cid = cid_to_run.at(item_id);
-            const auto &config = v_configs.at(cid);
-            auto &locs = v_locs.at(cid);
-            auto &runner = runners.at(thread_id);
-            locs = runner->run(config);
-        }, sz(cid_to_run));
-    } else if (allow_execute) {
-        auto &runner = runners_.at(0);
-        for (int cid : cid_to_run) {
-            const auto &config = v_configs.at(cid);
-            auto &locs = v_locs.at(cid);
-            locs = runner->run(config);
+    {
+        UniqueLock run_lock(run_lock_);
+        CHECK(allow_execute || cid_to_run.empty());
+        if (allow_execute && n_threads_ > 1) {
+            work_queue_.run_batch_job([&v_locs,
+                                              &v_configs = std::as_const(v_configs),
+                                              &cid_to_run = std::as_const(cid_to_run),
+                                              &runners = std::as_const(this->runners_)]
+                                              (int thread_id, int item_id) {
+                int cid = cid_to_run.at(item_id);
+                const auto &config = v_configs.at(cid);
+                auto &locs = v_locs.at(cid);
+                auto &runner = runners.at(thread_id);
+                locs = runner->run(config);
+            }, sz(cid_to_run));
+        } else if (allow_execute) {
+            auto &runner = runners_.at(0);
+            for (int cid : cid_to_run) {
+                const auto &config = v_configs.at(cid);
+                auto &locs = v_locs.at(cid);
+                locs = runner->run(config);
+            }
         }
     }
 
@@ -161,13 +172,19 @@ vec<set<str>> ProgramRunnerMt::run(const vec<PMutConfig> &v_configs) {
 }
 
 void ProgramRunnerMt::cleanup() {
-    WriteLock scoped_wlock(lock_);
+    WriteLock w_uniq_lock_flushdb(flushdb_lock_);
+    UniqueLock run_lock(run_lock_);
+    WriteLock w_stat_lock(stat_lock_);
+
     work_queue_.stop();
     flush_cachedb(), cachedb_.reset();
 }
 
 void ProgramRunnerMt::flush_cachedb() {
-    WriteLock scoped_wlock(lock_);
+    WriteLock w_uniq_lock_flushdb(flushdb_lock_);
+    UniqueLock run_lock(run_lock_);
+    WriteLock w_stat_lock(stat_lock_);
+
     if (has_cache && n_unflushed_write_ > 0) {
         using namespace rocksdb;
         LOG(INFO, "Start flushing cache db ({} unflushed writes, {} hits)", n_unflushed_write_, n_cache_hit_);
@@ -182,7 +199,9 @@ void ProgramRunnerMt::flush_cachedb() {
 }
 
 void ProgramRunnerMt::init() {
-    WriteLock scoped_wlock(lock_);
+    UniqueLock run_lock(run_lock_);
+    WriteLock w_stat_lock(stat_lock_);
+
     if (allow_execute) {
         for (const auto &r: runners_) r->init();
         if (n_threads_ > 1)
@@ -192,19 +211,21 @@ void ProgramRunnerMt::init() {
 }
 
 void ProgramRunnerMt::reset_stat() {
-    WriteLock scoped_wlock(lock_);
+    UniqueLock run_lock(run_lock_);
+    WriteLock w_stat_lock(stat_lock_);
+
     for (const auto &r: runners_) r->reset_stat();
 }
 
 int ProgramRunnerMt::n_runs() const {
-    ReadLock scoped_rlock(lock_);
+    ReadLock r_stat_lock(stat_lock_);
     int sum = 0;
     for (const auto &r: runners_) sum += r->n_runs();
     return sum;
 }
 
 int ProgramRunnerMt::n_locs() const {
-    ReadLock scoped_rlock(lock_);
+    ReadLock r_stat_lock(stat_lock_);
     int ret = -1;
     for (const auto &r: runners_) {
         int n = r->n_locs();
@@ -215,7 +236,7 @@ int ProgramRunnerMt::n_locs() const {
 }
 
 boost::timer::cpu_times ProgramRunnerMt::total_elapsed() const {
-    ReadLock scoped_rlock(lock_);
+    ReadLock r_stat_lock(stat_lock_);
     const auto t = timer_.elapsed();
     boost::timer::cpu_times sum{0, t.user, t.system};
     for (const auto &r: runners_) {
@@ -226,13 +247,13 @@ boost::timer::cpu_times ProgramRunnerMt::total_elapsed() const {
 }
 
 boost::timer::cpu_times ProgramRunnerMt::timer() const {
-    ReadLock scoped_rlock(lock_);
+    ReadLock r_stat_lock(stat_lock_);
     return timer_.elapsed();
 }
 
 int ProgramRunnerMt::n_cache_hit() const {
-    ReadLock scoped_rlock(lock_);
-    return n_cache_hit_;
+    // ReadLock scoped_rlock(run_lock_);
+    return n_cache_hit_; // atomic
 }
 
 void intrusive_ptr_release(const ProgramRunnerMt *p) { boost::sp_adl_block::intrusive_ptr_release(p); }
