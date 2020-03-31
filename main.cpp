@@ -27,7 +27,7 @@ void init_glog(int argc, char **argv) {
     (void) argc;
     FLAGS_colorlogtostderr = true;
     //FLAGS_timestamp_in_logfile_name = false;
-    FLAGS_max_log_size = 32;
+    //FLAGS_max_log_size = 32;
     FLAGS_logbuflevel = google::GLOG_INFO;
     google::SetStderrLogging(0);
     //google::SetVLOGLevel("*", 20);
