@@ -594,6 +594,7 @@ map<str, boost::any> run_interative_algorithm_2(const map<str, boost::any> &opts
         std::signal(SIGINT, iter2_sighandler);
         std::signal(SIGUSR1, iter2_sighandler);
         std::signal(SIGUSR2, iter2_sighandler);
+        std::signal(SIGRTMIN + 1, iter2_sighandler);
     });
 
     map<str, boost::any> ret;
