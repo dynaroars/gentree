@@ -30,7 +30,7 @@
 namespace igen {
 
 namespace {
-static volatile std::sig_atomic_t gSignalStatus = 0;
+static std::atomic<int> gSignalStatus = 0;
 }
 
 class Iter2 : public Object {
@@ -568,17 +568,21 @@ private:
     }
 };
 
+void sighandler(int signal) {
+    if (signal == SIGINT && gSignalStatus) {
+        RAW_LOG(ERROR, "Force terminate");
+        exit(1);
+    }
+    gSignalStatus = signal;
+}
+
 map<str, boost::any> run_interative_algorithm_2(const map<str, boost::any> &opts) {
-    const auto &sighandler = [](int signal) {
-        if (signal == SIGINT && gSignalStatus) {
-            RAW_LOG(ERROR, "Force terminate");
-            exit(1);
-        }
-        gSignalStatus = signal;
-    };
-    std::signal(SIGINT, sighandler);
-    std::signal(SIGUSR1, sighandler);
-    std::signal(SIGUSR2, sighandler);
+    static std::once_flag flag_register_handler;
+    std::call_once(flag_register_handler, []() {
+        std::signal(SIGINT, sighandler);
+        std::signal(SIGUSR1, sighandler);
+        std::signal(SIGUSR2, sighandler);
+    });
 
     map<str, boost::any> ret;
     PMutContext ctx = new Context();
