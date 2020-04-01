@@ -162,9 +162,8 @@ int prog(int argc, char *argv[]) {
     };
 
     str cache_ctl = vm["cache"].as<str>();
-    bool allow_execute = (cache_ctl.find('x') != str::npos);
     PMutContext shared_ctx;
-    if (allow_execute && n_repeats > 1 && n_threads > 1) {
+    if (!cache_ctl.empty() && n_repeats > 1 && n_threads > 1) {
         shared_ctx = new Context();
         shared_ctx->set_options(get_opts(-1, -1));
         shared_ctx->init();
