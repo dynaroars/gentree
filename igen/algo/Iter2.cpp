@@ -30,7 +30,7 @@
 namespace igen {
 
 namespace {
-static std::atomic<int> gSignalStatus = 0;
+std::atomic<int> gSignalStatus = 0;
 }
 
 class Iter2 : public Object {
@@ -63,7 +63,7 @@ public:
     using PLocData = ptr<LocData>;
 
     struct LocData : public intrusive_ref_base_mt<LocData> {
-        LocData(PLocation loc) : loc(std::move(loc)) {}
+        explicit LocData(PLocation loc) : loc(std::move(loc)) {}
 
         void link_to(PLocData p) { parent = p, tree = nullptr; }
 
