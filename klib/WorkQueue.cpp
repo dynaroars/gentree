@@ -4,6 +4,8 @@
 
 #include "WorkQueue.h"
 
+#include <csignal>
+
 namespace igen {
 
 
@@ -33,7 +35,18 @@ void WorkQueue::stop() {
     threads.clear();
 }
 
+static void mask_sig() {
+    sigset_t mask;
+    sigemptyset(&mask);
+    sigaddset(&mask, SIGINT);
+    sigaddset(&mask, SIGUSR1);
+    sigaddset(&mask, SIGUSR2);
+
+    pthread_sigmask(SIG_BLOCK, &mask, nullptr);
+}
+
 void WorkQueue::_run(int tid) {
+    mask_sig();
     UniqueLock lck(mtx_);
     for (;;) {
         while (deque_.empty() && running_) {

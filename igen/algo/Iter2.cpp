@@ -129,13 +129,14 @@ public:
             } else {
                 terminate_counter = 0;
             }
-            if (gSignalStatus == SIGINT) {
+            int cur_signal = gSignalStatus;
+            if (cur_signal == SIGINT) {
                 LOG(WARNING, "Requested break at iteration {}", iter);
                 ctx()->runner()->flush_cachedb();
                 break;
-            } else if (gSignalStatus == SIGUSR1 || gSignalStatus == SIGUSR2) {
-                finish_alg(iter, "TEMP FINISH", gSignalStatus == SIGUSR2);
-                gSignalStatus = 0;
+            } else if (cur_signal == SIGUSR1 || cur_signal == SIGUSR2) {
+                finish_alg(iter, "TEMP FINISH", cur_signal == SIGUSR2);
+                cur_signal = 0;
             }
             LOG(INFO, "Total        time: {}", timer.format(0));
             LOG(INFO, "Runner       time: {}", boost::timer::format(ctx()->runner()->timer(), 0));
@@ -568,7 +569,7 @@ private:
     }
 };
 
-void sighandler(int signal) {
+void iter2_sighandler(int signal) {
     if (signal == SIGINT && gSignalStatus) {
         RAW_LOG(ERROR, "Force terminate");
         exit(1);
@@ -579,9 +580,9 @@ void sighandler(int signal) {
 map<str, boost::any> run_interative_algorithm_2(const map<str, boost::any> &opts) {
     static std::once_flag flag_register_handler;
     std::call_once(flag_register_handler, []() {
-        std::signal(SIGINT, sighandler);
-        std::signal(SIGUSR1, sighandler);
-        std::signal(SIGUSR2, sighandler);
+        std::signal(SIGINT, iter2_sighandler);
+        std::signal(SIGUSR1, iter2_sighandler);
+        std::signal(SIGUSR2, iter2_sighandler);
     });
 
     map<str, boost::any> ret;
