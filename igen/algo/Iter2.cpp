@@ -136,7 +136,7 @@ public:
                 break;
             } else if (cur_signal == SIGUSR1 || cur_signal == SIGUSR2) {
                 finish_alg(iter, "TEMP FINISH", cur_signal == SIGUSR2);
-                cur_signal = 0;
+                gSignalStatus = 0; // problematic when run repeat-parallel
             }
             LOG(INFO, "Total        time: {}", timer.format(0));
             LOG(INFO, "Runner       time: {}", boost::timer::format(ctx()->runner()->timer(), 0));
