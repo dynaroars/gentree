@@ -25,6 +25,15 @@ public:
         }
     }
 
+    void add(const hash_t &h) {
+        VAL.first ^= h.first, VAL.second |= h.second;
+        for (int i = 0; i < ROUNDS; i++) {
+            R(KEY.first, KEY.second, uint64_t(counter));
+            R(VAL.first, VAL.second, KEY.second);
+            counter++;
+        }
+    }
+
     [[nodiscard]] hash_t digest() const {
         return VAL;
 //        hash_t ret = VAL, tkey = KEY;

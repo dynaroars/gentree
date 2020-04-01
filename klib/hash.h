@@ -11,7 +11,12 @@
 
 namespace igen {
 
-typedef std::pair<uint64_t, uint64_t> hash_t;
+struct hash_t : public std::pair<uint64_t, uint64_t> {
+    using Base = std::pair<uint64_t, uint64_t>;
+    using Base::Base;
+
+    [[nodiscard]] std::string str() const;
+};
 
 static constexpr hash_t hash128_empty = {0, 0};
 

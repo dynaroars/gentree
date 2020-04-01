@@ -117,39 +117,48 @@ public:
         // ====
         int iter;
         for (iter = 1; iter <= n_iterations; ++iter) {
+            bool request_break = false;
             CHECK_EQ(set_conf_hash.size(), set_ran_conf_hash.size());
             LOG(INFO, "{:=^80}", fmt::format("  Iteration {}  ", iter));
             if (run_iter(iter)) {
                 LOG(INFO, "terminate_counter = {:>2}", terminate_counter + 1);
                 if (++terminate_counter == max_terminate_counter) {
                     LOG(WARNING, "Early break at iteration {}", iter);
-                    break;
+                    request_break = true;
+                    goto print_iter_info;
                 }
                 enqueue_all();
             } else {
                 terminate_counter = 0;
             }
-            int cur_signal = gSignalStatus;
-            if (cur_signal == SIGINT) {
-                LOG(WARNING, "Requested break at iteration {}", iter);
-                ctx()->runner()->flush_cachedb();
-                break;
-            } else if (cur_signal == SIGUSR1 || cur_signal == SIGUSR2) {
-                finish_alg(iter, "TEMP FINISH", cur_signal == SIGUSR2);
-                gSignalStatus = 0; // problematic when run repeat-parallel
+            if (int cur_signal = gSignalStatus; cur_signal != 0) {
+                if (cur_signal == SIGINT || cur_signal == SIGRTMIN + 1) {
+                    LOG(WARNING, "Requested break at iteration {}", iter);
+                    ctx()->runner()->flush_cachedb();
+                    request_break = true;
+                    goto print_iter_info;
+                } else if (cur_signal == SIGUSR1 || cur_signal == SIGUSR2) {
+                    finish_alg(iter, "TEMP FINISH", cur_signal == SIGUSR2);
+                    gSignalStatus = 0; // problematic when run repeat-parallel
+                }
             }
+
+            print_iter_info:
             LOG(INFO, "Total        time: {}", timer.format(0));
             LOG(INFO, "Runner       time: {}", boost::timer::format(ctx()->runner()->timer(), 0));
             LOG(INFO, "Multi-runner time: {}", boost::timer::format(ctx()->runner()->total_elapsed(), 0));
-            LOG(WARNING, "{:>2} {:>4} | {:>3} {:>3} {:>2} | {:>5} {:>4} {:>3} | {:>5} | {:>3} {:>3} {:>3}",
+            LOG(WARNING, "{:>2} {:>4} | {:>3} {:>3} {:>2} | {:>5} {:>4} {:>3} | {:>5} | {:>3} {:>3} {:>3} | {}",
                 repeat_id_, iter,
                 v_this_iter.size(), v_next_iter.size(), terminate_counter,
                 cov()->n_configs(), cov()->n_locs(), v_uniq.size(),
                 ctx()->runner()->n_cache_hit(),
 
                 timer.elapsed().wall / NS, ctx()->runner()->timer().wall / NS,
-                ctx()->runner()->total_elapsed().wall / NS
+                ctx()->runner()->total_elapsed().wall / NS,
+
+                cov()->state_hash().str()
             );
+            if (request_break) break;
         }
         // ====
         if (v_loc_data.empty()) prepare_vec_loc_data();
@@ -268,7 +277,7 @@ public:
             if (dat->messed_up >= p_thr_messed_up_switch)
                 lim_times = p_messed_lim_times, consecutive_success = p_messed_consecutive_success;
             for (int t = 1; t <= lim_times; ++t) {
-                if (gSignalStatus == SIGINT) return false;
+                if (gSignalStatus == SIGINT || gSignalStatus == SIGRTMIN + 1) return false;
                 if (run_one_loc(iter, meidx, t, dat, need_rebuild, c_success > 0)) {
                     need_rebuild = false;
                     if (++c_success == consecutive_success) {
@@ -356,13 +365,15 @@ public:
         fmt::print(out, "# seed = {}, repeat_id = {}, thread_id = {}\n",
                    ctx()->get_option_as<uint64_t>("seed"),
                    ctx()->get_option_as<int>("_repeat_id"), ctx()->get_option_as<int>("_thread_id"));
-        fmt::print(out, "# {:>8} {:>4} {:>4} | {:>5} {:>5} | {:>2} {:>4} | {:>3} {:>3} {:>3}\n======\n",
+        fmt::print(out, "# {:>8} {:>4} {:>4} | {:>5} {:>5} | {:>2} {:>4} | {:>3} {:>3} {:>3} | {}\n======\n",
                    cov()->n_configs(), cov()->n_locs(), v_uniq.size(),
                    ctx()->runner()->n_cache_hit(), ctx()->runner()->n_locs(),
                    repeat_id_, iter,
 
                    timer.elapsed().wall / NS, ctx()->runner()->timer().wall / NS,
-                   ctx()->runner()->total_elapsed().wall / NS
+                   ctx()->runner()->total_elapsed().wall / NS,
+
+                   cov()->state_hash().str()
         );
         int simpl_cnt = 0;
         for (const PLocData &dat : v_loc_data) {
@@ -570,7 +581,7 @@ private:
 };
 
 void iter2_sighandler(int signal) {
-    if (signal == SIGINT && gSignalStatus) {
+    if (signal == SIGINT && gSignalStatus == SIGINT) {
         RAW_LOG(ERROR, "Force terminate");
         exit(1);
     }

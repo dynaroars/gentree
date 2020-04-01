@@ -10,6 +10,7 @@
 
 #include "MurmurHash3.h"
 
+#include "common.h"
 
 namespace igen {
 
@@ -37,5 +38,12 @@ hash_t calc_hash_128<int>(const std::vector<int> &vec);
 
 template
 hash_t calc_hash_128<short>(const std::vector<short> &vec);
+
+template
+hash_t calc_hash_128<hash_t>(const std::vector<hash_t> &vec);
+
+str hash_t::str() const {
+    return fmt::format(FMT_STRING("{:0>16x}{:0>16x}"), first, second);
+}
 
 }

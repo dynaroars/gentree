@@ -41,6 +41,9 @@ static void mask_sig() {
     sigaddset(&mask, SIGINT);
     sigaddset(&mask, SIGUSR1);
     sigaddset(&mask, SIGUSR2);
+    sigaddset(&mask, SIGRTMIN + 1);
+    sigaddset(&mask, SIGRTMIN + 2);
+    sigaddset(&mask, SIGRTMIN + 3);
 
     pthread_sigmask(SIG_BLOCK, &mask, nullptr);
 }

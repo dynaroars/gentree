@@ -50,12 +50,15 @@ public:
 
     void cleanup() override;
 
+    hash_t state_hash() const;
+
 private:
     vec<PMutLocation> locs_;
     vec<PLocation> clocs_;
 
     vec<PMutConfig> configs_;
     vec<PConfig> cconfigs_;
+    StreamHash hash_configs_;
 
     map<str, PMutLocation> map_name_loc_;
 };

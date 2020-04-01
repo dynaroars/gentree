@@ -27,11 +27,11 @@ ProgramRunnerMt::ProgramRunnerMt(PMutContext _ctx) : Object(move(_ctx)) {
     CHECK_GE(n_threads_, 1);
 
     str cache_ctl = ctx()->get_option_as<str>("cache");
-    has_cache = !cache_ctl.empty();
+    has_cache = !cache_ctl.empty() && cache_ctl != "x";
+    allow_execute = has_char(cache_ctl, 'x');
     if (has_cache) {
         allow_cache_read = has_cache && has_char(cache_ctl, 'r');
         allow_cache_write = has_cache && has_char(cache_ctl, 'w');
-        allow_execute = has_char(cache_ctl, 'x');
         CHECKF(allow_execute || (has_cache && allow_cache_read), "Invalid argument for cache control: ", cache_ctl);
     }
 

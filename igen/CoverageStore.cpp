@@ -26,6 +26,7 @@ void CoverageStore::register_config(const PMutConfig &config) {
     config->set_id(n_configs());
     configs_.emplace_back(config);
     cconfigs_.emplace_back(config);
+    hash_configs_.add(config->hash());
 }
 
 int CoverageStore::register_cov(const PMutConfig &config, const set<str> &loc_names) {
@@ -65,6 +66,13 @@ void CoverageStore::cleanup() {
     clocs_.clear();
     configs_.clear();
     cconfigs_.clear();
+}
+
+hash_t CoverageStore::state_hash() const {
+    vec<hash_t> loc_hashes(clocs_.size());
+    for (int i = 0; i < sz(clocs_); ++i) loc_hashes[i] = clocs_[i]->hash();
+    vec<hash_t> ret{hash_configs_.digest(), calc_hash_128(loc_hashes)};
+    return calc_hash_128(ret);
 }
 
 void intrusive_ptr_release(const CoverageStore *d) { boost::sp_adl_block::intrusive_ptr_release(d); }
