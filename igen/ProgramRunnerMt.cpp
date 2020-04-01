@@ -51,10 +51,10 @@ ProgramRunnerMt::ProgramRunnerMt(PMutContext _ctx) : Object(move(_ctx)) {
         DB *db;
         if (allow_cache_write) {
             Status s = DB::Open(options, cachedir, &db);
-            CHECKF(s.ok(), "Fail to open cachedb (r/w) at: {}", cachedir);
+            CHECKF(s.ok(), "Fail to open cachedb (r/w) {}, at {}", s.ToString(), cachedir);
         } else {
             Status s = DB::OpenForReadOnly(options, cachedir, &db);
-            CHECKF(s.ok(), "Fail to open cachedb (read only) at: {}", cachedir);
+            CHECKF(s.ok(), "Fail to open cachedb (read only) {}, at {}", s.ToString(), cachedir);
         }
         cachedb_.reset(db);
 
