@@ -581,7 +581,7 @@ private:
 };
 
 void iter2_sighandler(int signal) {
-    if (signal == SIGINT && gSignalStatus == SIGINT) {
+    if ((signal == SIGINT || signal == SIGRTMIN + 2) && gSignalStatus == signal) {
         RAW_LOG(ERROR, "Force terminate");
         exit(1);
     }
@@ -595,6 +595,7 @@ map<str, boost::any> run_interative_algorithm_2(const map<str, boost::any> &opts
         std::signal(SIGUSR1, iter2_sighandler);
         std::signal(SIGUSR2, iter2_sighandler);
         std::signal(SIGRTMIN + 1, iter2_sighandler);
+        std::signal(SIGRTMIN + 2, iter2_sighandler);
     });
 
     map<str, boost::any> ret;
