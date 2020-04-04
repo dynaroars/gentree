@@ -90,11 +90,14 @@ vec<set<str>> ProgramRunnerMt::run(const vec<PMutConfig> &v_configs) {
         WriteLock w_stat_lock(stat_lock_);
         CHECK_GE(n_started_timer, 0);
         if (++n_started_timer == 1) timer_.resume();
+        CHECK_NE(local_timer_.get(), nullptr);
+        local_timer_->resume();
     }
     BOOST_SCOPE_EXIT(this_) {
             WriteLock w_stat_lock(this_->stat_lock_);
             CHECK_GE(this_->n_started_timer, 1);
             if (--this_->n_started_timer == 0) this_->timer_.stop();
+            this_->local_timer_->stop();
         }
     BOOST_SCOPE_EXIT_END
 
@@ -259,9 +262,23 @@ boost::timer::cpu_times ProgramRunnerMt::timer() const {
     return timer_.elapsed();
 }
 
+
+boost::timer::cpu_times ProgramRunnerMt::local_timer() const {
+    CHECK_NE(local_timer_.get(), nullptr);
+    return local_timer_->elapsed();
+}
+
 int ProgramRunnerMt::n_cache_hit() const {
     return n_cache_hit_; // atomic
 }
+
+void ProgramRunnerMt::reset_local_timer() {
+    if (local_timer_.get() == nullptr) {
+        local_timer_.reset(new boost::timer::cpu_timer());
+    }
+    local_timer_->start(), local_timer_->stop();
+}
+
 
 void intrusive_ptr_release(const ProgramRunnerMt *p) { boost::sp_adl_block::intrusive_ptr_release(p); }
 

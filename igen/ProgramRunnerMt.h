@@ -12,6 +12,7 @@
 #include <klib/WorkQueue.h>
 
 #include <boost/timer/timer.hpp>
+#include <boost/thread/tss.hpp>
 
 #include <shared_mutex>
 
@@ -35,6 +36,8 @@ public:
 
     void reset_stat();
 
+    void reset_local_timer();
+
     int n_runs() const;
 
     int n_cache_hit() const;
@@ -49,6 +52,8 @@ public:
 
     boost::timer::cpu_times timer() const;
 
+    boost::timer::cpu_times local_timer() const;
+
 private:
     int n_threads_ = 1;
     std::atomic<int> n_cache_hit_ = 0, n_unflushed_write_ = 0;
@@ -61,6 +66,7 @@ private:
     vec<PMutProgramRunner> runners_;
     WorkQueue work_queue_;
     boost::timer::cpu_timer timer_;
+    boost::thread_specific_ptr<boost::timer::cpu_timer> local_timer_;
     int n_started_timer = 0;
 
     typedef std::mutex Lock;

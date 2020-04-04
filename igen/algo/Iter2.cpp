@@ -88,6 +88,7 @@ public:
     map<str, boost::any> run_alg() {
         read_config_script();
         timer.start();
+        ctx()->runner()->reset_local_timer();
 
         repeat_id_ = ctx()->get_option_as<int>("_repeat_id");
         max_terminate_counter = ctx()->get_option_as<int>("term-cnt");
@@ -145,15 +146,18 @@ public:
 
             print_iter_info:
             LOG(INFO, "Total        time: {}", timer.format(0));
+            LOG(INFO, "Runner local time: {}", boost::timer::format(ctx()->runner()->local_timer(), 0));
             LOG(INFO, "Runner       time: {}", boost::timer::format(ctx()->runner()->timer(), 0));
             LOG(INFO, "Multi-runner time: {}", boost::timer::format(ctx()->runner()->total_elapsed(), 0));
-            LOG(WARNING, "{:>2} {:>4} | {:>3} {:>3} {:>2} | {:>5} {:>4} {:>3} | {:>5} | {:>3} {:>3} {:>3} | {}",
+            LOG(WARNING, "{:>2} {:>4} | {:>3} {:>3} {:>2} | {:>7} {:>4} {:>3} | {:>7} | {:>3} {:>3} {:>3} {:>3} | {}",
                 repeat_id_, iter,
                 v_this_iter.size(), v_next_iter.size(), terminate_counter,
                 cov()->n_configs(), cov()->n_locs(), v_uniq.size(),
                 ctx()->runner()->n_cache_hit(),
 
-                timer.elapsed().wall / NS, ctx()->runner()->timer().wall / NS,
+                timer.elapsed().wall / NS,
+                ctx()->runner()->local_timer().wall / NS,
+                ctx()->runner()->timer().wall / NS,
                 ctx()->runner()->total_elapsed().wall / NS,
 
                 cov()->state_hash().str()
@@ -241,15 +245,17 @@ public:
         }
 
         LOG(INFO, "{:>2} {:>4} {:>3} | {:>4} {:>2} {:>2} {:>5} {:>3} {} | "
-                  "{:>3} {:>3} {:>3} {:>2} | {:>5} {:>4} {:>3} | {:>5} | "
-                  "{:>3} {:>3} {:>3}",
+                  "{:>3} {:>3} {:>3} {:>2} | {:>7} {:>4} {:>3} | {:>7} | "
+                  "{:>3} {:>3} {:>3} {:>3}",
             repeat_id_, iter, t,
             dat->loc->id(), dat->messed_up, dat->n_stuck, leaves.size(), cex.size(), ok ? ' ' : '*',
             meidx, v_this_iter.size(), v_next_iter.size(), terminate_counter,
             cov()->n_configs(), cov()->n_locs(), v_uniq.size(),
             ctx()->runner()->n_cache_hit(),
 
-            timer.elapsed().wall / NS, ctx()->runner()->timer().wall / NS,
+            timer.elapsed().wall / NS,
+            ctx()->runner()->local_timer().wall / NS,
+            ctx()->runner()->timer().wall / NS,
             ctx()->runner()->total_elapsed().wall / NS
         );
         return ok;
