@@ -244,7 +244,7 @@ public:
 
         LOG(INFO, "{:>2} {:>4} {:>3} | {:>4} {:>2} {:>2} {:>5} {:>3} {} | "
                   "{:>3} {:>3} {:>3} {:>2} | {:>7} {:>4} {:>3} | {:>7} | "
-                  "{:>3} {:>3} {:>3} {:>3}",
+                  "{:>5} {:>5} {:>6}",
             repeat_id_, iter, t,
             dat->loc->id(), dat->messed_up, dat->n_stuck, leaves.size(), cex.size(), ok ? ' ' : '*',
             meidx, v_this_iter.size(), v_next_iter.size(), terminate_counter,
