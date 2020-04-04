@@ -228,8 +228,8 @@ public:
         double total_cex = count_models(z3::mk_or(ve_cex));
 
         LOG(INFO, "{:=^80}", "  FINAL RESULT  ");
-        LOG(INFO, "Total: diff {:>4}, miss {:>4}, locs A {:>4}, B {:>4}", cntdiff, cntmissing, ma.size(), mb.size());
-        LOG(INFO, "Uniq : diff {:>4}, miss {:>4}, locs A {:>4}, B {:>4}, cex {:G}", sdiff.size(), smissing.size(),
+        LOG(INFO, "Total: diff {:^4}, miss {:^4}, locs A {:^4}, B {:^4}", cntdiff, cntmissing, ma.size(), mb.size());
+        LOG(INFO, "Uniq : diff {:^4}, miss {:^4}, locs A {:^4}, B {:^4}, cex {:G}", sdiff.size(), smissing.size(),
             slocsa.size(), slocsb.size(), totalcex);
         LOG(INFO, "Total CEX: {:G}", total_cex);
     }
