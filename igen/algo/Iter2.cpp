@@ -149,15 +149,13 @@ public:
             LOG(INFO, "Runner local time: {}", boost::timer::format(ctx()->runner()->local_timer(), 0));
             LOG(INFO, "Runner       time: {}", boost::timer::format(ctx()->runner()->timer(), 0));
             LOG(INFO, "Multi-runner time: {}", boost::timer::format(ctx()->runner()->total_elapsed(), 0));
-            LOG(WARNING, "{:>2} {:>4} | {:>3} {:>3} {:>2} | {:>7} {:>4} {:>3} | {:>7} | {:>3} {:>3} {:>3} {:>3} | {}",
+            LOG(WARNING, "{:>2} {:>4} | {:>3} {:>3} {:>2} | {:>7} {:>4} {:>3} | {:>7} | {:>5} {:>5} {:>6} | {}",
                 repeat_id_, iter,
                 v_this_iter.size(), v_next_iter.size(), terminate_counter,
                 cov()->n_configs(), cov()->n_locs(), v_uniq.size(),
                 ctx()->runner()->n_cache_hit(),
 
-                timer.elapsed().wall / NS,
-                ctx()->runner()->local_timer().wall / NS,
-                ctx()->runner()->timer().wall / NS,
+                timer.elapsed().wall / NS, ctx()->runner()->local_timer().wall / NS,
                 ctx()->runner()->total_elapsed().wall / NS,
 
                 cov()->state_hash().str()
@@ -253,9 +251,7 @@ public:
             cov()->n_configs(), cov()->n_locs(), v_uniq.size(),
             ctx()->runner()->n_cache_hit(),
 
-            timer.elapsed().wall / NS,
-            ctx()->runner()->local_timer().wall / NS,
-            ctx()->runner()->timer().wall / NS,
+            timer.elapsed().wall / NS, ctx()->runner()->local_timer().wall / NS,
             ctx()->runner()->total_elapsed().wall / NS
         );
         return ok;
@@ -371,12 +367,12 @@ public:
         fmt::print(out, "# seed = {}, repeat_id = {}, thread_id = {}\n",
                    ctx()->get_option_as<uint64_t>("seed"),
                    ctx()->get_option_as<int>("_repeat_id"), ctx()->get_option_as<int>("_thread_id"));
-        fmt::print(out, "# {:>8} {:>4} {:>4} | {:>5} {:>5} | {:>2} {:>4} | {:>3} {:>3} {:>3} | {}\n======\n",
+        fmt::print(out, "# {:>8} {:>4} {:>4} | {:>5} {:>5} | {:>2} {:>4} | {:>5} {:>5} {:>6} | {}\n======\n",
                    cov()->n_configs(), cov()->n_locs(), v_uniq.size(),
                    ctx()->runner()->n_cache_hit(), ctx()->runner()->n_locs(),
                    repeat_id_, iter,
 
-                   timer.elapsed().wall / NS, ctx()->runner()->timer().wall / NS,
+                   timer.elapsed().wall / NS, ctx()->runner()->local_timer().wall / NS,
                    ctx()->runner()->total_elapsed().wall / NS,
 
                    cov()->state_hash().str()
