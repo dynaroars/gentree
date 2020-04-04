@@ -14,9 +14,11 @@ namespace igen {
 
 // int run_interative_algorithm(const map<str, boost::any> &opts);
 
-map <str, boost::any> run_interative_algorithm_2(const map <str, boost::any> &opts);
+map<str, boost::any> run_interative_algorithm_2(const map<str, boost::any> &opts);
 
-map <str, boost::any> run_analyzer(const map <str, boost::any> &opts);
+map<str, boost::any> run_analyzer(const map<str, boost::any> &opts);
+
+map<str, boost::any> run_demo_algo(const map<str, boost::any> &opts);
 
 }
 

@@ -16,6 +16,7 @@ CTree::CTree(PMutContext ctx) :
 }
 
 void CTree::prepare_data(const PLocation &loc) {
+    CHECK_NE(loc, nullptr);
     CHECK_NE(loc->id(), -1);
     CHECK(root_ == nullptr);
     hit_configs().reserve((size_t) cov()->n_configs()), miss_configs().reserve((size_t) cov()->n_configs());

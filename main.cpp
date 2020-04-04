@@ -199,6 +199,9 @@ int prog(int argc, char *argv[]) {
                 case 2:
                     v_results.at(repeat_id) = igen::run_interative_algorithm_2(opts);
                     break;
+                case 3:
+                    v_results.at(repeat_id) = igen::run_demo_algo(opts);
+                    break;
                 default:
                     CHECK(0) << "Invalid C50 version";
             }

@@ -10,7 +10,7 @@ add_library(libigen4
         Location.cpp Location.h
         c50/CNode.cpp c50/CNode.h
         GCovRunner.cpp GCovRunner.h
-        builtin/programs.h builtin/programs.cpp builtin/fn_1.cpp builtin/impl.h builtin/fn_2.cpp algo/Analyzer.cpp algo/Algo.h algo/Iter2.cpp ProgramRunnerMt.cpp ProgramRunnerMt.h)
+        builtin/programs.h builtin/programs.cpp builtin/fn_1.cpp builtin/impl.h builtin/fn_2.cpp algo/Analyzer.cpp algo/Algo.h algo/Iter2.cpp ProgramRunnerMt.cpp ProgramRunnerMt.h algo/DemoAlgo.cpp)
 
 target_link_libraries(libigen4
         PRIVATE
