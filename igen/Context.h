@@ -91,6 +91,7 @@ private:
     z3::solver z3solver_;
     z3::expr z3true_;
     z3::expr z3false_;
+    z3::tactic z3simplifier_;
 
     ptr<Domain> dom_;
     ptr<const Domain> c_dom_;

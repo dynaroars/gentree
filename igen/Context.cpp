@@ -12,7 +12,20 @@
 namespace igen {
 
 Context::Context() :
-        z3solver_(z3ctx_), z3true_(z3ctx_.bool_val(true)), z3false_(z3ctx_.bool_val(false)) {
+        z3solver_(z3ctx_), z3true_(z3ctx_.bool_val(true)), z3false_(z3ctx_.bool_val(false)),
+        z3simplifier_(z3ctx_, "ctx-solver-simplify") {
+    constexpr int MAX_TIME = 60000;
+
+    z3::context &ctx = const_cast<Context *>(this)->zctx();
+    z3::params params(ctx);
+    params.set("random_seed", 456123u);
+    params.set(":random_seed", 456123u);
+    z3simplifier_ = z3::with(z3simplifier_, params);
+    z3simplifier_ = z3::try_for(z3simplifier_, MAX_TIME);
+    z3simplifier_ = z3::repeat(z3simplifier_);
+    z3simplifier_ = z3::try_for(z3simplifier_, MAX_TIME);
+
+    z3solver_.set("random-seed", 123456u);
     z3solver_.set(":random-seed", 123456u);
 }
 
@@ -69,18 +82,12 @@ void Context::cleanup() {
 }
 
 expr Context::zctx_solver_simplify(const expr &e) const {
-    constexpr int MAX_TIME = 30000;
-
-    z3::context &ctx = const_cast<Context *>(this)->zctx();
-    z3::tactic tactic(ctx, "ctx-solver-simplify");
-    tactic = z3::try_for(tactic, MAX_TIME);
-    tactic = z3::repeat(tactic);
-    tactic = z3::try_for(tactic, MAX_TIME);
-    z3::goal goal(ctx);
+    auto _this = const_cast<Context *>(this);
+    z3::goal goal(_this->z3ctx_);
     expr simple_simpl = e.simplify();
     try {
         goal.add(simple_simpl);
-        z3::apply_result tatic_result = tactic.apply(goal);
+        z3::apply_result tatic_result = _this->z3simplifier_.apply(goal);
         z3::goal result_goal = tatic_result[0];
         return result_goal.as_expr();
     } catch (z3::exception &e) {
