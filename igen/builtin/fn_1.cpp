@@ -163,3 +163,57 @@ FN(ex_2,
            }
        }
    })
+
+
+FN(ex_paper,
+   VARS(x, s, t, u, v),
+   DOMS(3, 2, 2, 2, 2), {
+       if (u && v) {
+           LOC("L0"); // u=1 & v=1
+           LOC("L0-1");
+           RETURN;
+       } else {
+           LOC("L1"); // u=0 | v=0
+           if (s && x == 2) {
+               LOC("L2"); // s=1 & x=2 & (u=0 | v=0)
+               RETURN;
+           }
+       }
+       LOC("L3"); // a_1 := x=0 | x=1 | s=0;  (u=0 & a_1) | (v=0 & a_1)
+       if (x == 2) {
+           LOC("L4"); // x=2 & s=0 & (u=0 | v=0)
+           if (u || v) {
+               LOC("L5"); // x=2 & s=0 & ((u=1 & v=0) | (u=0 & v=1))
+               LOC("L5-1");
+           } else {
+               LOC("L6"); // x=2 & s=0 & u=0 & v=0
+           }
+       }
+   })
+
+
+FN(ex_paper_l,
+   VARS(x, s, t, u, v, a, b, c, d, e, f, g, h),
+   DOMS(3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2), {
+       if (u && v) {
+           LOC("L0"); // u=1 & v=1
+           LOC("L0-1");
+           RETURN;
+       } else {
+           LOC("L1"); // u=0 | v=0
+           if (s && x == 2) {
+               LOC("L2"); // s=1 & x=2 & (u=0 | v=0)
+               RETURN;
+           }
+       }
+       LOC("L3"); // a_1 := x=0 | x=1 | s=0;  (u=0 & a_1) | (v=0 & a_1)
+       if (x == 2) {
+           LOC("L4"); // x=2 & s=0 & (u=0 | v=0)
+           if (u || v) {
+               LOC("L5"); // x=2 & s=0 & ((u=1 & v=0) | (u=0 & v=1))
+               LOC("L5-1");
+           } else {
+               LOC("L6"); // x=2 & s=0 & u=0 & v=0
+           }
+       }
+   })
