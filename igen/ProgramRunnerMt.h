@@ -68,6 +68,7 @@ private:
     boost::timer::cpu_timer timer_;
     boost::thread_specific_ptr<boost::timer::cpu_timer> local_timer_;
     int n_started_timer = 0;
+    set<str> interested_locs_;
 
     typedef std::mutex Lock;
     typedef std::unique_lock<Lock> UniqueLock;

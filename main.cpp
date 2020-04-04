@@ -62,7 +62,7 @@ int prog(int argc, char *argv[]) {
             ("input,I", po::value<str>()->default_value(""), "Algorithm input")
             ("term-cnt", po::value<int>()->default_value(0), "Termination counter")
 
-            ("loc,X", po::value<str>(), "Interested location")
+            ("locs,X", po::value<str>()->default_value(""), "Interested location")
             ("rounds,R", po::value<int>()->default_value(int(1e9)), "Number of iterations")
             ("seed-configs,C", po::value<std::vector<str>>()->default_value(std::vector<str>(), "none"), "Seed configs")
             ("repeat", po::value<int>()->default_value(1), "Repeat the experiment")

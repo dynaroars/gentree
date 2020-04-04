@@ -8,8 +8,10 @@
 #include <rocksdb/slice.h>
 #include <rocksdb/options.h>
 
+#include <boost/algorithm/string.hpp>
 #include <boost/container/flat_set.hpp>
 #include <boost/scope_exit.hpp>
+#include <boost/range/algorithm.hpp>
 
 namespace igen {
 
@@ -174,6 +176,14 @@ vec<set<str>> ProgramRunnerMt::run(const vec<PMutConfig> &v_configs) {
         }
     }
 
+    if (!interested_locs_.empty()) {
+        for (set<str> &s : v_locs) {
+            set<str> new_s;
+            boost::range::set_intersection(interested_locs_, s, std::inserter(new_s, new_s.begin()));
+            s = std::move(new_s);
+        }
+    }
+
     return v_locs;
 }
 
@@ -215,6 +225,10 @@ void ProgramRunnerMt::init() {
         if (n_threads_ > 1)
             work_queue_.init(n_threads_), work_queue_.start();
         LOG(INFO, "Inited {} runners", n_threads_);
+
+        str locs = ctx()->get_option_as<str>("locs");
+        if (!locs.empty())
+            boost::split(interested_locs_, locs, boost::is_any_of(",;"));
     }
 }
 

@@ -83,7 +83,7 @@ public:
 
     vec<PLocData> v_loc_data, v_this_iter, v_next_iter, v_uniq;
 
-    static constexpr int NS = 1e9;
+    static constexpr boost::timer::nanosecond_type NS = 1e9;
 public:
     map<str, boost::any> run_alg() {
         read_config_script();
@@ -145,10 +145,12 @@ public:
             }
 
             print_iter_info:
-            LOG(INFO, "Total        time: {}", timer.format(0));
-            LOG(INFO, "Runner local time: {}", boost::timer::format(ctx()->runner()->local_timer(), 0));
-            LOG(INFO, "Runner       time: {}", boost::timer::format(ctx()->runner()->timer(), 0));
-            LOG(INFO, "Multi-runner time: {}", boost::timer::format(ctx()->runner()->total_elapsed(), 0));
+            if (timer.elapsed().wall > 10 * NS) {
+                LOG(INFO, "Total        time: {}", timer.format(0));
+                LOG(INFO, "Runner local time: {}", boost::timer::format(ctx()->runner()->local_timer(), 0));
+                LOG(INFO, "Runner       time: {}", boost::timer::format(ctx()->runner()->timer(), 0));
+                LOG(INFO, "Multi-runner time: {}", boost::timer::format(ctx()->runner()->total_elapsed(), 0));
+            }
             LOG(WARNING, "{:>2} {:>4} | {:>3} {:>3} {:>2} | {:>7} {:>4} {:>3} | {:>7} | {:>5} {:>5} {:>6} | {}",
                 repeat_id_, iter,
                 v_this_iter.size(), v_next_iter.size(), terminate_counter,
