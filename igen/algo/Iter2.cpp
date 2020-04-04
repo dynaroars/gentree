@@ -261,6 +261,11 @@ public:
         v_this_iter = std::move(v_next_iter), v_next_iter.clear();
         auto v_new_locdat = prepare_vec_loc_data();
         int n_new_loc = sz(v_new_locdat);
+        LOG_IF_BLOCK(WARNING, n_new_loc > 0, {
+            fmt::print(log, "Found new locations ({}): {{", n_new_loc);
+            for (const auto &d : v_new_locdat) fmt::print(log, "{}/{}, ", d->loc->id(), d->loc->name());
+            log << "}";
+        });
         vec_move_append(v_this_iter, v_new_locdat);
         LOG_BLOCK(INFO, {
             fmt::print(log, "v_this_iter (tot {:3>}, new {}) = {{", v_this_iter.size(), n_new_loc);
