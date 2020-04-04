@@ -25,6 +25,7 @@ int register_builtin_program(Program p);
 
 #define VARS(...) __VA_ARGS__
 #define DOMS(...) __VA_ARGS__
+#define RETURN return _set_locs
 #define LOC(name) _set_locs.insert(name)
 #define NUMARGS(...)  (std::tuple_size<decltype(std::make_tuple(__VA_ARGS__))>::value)
 
@@ -43,7 +44,7 @@ int register_builtin_program(Program p);
                                                                                                             \
                 set<str> _set_locs;                                                                         \
                 auto[vars] = _array_values;                                                                 \
-                ([&](){ code; })();                                                                         \
+                { code; }                                                                                   \
                 return _set_locs;                                                                           \
             }                                                                                               \
         });                                                                                                 \
