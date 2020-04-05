@@ -1,6 +1,6 @@
 p_max_terminate_counter       =   10
-p_thr_messed_up_kickin        =   2e4
-p_thr_stuck_kickin            =   2e4
+p_thr_messed_up_kickin        =   1e5
+p_thr_stuck_kickin            =   1e5
 p_max_messed_up               =   10
 p_max_stuck                   =   40
 p_messed_up_factor            =   0.5
@@ -18,8 +18,8 @@ p_gen_cex_retry               =   [0, 5, 0]
 
 if (config_space < 1e5) {
     p_max_terminate_counter       =   3
-    p_thr_messed_up_kickin        =   1000
-    p_thr_stuck_kickin            =   1000
+    p_thr_messed_up_kickin        =   1e4
+    p_thr_stuck_kickin            =   1e4
 
     p_lim_times                   =   6
     p_consecutive_success         =   2
