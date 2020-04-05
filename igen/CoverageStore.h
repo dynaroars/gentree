@@ -9,6 +9,8 @@
 #include "Location.h"
 #include "Config.h"
 
+#include <tsl/robin_map.h>
+
 namespace igen {
 
 class CoverageStore : public Object {
@@ -60,7 +62,7 @@ private:
     vec<PConfig> cconfigs_;
     StreamHash hash_configs_;
 
-    map<str, PMutLocation> map_name_loc_;
+    tsl::robin_map<str, PMutLocation> map_name_loc_;
 };
 
 using PCoverageStore = ptr<const CoverageStore>;
