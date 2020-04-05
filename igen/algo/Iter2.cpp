@@ -264,7 +264,7 @@ public:
         auto v_new_locdat = prepare_vec_loc_data();
         int n_new_loc = sz(v_new_locdat);
         LOG_IF_BLOCK(WARNING, n_new_loc > 0, {
-            fmt::print(log, "Found new uniq locations ({}): {{", n_new_loc);
+            fmt::print(log, "Found new unique locations ({}): {{", n_new_loc);
             for (const auto &d : v_new_locdat) fmt::print(log, "{}/{}, ", d->loc->id(), d->loc->name());
             log << "}";
         });
