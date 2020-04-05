@@ -134,7 +134,8 @@ public:
                 PMutCTree tree = new CTree(ctx_mut());
                 std::stringstream stream_stree(stree);
                 tree->deserialize(stream_stree);
-                CHECKF(sexprid.insert(e.id()).second, "Duplicated expression ({})", path);
+                CHECKF(sexprid.insert(e.id()).second, "Duplicated expression ({}), loc {}", path,
+                       locs.empty() ? str() : locs.at(0));
                 //LOG(INFO, "EXPR: ") << e;
                 expr tree_e = tree->build_zexpr(CTree::FreeMix);
                 CHECKF(count_models(e != tree_e, 1) == 0, "Mismatch tree and expr: {}", path);
