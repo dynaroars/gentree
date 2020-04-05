@@ -165,7 +165,10 @@ public:
             if (request_break) break;
         }
         // ====
-        if (v_loc_data.empty()) prepare_vec_loc_data();
+        if (v_loc_data.empty()) {
+            prepare_vec_loc_data();
+            for (const PLocData &dat : v_loc_data) if (!dat->linked() && dat->need_rebuild) build_tree(dat);
+        }
         finish_alg(iter);
 
         return {};
@@ -534,14 +537,15 @@ private:
     }
 
     hash_t state_hash() {
-        vec<hash_t> dat;
-        dat.reserve(v_loc_data.size() + 1);
-        dat.push_back(cov()->state_hash());
-        for (const auto &loc : v_loc_data) {
-            if (loc->linked()) dat.push_back(loc->parent->tree->hash());
-            else dat.push_back(loc->tree->hash());
+        vec<hash_t> v_hashes;
+        v_hashes.reserve(v_loc_data.size() + 1);
+        v_hashes.push_back(cov()->state_hash());
+        for (const auto &dat : v_loc_data) {
+            const auto &tree = (dat->linked() ? dat->parent->tree : dat->tree);
+            CHECK_NE(tree, nullptr);
+            v_hashes.push_back(tree->hash());
         }
-        return calc_hash_128(dat);
+        return calc_hash_128(v_hashes);
     }
 
     void read_config_script() {
