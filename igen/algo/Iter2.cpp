@@ -65,7 +65,7 @@ public:
     struct LocData : public intrusive_ref_base_mt<LocData> {
         explicit LocData(PLocation loc) : loc(std::move(loc)) {}
 
-        void link_to(PLocData p) { parent = p, tree = nullptr; }
+        void link_to(PLocData p) { parent = p, tree = nullptr, need_rebuild = true; }
 
         void unlink() { link_to(nullptr); }
 
@@ -77,7 +77,7 @@ public:
         PLocData parent;
         PMutCTree tree;
 
-        bool queued_next = false, ignored = false;
+        bool queued_next = false, ignored = false, need_rebuild = true;
         int messed_up = 0, n_stuck = 0;
     };
 
@@ -160,7 +160,7 @@ public:
                 timer.elapsed().wall / NS, ctx()->runner()->local_timer().wall / NS,
                 ctx()->runner()->total_elapsed().wall / NS,
 
-                cov()->state_hash().str()
+                state_hash().str()
             );
             if (request_break) break;
         }
@@ -279,7 +279,7 @@ public:
         for (const auto &dat : v_loc_data) dat->queued_next = false;
         for (const auto &dat : v_this_iter) {
             CHECK(!dat->linked());
-            bool finished = false, need_rebuild = true;
+            bool finished = false;
             int c_success = 0;
             meidx++;
             int lim_times = p_lim_times, consecutive_success = p_consecutive_success;
@@ -287,14 +287,14 @@ public:
                 lim_times = p_messed_lim_times, consecutive_success = p_messed_consecutive_success;
             for (int t = 1; t <= lim_times; ++t) {
                 if (gSignalStatus == SIGINT || gSignalStatus == SIGRTMIN + 1) return false;
-                if (run_one_loc(iter, meidx, t, dat, need_rebuild, c_success > 0)) {
-                    need_rebuild = false;
+                if (run_one_loc(iter, meidx, t, dat, dat->need_rebuild, !dat->need_rebuild)) {
+                    dat->need_rebuild = false;
                     if (++c_success == consecutive_success) {
                         finished = true;
                         break;
                     }
                 } else {
-                    need_rebuild = true;
+                    dat->need_rebuild = true;
                     c_success = 0;
                 }
             }
@@ -382,14 +382,14 @@ public:
                    timer.elapsed().wall / NS, ctx()->runner()->local_timer().wall / NS,
                    ctx()->runner()->total_elapsed().wall / NS,
 
-                   cov()->state_hash().str()
+                   state_hash().str()
         );
         int simpl_cnt = 0;
         for (const PLocData &dat : v_loc_data) {
             const auto &loc = dat->loc;
             auto &tree = dat->tree;
             if (dat->linked()) continue;
-            build_tree(dat);
+            if (dat->need_rebuild) build_tree(dat);
 
             bool do_simpl = expensive_simplify;
             LOG_IF(INFO, do_simpl, "Generating expr: {:>3} ({}) {}", ++simpl_cnt, loc->id(), loc->name());
@@ -508,8 +508,10 @@ private:
     }
 
     void build_tree(const PLocData &d) {
+        CHECK(d->need_rebuild);
         auto &tree = d->tree;
         tree = new CTree(ctx()), tree->prepare_data(d->loc), tree->build_tree();
+        d->need_rebuild = false;
     }
 
     vec<PMutConfig> gen_rand_configs(int num) const {
@@ -525,6 +527,17 @@ private:
             ret.emplace_back(move(c));
         }
         return ret;
+    }
+
+    hash_t state_hash() {
+        vec<hash_t> dat;
+        dat.reserve(v_loc_data.size() + 1);
+        dat.push_back(cov()->state_hash());
+        for (const auto &loc : v_loc_data) {
+            if (loc->linked()) dat.push_back(loc->parent->tree->hash());
+            else dat.push_back(loc->tree->hash());
+        }
+        return calc_hash_128(dat);
     }
 
     void read_config_script() {

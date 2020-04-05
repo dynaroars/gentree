@@ -61,6 +61,7 @@ void CTree::cleanup() {
     configs_ = {};
     root_ = {};
     interpreter_.clear();
+    cached_hash_ = hash128_empty;
     default_hit_ = {};
     multi_val_ = {};
     n_cases_ = {};
@@ -137,6 +138,14 @@ bool CTree::interpret(const Config &conf) const {
         else it = interpreter_[it + v];
     }
     CHECK(0);
+}
+
+hash_t CTree::hash(bool bypass_cache) {
+    if (!bypass_cache && cached_hash_ != hash128_empty)
+        return cached_hash_;
+
+    build_interpreter();
+    return cached_hash_ = calc_hash_128(interpreter_);
 }
 
 // =====================================new CNode================================================================================
