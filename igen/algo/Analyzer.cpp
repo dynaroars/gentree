@@ -228,11 +228,17 @@ public:
         LOG(INFO, "Counting total cex");
         double total_cex = count_models(z3::mk_or(ve_cex));
 
-        LOG(INFO, "{:=^80}", "  FINAL RESULT  ");
-        LOG(INFO, "Total: diff {:^4}, miss {:^4}, locs A {:^4}, B {:^4}", cntdiff, cntmissing, ma.size(), mb.size());
-        LOG(INFO, "Uniq : diff {:^4}, miss {:^4}, locs A {:^4}, B {:^4}, cex {:G}", sdiff.size(), smissing.size(),
+        int repeat_id = ctx()->get_option_as<int>("_repeat_id");
+        LOG(INFO, "R[{:>2}] {:=^80}",
+            repeat_id, "  FINAL RESULT  ");
+        LOG(INFO, "R[{:>2}] Total: diff {:^4}, miss {:^4}, locs A {:^4}, B {:^4}",
+            repeat_id, cntdiff, cntmissing, ma.size(), mb.size());
+        LOG(INFO, "R[{:>2}] Uniq : diff {:^4}, miss {:^4}, locs A {:^4}, B {:^4}, cex {:G}",
+            repeat_id,
+            sdiff.size(), smissing.size(),
             slocsa.size(), slocsb.size(), totalcex);
-        LOG(INFO, "Total CEX: {:G}", total_cex);
+        LOG(INFO, "R[{:>2}] Total CEX: {:G}",
+            repeat_id, total_cex);
     }
 
     // try random conf
