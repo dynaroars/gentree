@@ -56,6 +56,10 @@ public:
 
     hash_t hash(bool bypass_cache = false);
 
+    int n_new_miss_configs() const { return n_new_configs_[0]; }
+
+    int n_new_hit_configs() const { return n_new_configs_[1]; }
+
 public: // For gen CEX
     int n_min_cases() const { return root_->min_cases_in_one_leaf_; };
 
@@ -74,6 +78,7 @@ private:
     PMutCNode root_;
     vec<int> interpreter_;
     hash_t cached_hash_ = hash128_empty;
+    std::array<int, 2> n_new_configs_{};
 
     bool default_hit_;
     bool multi_val_;

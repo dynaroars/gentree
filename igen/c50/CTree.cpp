@@ -62,6 +62,7 @@ void CTree::cleanup() {
     root_ = {};
     interpreter_.clear();
     cached_hash_ = hash128_empty;
+    n_new_configs_ = {0, 0};
     default_hit_ = {};
     multi_val_ = {};
     n_cases_ = {};
@@ -75,6 +76,7 @@ std::pair<bool, int> CTree::test_config(const PConfig &conf) const {
 
 std::pair<bool, int> CTree::test_add_config(const PConfig &conf, bool val) {
     CHECK_NE(root_, nullptr);
+    n_new_configs_[val]++;
     return root_->test_add_config(conf, val);
 }
 
