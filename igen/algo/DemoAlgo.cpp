@@ -89,7 +89,10 @@ public:
     }
 
 
+    set<hash_t> ran_hashes;
+
     PMutConfig config(PMutConfig c) {
+        CHECK(ran_hashes.insert(c->hash()).second) << " # " << c->to_str_raw();
         auto loc_names = ctx()->runner()->run({c}).at(0);
         cov_mut()->register_cov(c, loc_names);
         VLOG(50, "{}  ==>  ", *c) << loc_names << "   # " << c->to_str_raw();
