@@ -58,7 +58,6 @@ public:
             config("0,0,1,1,1");
             config("1,0,0,0,0");
             config("2,0,1,0,0");
-            config("2,0,1,1,0"); // H
             config("2,0,1,0,1"); // H
             build();
         }
@@ -69,11 +68,11 @@ public:
         {
             LOG(INFO, "{:=^80}", " Ite 3 ");
             //      x     u v
-            config("2,0,1,0,0");
-            config("2,1,0,0,0");
+            config("2,0,0,0,0");
+            config("2,1,1,0,0");
             //      x     u v
-            config("2,0,1,0,1"); // H
-            config("2,1,0,0,1");
+            config("2,0,0,0,1"); // H
+            config("2,1,1,0,1");
             //      x     u
             config("2,0,1,1,1");
             config("2,1,0,1,0");
@@ -85,6 +84,7 @@ public:
         expr = ctx()->zctx_solver_simplify(expr);
         LOG(INFO, "\n{}", expr.to_string());
         LOG(INFO, "{:=^80}", " END ");
+        LOG(INFO, "ran_hashes = {}", ran_hashes.size());
         return {};
     }
 
