@@ -302,7 +302,8 @@ public:
             else enqueue_next(dat);
         }
         int add_loc = 0;
-        for (int i = 0; i < prev_n_conf; ++i) {
+        int new_n_conf = cov()->n_configs();
+        for (int i = prev_n_conf; i < new_n_conf; ++i) {
             const auto &c = cov()->config(i);
             const vec<int> cov_ids = c->cov_loc_ids();
             auto it = cov_ids.begin();
