@@ -338,6 +338,7 @@ public:
             LOG(WARNING, "Ignore loc ({}) {} (messed={}/{}, stuck={}/{})", dat->id(), dat->loc->name(),
                 dat->messed_up, p_max_messed_up, dat->n_stuck, p_max_stuck);
             dat->ignored = true;
+            dat->need_rebuild = true;
             return;
         }
         v_next_iter.emplace_back(dat), dat->queued_next = true;
@@ -391,6 +392,7 @@ public:
             const auto &loc = dat->loc;
             auto &tree = dat->tree;
             if (dat->linked()) continue;
+            CHECK(!dat->ignored || dat->need_rebuild);
             if (dat->need_rebuild) build_tree(dat);
 
             bool do_simpl = expensive_simplify;
