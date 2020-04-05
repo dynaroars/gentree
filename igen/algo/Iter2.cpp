@@ -393,13 +393,13 @@ public:
         int simpl_cnt = 0;
         for (const PLocData &dat : v_loc_data) {
             const auto &loc = dat->loc;
-            auto &tree = dat->tree;
             if (dat->linked()) continue;
             CHECK(!dat->ignored || dat->need_rebuild);
             if (dat->need_rebuild) build_tree(dat);
 
             bool do_simpl = expensive_simplify;
             LOG_IF(INFO, do_simpl, "Generating expr: {:>3} ({}) {}", ++simpl_cnt, loc->id(), loc->name());
+            auto &tree = dat->tree;
             CHECK_NE(tree, nullptr);
 
             z3::expr e = tree->build_zexpr(expr_strat);
