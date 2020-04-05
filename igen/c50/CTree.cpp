@@ -142,6 +142,12 @@ bool CTree::interpret(const Config &conf) const {
     CHECK(0);
 }
 
+bool CTree::interpret_add(const Config &conf) {
+    bool val = interpret(conf);
+    n_new_configs_[val]++;
+    return val;
+}
+
 hash_t CTree::hash(bool bypass_cache) {
     if (!bypass_cache && cached_hash_ != hash128_empty)
         return cached_hash_;

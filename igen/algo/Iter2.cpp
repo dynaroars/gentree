@@ -319,7 +319,7 @@ public:
                 CHECK_NE(dat->tree, nullptr) << fmt::format("({}) {}", loc->id(), loc->name());
 
                 dat->tree->build_interpreter();
-                bool tree_eval = dat->tree->interpret(*c);
+                bool tree_eval = dat->tree->interpret_add(*c);
                 if (new_truth != tree_eval) {
                     add_loc++;
                     dat->need_rebuild = true;

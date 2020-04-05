@@ -54,6 +54,8 @@ public:
 
     bool interpret(const Config &conf) const;
 
+    bool interpret_add(const Config &conf);
+
     hash_t hash(bool bypass_cache = false);
 
     int n_new_miss_configs() const { return n_new_configs_[0]; }
