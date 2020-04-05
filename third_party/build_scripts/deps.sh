@@ -168,6 +168,7 @@ boost_dl=$(grep boost_dl $deps_rev_file | tr -s ' ' | cut -f2 -d' ')
   cd z3
   git fetch
   git checkout -f $z3_rev
+  git apply "$start_dir/_patch/z3.patch"
 
   mkdir -p $build_dir && cd $build_dir
   cmake .. "${cmake_extra_flags[@]}" \
