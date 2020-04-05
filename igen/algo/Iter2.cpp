@@ -319,6 +319,7 @@ public:
                 bool tree_eval = dat->tree->interpret(*c);
                 if (new_truth != tree_eval) {
                     add_loc++;
+                    dat->need_rebuild = true;
                     enqueue_next(dat);
                 }
             }
