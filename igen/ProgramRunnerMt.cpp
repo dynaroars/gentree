@@ -230,6 +230,8 @@ void ProgramRunnerMt::init() {
         if (!locs.empty())
             boost::split(interested_locs_, locs, boost::is_any_of(",;"));
     }
+    
+    reset_local_timer();
 }
 
 void ProgramRunnerMt::reset_stat() {
