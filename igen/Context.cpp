@@ -4,7 +4,7 @@
 
 #include "Context.h"
 #include "Domain.h"
-#include "ProgramRunnerMt.h"
+#include "igen/runner/ProgramRunnerMt.h"
 #include "CoverageStore.h"
 
 #include <fstream>

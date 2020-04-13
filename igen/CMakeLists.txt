@@ -5,12 +5,12 @@ add_library(libigen4
         Z3Scope.h
         algo/IterAlgo.cpp
         c50/CTree.cpp c50/CTree.h
-        ProgramRunner.cpp ProgramRunner.h
+        runner/ProgramRunner.cpp runner/ProgramRunner.h
         CoverageStore.cpp CoverageStore.h
         Location.cpp Location.h
         c50/CNode.cpp c50/CNode.h
-        GCovRunner.cpp GCovRunner.h
-        builtin/programs.h builtin/programs.cpp builtin/fn_1.cpp builtin/impl.h builtin/fn_2.cpp algo/Analyzer.cpp algo/Algo.h algo/Iter2.cpp ProgramRunnerMt.cpp ProgramRunnerMt.h algo/DemoAlgo.cpp)
+        runner/GCovRunner.cpp runner/GCovRunner.h
+        builtin/programs.h builtin/programs.cpp builtin/fn_1.cpp builtin/impl.h builtin/fn_2.cpp algo/Analyzer.cpp algo/Algo.h algo/Iter2.cpp runner/ProgramRunnerMt.cpp runner/ProgramRunnerMt.h algo/DemoAlgo.cpp)
 
 target_link_libraries(libigen4
         PRIVATE

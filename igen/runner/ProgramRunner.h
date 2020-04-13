@@ -17,7 +17,7 @@
 
 namespace igen {
 
-BETTER_ENUM(RunnerType, int, Invalid, Simple, BuiltIn, GCov)
+BETTER_ENUM(RunnerType, int, Invalid, Simple, BuiltIn, GCov, Otter)
 
 class GCovRunner;
 

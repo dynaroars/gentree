@@ -19,7 +19,7 @@
 
 #include <igen/algo/Algo.h>
 #include <igen/Context.h>
-#include <igen/ProgramRunnerMt.h>
+#include <igen/runner/ProgramRunnerMt.h>
 
 namespace po = boost::program_options;
 
@@ -45,6 +45,7 @@ int prog(int argc, char *argv[]) {
             ("simple-runner,S", "Simple runner")
             ("builtin-runner,B", "Builtin runner")
             ("gcov-runner,G", "GCov runner")
+            ("otter-runner,Y", "Otter runner")
             ("seed,s", po::value<uint64_t>()->default_value(123), "Random seed")
             ("output,O", po::value<str>(), "Output result")
             ("disj-conj", "Gen expr strat DisjOfConj")

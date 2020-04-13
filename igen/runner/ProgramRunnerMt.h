@@ -7,7 +7,7 @@
 
 #include <igen/Context.h>
 #include <igen/Config.h>
-#include <igen/ProgramRunner.h>
+#include <igen/runner/ProgramRunner.h>
 
 #include <klib/WorkQueue.h>
 

@@ -7,7 +7,7 @@
 #include <igen/Context.h>
 #include <igen/Domain.h>
 #include <igen/Config.h>
-#include <igen/ProgramRunnerMt.h>
+#include <igen/runner/ProgramRunnerMt.h>
 #include <igen/CoverageStore.h>
 #include <igen/c50/CTree.h>
 
