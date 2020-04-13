@@ -16,7 +16,7 @@ p_gen_cex_normal              =   [5, 0, 0]
 p_gen_cex_retry               =   [0, 5, 0]
 
 
-if (config_space < 1e5) {
+if (config_space < 3e5) {
     p_max_terminate_counter       =   3
     p_thr_messed_up_kickin        =   1e4
     p_thr_stuck_kickin            =   1e4
