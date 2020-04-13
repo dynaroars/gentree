@@ -357,7 +357,7 @@ public:
                 }
             }
             if (it == 1) {
-                LOG(INFO, "{:>4} {:>4} {:>4} | {:>4} {:>4} {:>4} | {:>4} {:>4} {:>4} | ",
+                LOG(INFO, "{:>7} {:>4} {:>7} | {:>4} {:>4} {:>4} | {:>4} {:>4} {:>4} | ",
                     all_configs.size(), wrong_configs.size(), ctx()->runner()->n_cache_hit(),
                     wrong_locs.size(), wrong_locs_uniq.size(), missing_locs.size(),
                     wrong_configs_nig.size(), wrong_locs_nig.size(), wrong_locs_uniq_nig.size()
