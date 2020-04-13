@@ -17,36 +17,10 @@ message(STATUS "Found glog ${glog_FIND_VERSION}, dir: ${glog_DIR}")
 find_package(Z3 REQUIRED CONFIG)
 message(STATUS "Found Z3 ${Z3_VERSION_STRING}, Z3_DIR: ${Z3_DIR}")
 
-# ZSTD \/ \/ \/ \/ \/ \/ \/ \/
-find_path(zstd_INCLUDE_DIRS
-        NAMES zstd.h
-        HINTS ${zstd_ROOT_DIR}/include)
+include(third_party/cmake/find_zstd.cmake)
 
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(ZSTD_PREFER_LIBRARY libzstd.so)
-else ()
-    set(ZSTD_PREFER_LIBRARY libzstd.a)
-endif ()
-find_library(zstd_LIBRARIES
-        NAMES ${ZSTD_PREFER_LIBRARY} zstd
-        HINTS ${zstd_ROOT_DIR}/lib)
-
-include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(zstd DEFAULT_MSG zstd_LIBRARIES zstd_INCLUDE_DIRS)
-
-mark_as_advanced(
-        zstd_LIBRARIES
-        zstd_INCLUDE_DIRS)
-
-if (NOT zstd_FOUND)
-    message(FATAL "Cannot find zstd")
-endif ()
-add_library(zstd::zstd UNKNOWN IMPORTED)
-set_target_properties(zstd::zstd
-        PROPERTIES
-        IMPORTED_LOCATION ${zstd_LIBRARIES}
-        INTERFACE_INCLUDE_DIRECTORIES ${zstd_INCLUDE_DIRS})
-# ZSTD /\ /\ /\ /\ /\ /\ /\ /\
+find_package(ZLIB REQUIRED)
+message(STATUS "Found ZLIB ${ZLIB_VERSION_STRING}, ZLIB_DIR: ${ZLIB_INCLUDE_DIRS}")
 
 find_package(RocksDB REQUIRED CONFIG)
 message(STATUS "Found RocksDB ${RocksDB_VERSION_STRING}, RocksDB_DIR: ${RocksDB_DIR}")
