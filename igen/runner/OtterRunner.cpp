@@ -9,6 +9,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <mutex>
 
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/copy.hpp>
@@ -21,6 +22,9 @@ namespace igen {
 
 ptr<const OtterRunner> OtterRunner::create(const str &otter_file) {
     static map<str, POtterRunner> _m_cached;
+    static std::mutex _mtx;
+    std::unique_lock<std::mutex> _lock(_mtx);
+
     POtterRunner &res = _m_cached[otter_file];
     if (res == nullptr)
         res = new OtterRunner(otter_file);
