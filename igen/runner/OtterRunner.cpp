@@ -103,10 +103,12 @@ void OtterRunner::_parse(const str &otter_file) {
         switch (read_state) {
             case 0: {
                 std::stringstream ss(line);
-                int loc;
+                int loc, prev_loc = -1;
                 while (ss >> loc) {
                     CHECK(0 <= loc && loc < n_locs);
+                    CHECK(prev_loc = -1 || prev_loc < loc);
                     bs.set(loc);
+                    prev_loc = loc;
                 }
                 break;
             }
