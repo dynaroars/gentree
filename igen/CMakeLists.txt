@@ -10,11 +10,11 @@ add_library(libigen4
         Location.cpp Location.h
         c50/CNode.cpp c50/CNode.h
         runner/GCovRunner.cpp runner/GCovRunner.h
-        builtin/programs.h builtin/programs.cpp builtin/fn_1.cpp builtin/impl.h builtin/fn_2.cpp algo/Analyzer.cpp algo/Algo.h algo/Iter2.cpp runner/ProgramRunnerMt.cpp runner/ProgramRunnerMt.h algo/DemoAlgo.cpp)
+        builtin/programs.h builtin/programs.cpp builtin/fn_1.cpp builtin/impl.h builtin/fn_2.cpp algo/Analyzer.cpp algo/Algo.h algo/Iter2.cpp runner/ProgramRunnerMt.cpp runner/ProgramRunnerMt.h algo/DemoAlgo.cpp runner/OtterRunner.cpp runner/OtterRunner.h)
 
 target_link_libraries(libigen4
         PRIVATE
-        Boost::headers Boost::program_options Boost::timer Boost::filesystem Boost::thread
+        Boost::headers Boost::program_options Boost::timer Boost::filesystem Boost::thread Boost::iostreams
         rapidjson robinmap
         PUBLIC
         z3::libz3 klib)

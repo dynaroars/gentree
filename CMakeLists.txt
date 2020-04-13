@@ -61,7 +61,7 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         set(Boost_USE_STATIC_LIBS ON)
     endif ()
 endif ()
-find_package(Boost REQUIRED COMPONENTS headers program_options timer filesystem thread)
+find_package(Boost REQUIRED COMPONENTS headers program_options timer filesystem thread iostreams)
 
 # ===
 
@@ -82,6 +82,8 @@ target_link_libraries(igen4 PRIVATE
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 else ()
     target_compile_options(igen4 PUBLIC -flto)
+    target_compile_options(libigen4 PUBLIC -flto)
+    target_compile_options(klib PUBLIC -flto)
 endif ()
 
 add_subdirectory(kutil)

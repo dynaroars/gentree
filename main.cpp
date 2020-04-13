@@ -32,6 +32,7 @@ void init_glog(int argc, char **argv) {
     google::SetStderrLogging(0);
     //google::SetVLOGLevel("*", 20);
     google::InitGoogleLogging(argv[0]);
+    google::InstallFailureSignalHandler();
 }
 
 int prog(int argc, char *argv[]) {

@@ -42,6 +42,8 @@ ProgramRunner::ProgramRunner(PMutContext _ctx, map<str, str> default_vars) :
         type = RunnerType::BuiltIn;
     } else if (ctx()->has_option("gcov-runner")) {
         type = RunnerType::GCov;
+    } else if (ctx()->has_option("otter-runner")) {
+        type = RunnerType::Otter;
     } else {
         str str_type = ctx()->get_option_as<str>("runner");
         type = RunnerType::_from_string_nocase(str_type.c_str());
@@ -49,10 +51,13 @@ ProgramRunner::ProgramRunner(PMutContext _ctx, map<str, str> default_vars) :
     if (ctx()->has_option("target")) {
         target = ctx()->get_option_as<str>("target");
     } else {
+        str filestem = ctx()->get_option_as<str>("filestem");
         if (type == +RunnerType::GCov)
-            target = ctx()->get_option_as<str>("filestem") + ".gcov";
+            target = filestem + ".gcov";
+        else if (type == +RunnerType::Otter)
+            target = filestem + ".otter";
         else
-            target = ctx()->get_option_as<str>("filestem") + ".exe";
+            target = filestem + ".exe";
     }
     // LOG(INFO, "Program runner: type {}, target {}", type._to_string(), target);
     if (type == +RunnerType::BuiltIn) {
@@ -62,6 +67,9 @@ ProgramRunner::ProgramRunner(PMutContext _ctx, map<str, str> default_vars) :
     if (type == +RunnerType::GCov) {
         gcov_runner_ = new GCovRunner(ctx_mut(), default_vars_);
         gcov_runner_->parse(target);
+    }
+    if (type == +RunnerType::Otter) {
+        otter_runner_ = OtterRunner::create(target);
     }
 }
 
@@ -81,6 +89,9 @@ set<str> ProgramRunner::run(const PConfig &config) {
             break;
         case RunnerType::GCov:
             ret = _run_gcov(config);
+            break;
+        case RunnerType::Otter:
+            ret = _run_otter(config);
             break;
         default:
             CHECK(0);
@@ -155,7 +166,13 @@ void ProgramRunner::init() {
 
 int ProgramRunner::n_locs() const {
     if (gcov_runner_ != nullptr) return gcov_runner_->n_locs();
+    if (otter_runner_ != nullptr) return otter_runner_->n_locs();
     return -1;
+}
+
+set<str> ProgramRunner::_run_otter(const PConfig &config) const {
+    CHECK_NE(otter_runner_, nullptr);
+    return otter_runner_->run(config);
 }
 
 }

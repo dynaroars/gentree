@@ -8,6 +8,7 @@
 #include <igen/Context.h>
 #include <igen/Config.h>
 #include <igen/builtin/programs.h>
+#include <igen/runner/OtterRunner.h>
 
 #include <boost/timer/timer.hpp>
 #include <boost/container/flat_set.hpp>
@@ -56,6 +57,10 @@ private:
     ptr<GCovRunner> gcov_runner_;
 
     set<str> _run_gcov(const PConfig &config) const;
+
+    POtterRunner otter_runner_;
+
+    set<str> _run_otter(const PConfig &config) const;
 };
 
 using PProgramRunner = ptr<const ProgramRunner>;
