@@ -6,6 +6,7 @@
 
 #include <boost/container/flat_map.hpp>
 #include <boost/container/flat_set.hpp>
+#include <tsl/robin_set.h>
 
 #include <fstream>
 #include <iostream>
@@ -71,11 +72,13 @@ void OtterRunner::_parse(const str &otter_file) {
         CHECK(is_all(str_sep, '#'));
     }
 
+    int n_all_configs = 0, n_dup_configs = 0;
     str line;
 
     int read_state = 0;
     Bitset bs(n_locs);
     vec<vec<short>> samples;
+    tsl::robin_set<hash_t> s_conf_hashes;
     str sexpr;
     while (getline(in, line)) {
         if (is_all(line, '-')) {
@@ -97,7 +100,7 @@ void OtterRunner::_parse(const str &otter_file) {
             CHECK(!samples.empty());
             CHECK_EQ(read_state, 2);
             entries_.emplace_back(move(samples), std::move(bs));
-            read_state = 0, bs.clear(), bs.resize(n_locs), samples.clear(), sexpr.clear();
+            read_state = 0, bs.clear(), bs.resize(n_locs), samples.clear(), s_conf_hashes.clear(), sexpr.clear();
             continue;
         }
         switch (read_state) {
@@ -128,13 +131,20 @@ void OtterRunner::_parse(const str &otter_file) {
                     dat.push_back(val);
                 }
                 CHECK_EQ(sz(dat), n_vars);
-                samples.emplace_back(move(dat));
+                n_all_configs++;
+                if (s_conf_hashes.insert(calc_hash_128(dat)).second) {
+                    samples.emplace_back(move(dat));
+                } else {
+                    n_dup_configs++;
+                }
                 break;
             }
             default:
                 CHECK(0);
         }
     }
+    LOG(INFO, "Loaded otter from {} (locs={}, all_confs={}, dup_confs={})",
+        otter_file, n_locs, n_all_configs, n_dup_configs);
 }
 
 bool OtterRunner::_match(const vec<short> &a, const PConfig &_b) const {
