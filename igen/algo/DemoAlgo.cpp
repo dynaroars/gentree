@@ -24,7 +24,7 @@ public:
     vec<PCNode> leaves;
 
     void build() {
-        tree = new CTree(ctx()), tree->prepare_data(cov()->loc("L7")), tree->build_tree();
+        tree = new CTree(ctx()), tree->prepare_data(cov()->loc("L8")), tree->build_tree();
         leaves.clear(), tree->gather_nodes(leaves);
         std::sort(leaves.begin(), leaves.end(), [](const PCNode &a, const PCNode &b) {
             if (a->n_min_cases() != b->n_min_cases())

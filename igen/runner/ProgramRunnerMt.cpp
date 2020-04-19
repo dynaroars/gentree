@@ -33,11 +33,6 @@ ProgramRunnerMt::ProgramRunnerMt(PMutContext _ctx) : Object(move(_ctx)) {
     allow_cache_read = has_cache && has_char(cache_ctl, 'r');
     allow_cache_write = has_cache && has_char(cache_ctl, 'w');
     has_cache = allow_cache_read || allow_cache_write;
-    if (has_cache) {
-        CHECKF(allow_execute || (has_cache && allow_cache_read), "Invalid argument for cache control: ", cache_ctl);
-    } else {
-        CHECKF(allow_execute, "Invalid argument for cache control: ", cache_ctl);
-    }
 
     if (has_cache) {
         str cachedir = ctx()->get_option_as<str>("cache-path");

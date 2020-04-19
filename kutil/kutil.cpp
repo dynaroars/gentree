@@ -69,8 +69,8 @@ int prog(int argc, char *argv[]) {
             ("loc,X", po::value<str>(), "Interested location")
             ("rounds,R", po::value<int>(), "Number of iterations")
             ("seed-configs,C", po::value<std::vector<str>>()->default_value(std::vector<str>(), "none"), "Seed configs")
-            ("repeat", po::value<int>()->default_value(1), "Repeat the experiment")
-            ("repeat-parallel", po::value<int>()->default_value(1), "Repeat multithreaded")
+            ("rep", po::value<int>()->default_value(1), "Repeat the experiment")
+            ("rep-parallel", po::value<int>()->default_value(1), "Repeat multithreaded")
             ("fixed-seed", "Keep seed fixed")
 
             ("count-keys", po::value<str>())

@@ -67,8 +67,8 @@ int prog(int argc, char *argv[]) {
             ("locs,X", po::value<str>()->default_value(""), "Interested location")
             ("rounds,R", po::value<int>()->default_value(int(1e9)), "Number of iterations")
             ("seed-configs,C", po::value<std::vector<str>>()->default_value(std::vector<str>(), "none"), "Seed configs")
-            ("repeat", po::value<int>()->default_value(1), "Repeat the experiment")
-            ("repeat-parallel", po::value<int>()->default_value(1), "Repeat multithreaded")
+            ("rep", po::value<int>()->default_value(1), "Repeat the experiment")
+            ("rep-parallel", po::value<int>()->default_value(1), "Repeat multithreaded")
             ("fixed-seed", "Keep seed fixed")
 
             ("vmodule,V", po::value<str>(), "Verbose logging. eg -V mapreduce=2,file=1,gfs*=3")
@@ -135,8 +135,8 @@ int prog(int argc, char *argv[]) {
 
     // == BEGIN REAL PROGRAM ==
 
-    const int n_repeats = vm["repeat"].as<int>();
-    const int n_threads = vm["repeat-parallel"].as<int>();
+    const int n_repeats = vm["rep"].as<int>();
+    const int n_threads = vm["rep-parallel"].as<int>();
     const bool fixed_seed = vm.count("fixed-seed");
 
     using namespace igen;

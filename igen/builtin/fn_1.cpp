@@ -169,28 +169,28 @@ FN(ex_paper,
    VARS(x, s, t, u, v, a, b, c, d),
    DOMS(3, 2, 2, 2, 2, 3, 3, 3, 3), {
        LOC("L0");
-       if ((a == 1 || b == 2) && (c == 0 || d <= 2)) {
+       if (a == 1 || b == 2) {
            LOC("L1");
+       } else if (c == 0 && d == 1) {
+           LOC("L2");
        }
        if (u && v) {
-           LOC("L2"); // u=1 & v=1
-           LOC("L2-1");
+           LOC("L3"); // u=1 & v=1
+           LOC("L3-1");
            RETURN;
        } else {
-           LOC("L3"); // u=0 | v=0
+           LOC("L4"); // u=0 | v=0
            if (s && x == 2) {
-               LOC("L4"); // s=1 & x=2 & (u=0 | v=0)
+               LOC("L5"); // s=1 & x=2 & (u=0 | v=0)
                RETURN;
            }
        }
-       LOC("L5"); // a_1 := x=0 | x=1 | s=0;  (u=0 & a_1) | (v=0 & a_1)
+       LOC("L6"); // a_1 := x=0 | x=1 | s=0;  (u=0 & a_1) | (v=0 & a_1)
        if (x == 2) {
-           LOC("L6"); // x=2 & s=0 & (u=0 | v=0)
+           LOC("L7"); // x=2 & s=0 & (u=0 | v=0)
            if (u || v) {
-               LOC("L7"); // x=2 & s=0 & ((u=1 & v=0) | (u=0 & v=1))
-               LOC("L7-1");
-           } else {
-               LOC("L8"); // x=2 & s=0 & u=0 & v=0
+               LOC("L8"); // x=2 & s=0 & ((u=1 & v=0) | (u=0 & v=1))
+               LOC("L8-1");
            }
        }
    })

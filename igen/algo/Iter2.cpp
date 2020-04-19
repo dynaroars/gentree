@@ -99,9 +99,9 @@ public:
         pregen_configs = run_full || run_rand;
         n_iterations = ctx()->get_option_as<int>("rounds");
         // ====
-        vec<PMutConfig> init_configs;
+        vec <PMutConfig> init_configs;
         if (pregen_configs) {
-            if (run_full) init_configs = dom()->gen_all_configs();
+            if (run_full) init_configs = dom()->gen_all_configs(), n_iterations = 0;
             else init_configs = gen_rand_configs(ctx()->get_option_as<int>("rand"));
             LOG(INFO, "Running pregen configs (n_configs = {})", init_configs.size());
         } else {
