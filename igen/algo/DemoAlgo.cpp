@@ -36,29 +36,30 @@ public:
         LOG(INFO, "TREE = \n") << *tree;
     }
 
-    void run_cex() {
-        auto n = leaves[0];
-        auto cex = n->gen_one_convering_configs();
-        for (const auto &c : cex) config(c);
+    void run_cex(int n) {
+        for (int i = 0; i < n; ++i) {
+            auto cex = leaves.at(i)->gen_one_convering_configs();
+            for (const auto &c : cex) config(c);
+        }
     }
 
     map<str, boost::any> run_alg() {
 
         {
             LOG(INFO, "{:=^80}", " Init ");
-            config("0,1,1,0,0");
-            config("2,0,1,1,0"); // H
-            config("1,1,0,1,1");
+            config("0,1,1,0,0,0,1,2,1");
+            config("2,0,1,1,0,2,0,0,2"); // H
+            config("1,1,0,1,1,1,2,1,0");
             build();
         }
 
         {
             LOG(INFO, "{:=^80}", " Ite 1 ");
             //        s
-            config("0,0,1,1,1");
-            config("1,0,0,0,0");
-            config("2,0,1,0,0");
-            config("2,0,1,0,1"); // H
+            config("0,0,1,1,1,1,1,0,1");
+            config("1,0,0,0,0,0,2,2,0");
+            config("2,0,1,0,0,2,0,1,2");
+            config("2,0,1,0,1,0,0,1,2"); // H
             build();
         }
 
@@ -68,15 +69,24 @@ public:
         {
             LOG(INFO, "{:=^80}", " Ite 3 ");
             //      x     u v
-            config("2,0,0,0,0");
-            config("2,1,1,0,0");
+            config("2,0,0,0,0,0,0,2,2");
+            config("2,1,1,0,0,2,1,1,0");
+            config("2,1,0,0,0,1,2,0,1");
             //      x     u v
-            config("2,0,0,0,1"); // H
-            config("2,1,1,0,1");
+            config("2,0,0,0,1,2,2,1,0"); // H
+            config("2,0,0,0,1,1,0,2,1"); // H
+            config("2,1,1,0,1,0,1,0,2");
             //      x     u
-            config("2,0,1,1,1");
-            config("2,1,0,1,0");
+            config("2,0,1,1,1,1,2,1,0");
+            config("2,1,0,1,0,0,0,2,1");
+            config("2,1,0,1,0,2,1,0,2");
             build();
+        }
+
+        {
+            LOG(INFO, "{:=^80}", " Ite 4 ");
+            run_cex(2);
+            //build();
         }
 
         LOG(INFO, "{:=^80}", " EXPR ");

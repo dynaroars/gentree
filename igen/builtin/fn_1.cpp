@@ -166,8 +166,8 @@ FN(ex_2,
 
 
 FN(ex_paper,
-   VARS(x, s, t, u, v),
-   DOMS(3, 2, 2, 2, 2), {
+   VARS(x, s, t, u, v, a, b, c, d),
+   DOMS(3, 2, 2, 2, 2, 3, 3, 3, 3), {
        if (u && v) {
            LOC("L0"); // u=1 & v=1
            LOC("L0-1");
