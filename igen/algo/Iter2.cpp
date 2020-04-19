@@ -79,6 +79,8 @@ public:
 
         bool queued_next = false, ignored = false, need_rebuild = true;
         int messed_up = 0, n_stuck = 0;
+
+        int last_build_iter = -1, last_build_n_configs = -1;
     };
 
     vec<PLocData> v_loc_data, v_this_iter, v_next_iter, v_uniq;
@@ -167,7 +169,7 @@ public:
         // ====
         if (v_loc_data.empty()) {
             prepare_vec_loc_data();
-            for (const PLocData &dat : v_loc_data) if (!dat->linked() && dat->need_rebuild) build_tree(dat);
+            for (const PLocData &dat : v_loc_data) if (!dat->linked() && dat->need_rebuild) build_tree(dat, 0);
         }
         finish_alg(iter);
 
@@ -213,7 +215,7 @@ public:
     bool run_one_loc(int iter, int meidx, int t, const PLocData &dat, bool rebuild, bool heavy) {
         CHECK(!dat->linked());
         auto &tree = dat->tree;
-        if (rebuild) build_tree(dat);
+        if (rebuild) build_tree(dat, iter);
 
         vec<PMutConfig> cex;
         vec<PCNode> leaves;
@@ -395,7 +397,7 @@ public:
             const auto &loc = dat->loc;
             if (dat->linked()) continue;
             CHECK(!dat->ignored || dat->need_rebuild);
-            if (dat->need_rebuild) build_tree(dat);
+            if (dat->need_rebuild) build_tree(dat, iter);
 
             bool do_simpl = expensive_simplify;
             LOG_IF(INFO, do_simpl, "Generating expr: {:>3} ({}) {}", ++simpl_cnt, loc->id(), loc->name());
@@ -410,6 +412,8 @@ public:
             fmt::print(out, "# M/H: {} / {}\n",
                        sz(tree->miss_configs()) + tree->n_new_miss_configs(),
                        sz(tree->hit_configs()) + tree->n_new_hit_configs());
+            fmt::print(out, "# Last rebuild:   iter {}  num_configs {}\n",
+                       dat->last_build_iter, dat->last_build_n_configs);
             for (const auto &d : vvp[dat->id()])
                 out << d->loc->name() << ", ";
             out << "\n-\n" << e << "\n-\n";
@@ -516,11 +520,12 @@ private:
         return true;
     }
 
-    void build_tree(const PLocData &d) {
+    void build_tree(const PLocData &d, int cur_iter) {
         CHECK(d->need_rebuild);
         auto &tree = d->tree;
         tree = new CTree(ctx()), tree->prepare_data(d->loc), tree->build_tree();
         d->need_rebuild = false;
+        d->last_build_iter = cur_iter, d->last_build_n_configs = cov()->n_configs();
     }
 
     vec<PMutConfig> gen_rand_configs(int num) const {
