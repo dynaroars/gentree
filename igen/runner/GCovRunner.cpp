@@ -141,6 +141,8 @@ void GCovRunner::parse(const str &filename, map<str, str> &varmap) {
             lang = Language::_from_string_nocase(readval(ss).c_str());
         } else if (cmd == "python_bin") {
             f_python_bin = readval(ss);
+        } else if (cmd == "cov_arg") {
+            f_cov_args.emplace_back(readval(ss));
         } else {
             throw std::runtime_error(fmt::format("invalid command: {}", cmd));
         }
@@ -365,7 +367,9 @@ void GCovRunner::_clean_cov_cpp() {
 //======================================================================================================================
 
 void GCovRunner::_run_py(vec<str> args) {
-    vec<str> pre_args{f_cov_bin, "run", f_bin};
+    vec<str> pre_args{f_cov_bin, "run"};
+    pre_args.insert(pre_args.end(), f_cov_args.begin(), f_cov_args.end());
+    pre_args.emplace_back(f_bin);
     args.insert(args.begin(), pre_args.begin(), pre_args.end());
 
 #if PRINT_VERBOSE
