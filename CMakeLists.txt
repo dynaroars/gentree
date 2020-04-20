@@ -54,7 +54,7 @@ target_link_libraries(igen4 PRIVATE
         z3::libz3 klib libigen4)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-else ()
+elseif (IGEN_LTO)
     target_compile_options(igen4 PUBLIC -flto)
     target_compile_options(libigen4 PUBLIC -flto)
     target_compile_options(klib PUBLIC -flto)

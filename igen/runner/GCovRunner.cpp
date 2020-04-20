@@ -109,22 +109,23 @@ void GCovRunner::parse(const str &filename, map<str, str> &varmap) {
             if (varmap.contains(k))
                 throw std::runtime_error(fmt::format("duplicated var: {}", k));
             varmap[k] = v;
+        } else if (cmd == "cov_env") {
+            auto[k, v] = readkv(ss);
+            cov_env[k] = v;
         } else if (cmd == "env") {
             auto[k, v] = readkv(ss);
-            if (bp_env.count(k))
-                throw std::runtime_error(fmt::format("duplicated env: {}", k));
-            bp_env[k] = v;
+            prog_env[k] = v;
         } else if (cmd == "bin") {
             f_bin = readval(ss);
             f_gcov_prog_name = std::filesystem::path(f_bin).filename();
         } else if (cmd == "wd") {
             f_wd = readval(ss);
-        } else if (cmd == "gcov_wd") {
-            f_gcov_wd = readval(ss);
-        } else if (cmd == "gcov_bin") {
-            f_gcov_bin = readval(ss);
+        } else if (cmd == "cov_wd") {
+            f_cov_wd = readval(ss);
+        } else if (cmd == "cov_bin") {
+            f_cov_bin = readval(ss);
         } else if (cmd == "loc_trim_prefix") {
-            f_loc_trim_prefix = readval(ss);
+            f_loc_trim_prefix.emplace_back(readval(ss));
         } else if (cmd == "run") {
             cmds.push_back({Cmd::Run, readargs(ss)});
         } else if (cmd == "cleandir") {
@@ -135,6 +136,8 @@ void GCovRunner::parse(const str &filename, map<str, str> &varmap) {
             const auto &a = readargs(ss);
             if (a.size() != 2) throw std::runtime_error(fmt::format("invalid cp_replace_foldercommand: {}", a));
             cp_replace_folder_cmds.emplace_back(a[0], a[1]);
+        } else if (cmd == "lang") {
+            lang = Language::_from_string_nocase(readval(ss).c_str());
         } else {
             throw std::runtime_error(fmt::format("invalid command: {}", cmd));
         }
@@ -163,30 +166,16 @@ void GCovRunner::exec(const vec<str> &config_values) {
                     else run_arg.emplace_back(s);
                 }
                 LOG_IF(INFO, PRINT_VERBOSE, "Run: {} {}", f_bin, fmt::join(run_arg, " "));
-
-#if PRINT_VERBOSE
-                bp::ipstream out, err;
-#endif
-                bp::child proc_child(
-                        f_bin, bp::posix::use_vfork, bp::posix::sig.ign(),
-                        bp::args(run_arg), bp::start_dir(f_wd), bp::env(bp_env),
-#if PRINT_VERBOSE
-                        bp::std_out > out, bp::std_err > err
-#else
-                        bp::std_out > bp::null, bp::std_err > bp::null
-#endif
-                );
-                CHECKF(proc_child, "Error running process: {} {}", f_bin, fmt::join(run_arg, " "));
-                proc_child.wait();
-                //LOG(INFO, "ec = {}", proc_child.exit_code()) << out.rdbuf();
-                //GLOG(INFO) << err.rdbuf();
-#if PRINT_VERBOSE
-                str str_out = read_stream_to_str(out);
-                VLOG(10, "Out (ec={}): {}", proc_child.exit_code(), str_out);
-                str str_err = read_stream_to_str(err);
-                VLOG(10, "Err: {}", str_err);
-#endif
-                // TODO: Check stderr
+                switch (lang) {
+                    case Language::Cpp:
+                        _run_cpp(std::move(run_arg));
+                        break;
+                    case Language::Python:
+                        _run_py(std::move(run_arg));
+                        break;
+                    default:
+                        CHECK(0);
+                }
                 break;
             }
             case Cmd::CleanDir: {
@@ -204,13 +193,98 @@ void GCovRunner::exec(const vec<str> &config_values) {
 }
 
 set<str> GCovRunner::collect_cov() {
+    switch (lang) {
+        case Language::Cpp:
+            return _collect_cov_cpp();
+        default:
+            CHECK(0);
+    }
+}
+
+
+void GCovRunner::clean_cov() {
+    switch (lang) {
+        case Language::Cpp:
+            return _clean_cov_cpp();
+        default:
+            CHECK(0);
+    }
+}
+
+static void recursive_copy(const boost::filesystem::path &src, const boost::filesystem::path &dst) {
+    namespace fs = boost::filesystem;
+    CHECK(fs::is_directory(src) && fs::is_directory(dst));
+
+    for (fs::directory_entry &src_item : fs::directory_iterator(src)) {
+        fs::path new_ds = dst / src_item.path().filename();
+        if (fs::is_directory(src_item.path())) {
+            fs::create_directories(new_ds);
+            recursive_copy(src_item.path(), new_ds);
+        } else if (fs::is_regular_file(src_item)) {
+            fs::copy(src_item, new_ds);
+        } else if (fs::is_symlink(src_item)) {
+            fs::copy_symlink(src_item, new_ds);
+        }
+    }
+}
+
+void GCovRunner::init() {
+    namespace fs = boost::filesystem;
+    const str allowed_prefix = "/mnt/ramdisk/";
+
+    CHECK(boost::algorithm::starts_with(f_cov_wd, allowed_prefix));
+    f_gcov_gcda_file = f_cov_wd + "/" + f_gcov_prog_name + ".gcda";
+
+    CHECK(boost::algorithm::starts_with(f_wd, allowed_prefix));
+    fs::remove_all(f_wd);
+    fs::create_directories(f_wd);
+
+    for (const auto &p : cp_replace_folder_cmds) {
+        CHECK(boost::algorithm::starts_with(p.second, allowed_prefix));
+        fs::remove_all(p.second);
+        fs::create_directories(p.second);
+        recursive_copy(p.first, p.second);
+    }
+
+    VLOG(1, "GCovRunner inited");
+}
+
+//======================================================================================================================
+
+void GCovRunner::_run_cpp(vec<str> args) {
+#if PRINT_VERBOSE
+    bp::ipstream out, err;
+#endif
+    bp::child proc_child(
+            f_bin, bp::posix::use_vfork, bp::posix::sig.ign(),
+            bp::args(args), bp::start_dir(f_wd), bp::env(prog_env),
+#if PRINT_VERBOSE
+            bp::std_out > out, bp::std_err > err
+#else
+            bp::std_out > bp::null, bp::std_err > bp::null
+#endif
+    );
+    CHECKF(proc_child, "Error running process: {} {}", f_bin, fmt::join(args, " "));
+    proc_child.wait();
+    //LOG(INFO, "ec = {}", proc_child.exit_code()) << out.rdbuf();
+    //GLOG(INFO) << err.rdbuf();
+#if PRINT_VERBOSE
+    str str_out = read_stream_to_str(out);
+                VLOG(10, "Out (ec={}): {}", proc_child.exit_code(), str_out);
+                str str_err = read_stream_to_str(err);
+                VLOG(10, "Err: {}", str_err);
+#endif
+    // TODO: Check stderr
+}
+
+set<str> GCovRunner::_collect_cov_cpp() {
     vec<str> run_arg = {"-it", f_gcov_prog_name};
 
     bp::ipstream out, err;
-    bp::child proc_child(f_gcov_bin, bp::posix::use_vfork, bp::posix::sig.ign(),
-                         bp::args(run_arg), bp::start_dir(f_gcov_wd),
+    bp::child proc_child(f_cov_bin, bp::posix::use_vfork, bp::posix::sig.ign(),
+                         bp::args(run_arg), bp::start_dir(f_cov_wd),
                          bp::std_out > out, bp::std_err > err);
-    CHECKF(proc_child, "Error running gcov: {} {}", f_gcov_bin, fmt::join(run_arg, " "));
+    CHECKF(proc_child, "Error running gcov: {} {}", f_cov_bin, fmt::join(run_arg, " "));
 
     using namespace rapidjson;
     set<str> res;
@@ -235,8 +309,11 @@ set<str> GCovRunner::collect_cov() {
         const Value &file = obj["file"];
         CHECK(file.IsString());
         str file_str = file.GetString();
-        if (boost::algorithm::starts_with(file_str, f_loc_trim_prefix))
-            file_str.erase(file_str.begin(), file_str.begin() + f_loc_trim_prefix.size());
+        for (const auto &prefix : f_loc_trim_prefix) {
+            if (boost::algorithm::starts_with(file_str, prefix))
+                file_str.erase(file_str.begin(), file_str.begin() + sz(prefix));
+            break;
+        }
 
         const Value &lines = obj["lines"];
         CHECK(lines.IsArray());
@@ -262,47 +339,22 @@ set<str> GCovRunner::collect_cov() {
     return res;
 }
 
-void GCovRunner::clean_cov() {
+void GCovRunner::_clean_cov_cpp() {
     std::filesystem::remove(f_gcov_gcda_file);
 }
 
-static void recursive_copy(const boost::filesystem::path &src, const boost::filesystem::path &dst) {
-    namespace fs = boost::filesystem;
-    CHECK(fs::is_directory(src) && fs::is_directory(dst));
+//======================================================================================================================
 
-    for (fs::directory_entry &src_item : fs::directory_iterator(src)) {
-        fs::path new_ds = dst / src_item.path().filename();
-        if (fs::is_directory(src_item.path())) {
-            fs::create_directories(new_ds);
-            recursive_copy(src_item.path(), new_ds);
-        } else if (fs::is_regular_file(src_item)) {
-            fs::copy(src_item, new_ds);
-        } else if (fs::is_symlink(src_item)) {
-            fs::copy_symlink(src_item, new_ds);
-        }
-    }
+void GCovRunner::_run_py(vec<str> args) {
+
 }
 
-void GCovRunner::init() {
-    namespace fs = boost::filesystem;
-    const str allowed_prefix = "/mnt/ramdisk/";
+set<str> GCovRunner::_collect_cov_py() {
 
-    CHECK(boost::algorithm::starts_with(f_gcov_wd, allowed_prefix));
-    f_gcov_gcda_file = f_gcov_wd + "/" + f_gcov_prog_name + ".gcda";
-
-    CHECK(boost::algorithm::starts_with(f_wd, allowed_prefix));
-    fs::remove_all(f_wd);
-    fs::create_directories(f_wd);
-
-    for (const auto &p : cp_replace_folder_cmds) {
-        CHECK(boost::algorithm::starts_with(p.second, allowed_prefix));
-        fs::remove_all(p.second);
-        fs::create_directories(p.second);
-        recursive_copy(p.first, p.second);
-    }
-
-    VLOG(1, "GCovRunner inited");
 }
 
+void GCovRunner::_clean_cov_py() {
+    std::filesystem::remove(f_gcov_gcda_file);
+}
 
 }
