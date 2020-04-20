@@ -36,6 +36,7 @@ typedef unsigned long DWORD;
 #include <rapidjson/istreamwrapper.h>
 
 namespace bp = boost::process;
+#define PRINT_VERBOSE 1
 
 
 namespace igen {
@@ -138,6 +139,8 @@ void GCovRunner::parse(const str &filename, map<str, str> &varmap) {
             cp_replace_folder_cmds.emplace_back(a[0], a[1]);
         } else if (cmd == "lang") {
             lang = Language::_from_string_nocase(readval(ss).c_str());
+        } else if (cmd == "python_bin") {
+            f_python_bin = readval(ss);
         } else {
             throw std::runtime_error(fmt::format("invalid command: {}", cmd));
         }
@@ -154,8 +157,6 @@ static std::string read_stream_to_str(std::istream &in) {
 }
 
 void GCovRunner::exec(const vec<str> &config_values) {
-#define PRINT_VERBOSE 0
-
     for (const auto &ce : cmds) {
         switch (ce.cmd) {
             case Cmd::Run: {
@@ -196,6 +197,8 @@ set<str> GCovRunner::collect_cov() {
     switch (lang) {
         case Language::Cpp:
             return _collect_cov_cpp();
+        case Language::Python:
+            return _collect_cov_py();
         default:
             CHECK(0);
     }
@@ -206,6 +209,8 @@ void GCovRunner::clean_cov() {
     switch (lang) {
         case Language::Cpp:
             return _clean_cov_cpp();
+        case Language::Python:
+            return _clean_cov_py();
         default:
             CHECK(0);
     }
@@ -270,9 +275,9 @@ void GCovRunner::_run_cpp(vec<str> args) {
     //GLOG(INFO) << err.rdbuf();
 #if PRINT_VERBOSE
     str str_out = read_stream_to_str(out);
-                VLOG(10, "Out (ec={}): {}", proc_child.exit_code(), str_out);
-                str str_err = read_stream_to_str(err);
-                VLOG(10, "Err: {}", str_err);
+    VLOG(10, "Out (ec={}): {}", proc_child.exit_code(), str_out);
+    str str_err = read_stream_to_str(err);
+    VLOG(10, "Err: {}", str_err);
 #endif
     // TODO: Check stderr
 }
@@ -346,11 +351,36 @@ void GCovRunner::_clean_cov_cpp() {
 //======================================================================================================================
 
 void GCovRunner::_run_py(vec<str> args) {
+    vec<str> pre_args{"run", f_bin};
+    args.insert(args.begin(), pre_args.begin(), pre_args.end());
 
+#if PRINT_VERBOSE
+    bp::ipstream out, err;
+#endif
+    bp::child proc_child(
+            f_python_bin, bp::posix::use_vfork, bp::posix::sig.ign(),
+            bp::args(args), bp::start_dir(f_wd), bp::env(prog_env),
+#if PRINT_VERBOSE
+            bp::std_out > out, bp::std_err > err
+#else
+            bp::std_out > bp::null, bp::std_err > bp::null
+#endif
+    );
+    CHECKF(proc_child, "Error running process: {} {}", f_bin, fmt::join(args, " "));
+    proc_child.wait();
+    //LOG(INFO, "ec = {}", proc_child.exit_code()) << out.rdbuf();
+    //GLOG(INFO) << err.rdbuf();
+#if PRINT_VERBOSE
+    str str_out = read_stream_to_str(out);
+    LOG(INFO, "Out (ec={}): {}", proc_child.exit_code(), str_out);
+    str str_err = read_stream_to_str(err);
+    LOG(INFO, "Err: {}", str_err);
+#endif
+    // TODO: Check stderr
 }
 
 set<str> GCovRunner::_collect_cov_py() {
-
+    return {};
 }
 
 void GCovRunner::_clean_cov_py() {
