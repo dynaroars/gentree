@@ -176,7 +176,6 @@ FN(ex_paper,
        }
        if (u && v) {
            LOC("L3"); // u=1 & v=1
-           LOC("L3-1");
            RETURN;
        } else {
            LOC("L4"); // u=0 | v=0
@@ -190,7 +189,6 @@ FN(ex_paper,
            LOC("L7"); // x=2 & s=0 & (u=0 | v=0)
            if (u || v) {
                LOC("L8"); // x=2 & s=0 & ((u=1 & v=0) | (u=0 & v=1))
-               LOC("L8-1");
            }
        }
    })

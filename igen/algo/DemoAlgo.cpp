@@ -22,9 +22,12 @@ public:
 
     PMutCTree tree;
     vec<PCNode> leaves;
+    str xloc = "L8";
 
     void build() {
-        tree = new CTree(ctx()), tree->prepare_data(cov()->loc("L8")), tree->build_tree();
+        print_conf_tbl();
+
+        tree = new CTree(ctx()), tree->prepare_data(cov()->loc(xloc)), tree->build_tree();
         leaves.clear(), tree->gather_nodes(leaves);
         std::sort(leaves.begin(), leaves.end(), [](const PCNode &a, const PCNode &b) {
             if (a->n_min_cases() != b->n_min_cases())
@@ -101,16 +104,49 @@ public:
 
     set<hash_t> ran_hashes;
 
+    std::stringstream conf_ss;
+    int cid = 0;
+    vec<str> tbl_order = {"s", "t", "u", "v", "x", "a", "b", "c", "d"};
+
     PMutConfig config(PMutConfig c) {
         CHECK(ran_hashes.insert(c->hash()).second) << " # " << c->to_str_raw();
         auto loc_names = ctx()->runner()->run({c}).at(0);
         cov_mut()->register_cov(c, loc_names);
         VLOG(50, "{}  ==>  ", *c) << loc_names << "   # " << c->to_str_raw();
+
+        {
+            std::stringstream q;
+            for (const str &s : tbl_order) {
+                for (int i = 0, nv = dom()->n_vars(); i < nv; ++i) {
+                    if (dom()->var(i)->name() == s) {
+                        q << c->get(i) << " & ";
+                        break;
+                    }
+                }
+            }
+            fmt::print(conf_ss, "\nc_{{{}}} & {} {}", ++cid, q.str(), fmt::join(loc_names, ","));
+            if (tree) {
+                bool tval = tree->test_config(c).first;
+                conf_ss << " & " << (tval != loc_names.count(xloc) ? "Y" : "N");
+            }
+            conf_ss << " \\\\";
+        }
+
         return c;
     }
 
     PMutConfig config(const str &s) {
         return config(new Config(ctx_mut(), s));
+    }
+
+    void print_conf_tbl() {
+        std::stringstream q;
+        q << "\\text{config} & ";
+        for (const str &s : tbl_order) fmt::print(q, "{} & ", s);
+        q << "\\text{coverage}";
+        if (tree) q << " & \\text{cex?}";
+        LOG(INFO, "\n{} \\\\\n\\midrule{}", q.str(), conf_ss.str());
+        conf_ss = {};
     }
 };
 
