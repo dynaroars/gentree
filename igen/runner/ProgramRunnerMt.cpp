@@ -30,8 +30,8 @@ ProgramRunnerMt::ProgramRunnerMt(PMutContext _ctx) : Object(move(_ctx)) {
 
     str cache_ctl = ctx()->get_option_as<str>("cache");
     allow_execute = has_char(cache_ctl, 'x');
-    allow_cache_read = has_cache && has_char(cache_ctl, 'r');
-    allow_cache_write = has_cache && has_char(cache_ctl, 'w');
+    allow_cache_read = has_char(cache_ctl, 'r');
+    allow_cache_write = has_char(cache_ctl, 'w');
     has_cache = allow_cache_read || allow_cache_write;
 
     if (has_cache) {
