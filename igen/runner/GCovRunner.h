@@ -50,9 +50,11 @@ private:
 
     void _clean_cov_py();
 
+    void _trim_file_prefix(str &file_str) const;
+
 private:
     str f_bin, f_wd, f_cov_wd, f_cov_bin, f_gcov_prog_name, f_gcov_gcda_file;
-    str f_python_bin;
+    str f_python_bin, f_python_cov_file;
     vec<str> f_loc_trim_prefix;
     map<str, str> vars_;
 

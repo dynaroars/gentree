@@ -36,7 +36,7 @@ typedef unsigned long DWORD;
 #include <rapidjson/istreamwrapper.h>
 
 namespace bp = boost::process;
-#define PRINT_VERBOSE 1
+#define PRINT_VERBOSE 0
 
 
 namespace igen {
@@ -238,7 +238,16 @@ void GCovRunner::init() {
     const str allowed_prefix = "/mnt/ramdisk/";
 
     CHECK(boost::algorithm::starts_with(f_cov_wd, allowed_prefix));
-    f_gcov_gcda_file = f_cov_wd + "/" + f_gcov_prog_name + ".gcda";
+    switch (lang) {
+        case Language::Cpp:
+            f_gcov_gcda_file = f_cov_wd + "/" + f_gcov_prog_name + ".gcda";
+            break;
+        case Language::Python:
+            f_python_cov_file = f_cov_wd + "/.coverage";
+            break;
+        default:
+            break;
+    }
 
     CHECK(boost::algorithm::starts_with(f_wd, allowed_prefix));
     fs::remove_all(f_wd);
@@ -252,6 +261,15 @@ void GCovRunner::init() {
     }
 
     VLOG(1, "GCovRunner inited");
+}
+
+void GCovRunner::_trim_file_prefix(str &file_str) const {
+    for (const auto &prefix : f_loc_trim_prefix) {
+        if (boost::algorithm::starts_with(file_str, prefix)) {
+            file_str.erase(file_str.begin(), file_str.begin() + sz(prefix));
+            break;
+        }
+    }
 }
 
 //======================================================================================================================
@@ -314,11 +332,7 @@ set<str> GCovRunner::_collect_cov_cpp() {
         const Value &file = obj["file"];
         CHECK(file.IsString());
         str file_str = file.GetString();
-        for (const auto &prefix : f_loc_trim_prefix) {
-            if (boost::algorithm::starts_with(file_str, prefix))
-                file_str.erase(file_str.begin(), file_str.begin() + sz(prefix));
-            break;
-        }
+        _trim_file_prefix(file_str);
 
         const Value &lines = obj["lines"];
         CHECK(lines.IsArray());
@@ -351,14 +365,14 @@ void GCovRunner::_clean_cov_cpp() {
 //======================================================================================================================
 
 void GCovRunner::_run_py(vec<str> args) {
-    vec<str> pre_args{"run", f_bin};
+    vec<str> pre_args{f_cov_bin, "run", f_bin};
     args.insert(args.begin(), pre_args.begin(), pre_args.end());
 
 #if PRINT_VERBOSE
     bp::ipstream out, err;
 #endif
     bp::child proc_child(
-            f_python_bin, bp::posix::use_vfork, bp::posix::sig.ign(),
+            f_python_bin, bp::posix::use_vfork, // bp::posix::sig.ign(),
             bp::args(args), bp::start_dir(f_wd), bp::env(prog_env),
 #if PRINT_VERBOSE
             bp::std_out > out, bp::std_err > err
@@ -380,11 +394,62 @@ void GCovRunner::_run_py(vec<str> args) {
 }
 
 set<str> GCovRunner::_collect_cov_py() {
-    return {};
+    vec<str> run_arg = {f_cov_bin, "json", "-o-"};
+
+    bp::ipstream out, err;
+    bp::child proc_child(f_python_bin, bp::posix::use_vfork, bp::posix::sig.ign(),
+                         bp::args(run_arg), bp::start_dir(f_cov_wd), bp::env(cov_env),
+                         bp::std_out > out, bp::std_err > err);
+    CHECKF(proc_child, "Error running gcov: {} {}", f_cov_bin, fmt::join(run_arg, " "));
+
+    using namespace rapidjson;
+    set<str> res;
+    str json_str = read_stream_to_str(out);
+
+    std::string serr = read_stream_to_str(err);
+    // TODO: Check error
+    if (!serr.empty()) {
+        CHECKF(0, "Py-cov error (ec = {}). Stderr = \n", proc_child.exit_code()) << serr;
+    }
+    //====
+
+    int cur_n_locs = 0;
+    Document document;
+    document.ParseInsitu(json_str.data());
+
+    const Value &files = document["files"];
+    CHECK(files.IsObject());
+    for (auto &file_entry : files.GetObject()) {
+        str file_str = file_entry.name.GetString();
+        _trim_file_prefix(file_str);
+
+        const Value &lines = file_entry.value["executed_lines"];
+        CHECK(lines.IsArray());
+        for (auto &v : lines.GetArray()) {
+            CHECK(v.IsInt());
+            int lnum = v.GetInt();
+
+            str loc = file_str;
+            loc.push_back(':');
+            loc += std::to_string(lnum);
+            res.insert(move(loc));
+        }
+
+        const auto &summary = file_entry.value["summary"];
+        CHECK(summary.IsObject());
+        cur_n_locs += summary.GetObject()["num_statements"].GetInt();
+    }
+
+    if (n_locs_ == -1)
+        n_locs_ = cur_n_locs;
+    else
+        CHECK_EQ(n_locs_, cur_n_locs);
+    proc_child.wait();
+    return res;
 }
 
 void GCovRunner::_clean_cov_py() {
-    std::filesystem::remove(f_gcov_gcda_file);
+    std::filesystem::remove(f_python_cov_file);
 }
 
 }
