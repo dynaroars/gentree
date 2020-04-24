@@ -106,7 +106,7 @@ public:
 
     std::stringstream conf_ss;
     int cid = 0;
-    vec<str> tbl_order = {"s", "t", "u", "v", "x", "a", "b", "c", "d"};
+    vec<str> tbl_order = {"s", "t", "u", "v", "a", "b", "c", "d", "e"};
 
     PMutConfig config(PMutConfig c) {
         CHECK(ran_hashes.insert(c->hash()).second) << " # " << c->to_str_raw();
