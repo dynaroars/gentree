@@ -60,7 +60,7 @@ ProgramRunner::ProgramRunner(PMutContext _ctx, map<str, str> default_vars) :
     } else {
         str filestem = ctx()->get_option_as<str>("filestem");
         if (type == +RunnerType::GCov)
-            target = try_ext(filestem, {"gcov", "pycov"});
+            target = try_ext(filestem, {"gcov", "pycov", "ocov"});
         else if (type == +RunnerType::Otter)
             target = filestem + ".otter";
         else
@@ -152,7 +152,7 @@ set<str> ProgramRunner::_run_gcov(const PConfig &config) const {
                 tmp += '=', tmp += label;
                 str_args.emplace_back(move(tmp));
             } else {
-                CHECKF(name.at(0) == '-' && name.at(1) != '-', "Invalid name/lable pair: {} {}", name, label);
+                //CHECKF(name.at(0) == '-' && name.at(1) != '-', "Invalid name/lable pair: {} {}", name, label);
                 str_args.emplace_back(name);
                 str_args.emplace_back(label);
             }

@@ -36,7 +36,7 @@ typedef unsigned long DWORD;
 #include <rapidjson/istreamwrapper.h>
 
 namespace bp = boost::process;
-#define PRINT_VERBOSE 0
+#define PRINT_VERBOSE 1
 
 
 namespace igen {
@@ -131,6 +131,8 @@ void GCovRunner::parse(const str &filename, map<str, str> &varmap) {
             cmds.push_back({Cmd::Run, readargs(ss)});
         } else if (cmd == "cleandir") {
             cmds.push_back({Cmd::CleanDir, readargs(ss)});
+        } else if (cmd == "clean_wd") {
+            cmds.push_back({Cmd::CleanWd, readargs(ss)});
         } else if (cmd == "touch") {
             cmds.push_back({Cmd::Touch, readargs(ss)});
         } else if (cmd == "cp_replace_folder") {
@@ -176,9 +178,17 @@ void GCovRunner::exec(const vec<str> &config_values) {
                     case Language::Python:
                         _run_py(std::move(run_arg));
                         break;
+                    case Language::Ocaml:
+                        _run_ocaml(std::move(run_arg));
+                        break;
                     default:
                         CHECK(0);
                 }
+                break;
+            }
+            case Cmd::CleanWd: {
+                std::filesystem::remove_all(f_wd);
+                std::filesystem::create_directory(f_wd);
                 break;
             }
             case Cmd::CleanDir: {
@@ -201,6 +211,8 @@ set<str> GCovRunner::collect_cov() {
             return _collect_cov_cpp();
         case Language::Python:
             return _collect_cov_py();
+        case Language::Ocaml:
+            return _collect_cov_ocaml();
         default:
             CHECK(0);
     }
@@ -213,6 +225,8 @@ void GCovRunner::clean_cov() {
             return _clean_cov_cpp();
         case Language::Python:
             return _clean_cov_py();
+        case Language::Ocaml:
+            return _clean_cov_ocaml();
         default:
             CHECK(0);
     }
@@ -246,6 +260,9 @@ void GCovRunner::init() {
             break;
         case Language::Python:
             f_python_cov_file = f_cov_wd + "/.coverage";
+            break;
+        case Language::Ocaml:
+            f_ocaml_cov_file = f_cov_wd + "/bisect0001.out";
             break;
         default:
             break;
@@ -455,5 +472,62 @@ set<str> GCovRunner::_collect_cov_py() {
 void GCovRunner::_clean_cov_py() {
     std::filesystem::remove(f_python_cov_file);
 }
+
+
+//======================================================================================================================
+
+void GCovRunner::_run_ocaml(vec<str> args) {
+#if PRINT_VERBOSE
+    bp::ipstream out, err;
+#endif
+    bp::child proc_child(
+            f_bin, bp::posix::use_vfork, // bp::posix::sig.ign(),
+            bp::args(args), bp::start_dir(f_wd), bp::env(prog_env),
+#if PRINT_VERBOSE
+            bp::std_out > out, bp::std_err > err
+#else
+            bp::std_out > bp::null, bp::std_err > bp::null
+#endif
+    );
+    CHECKF(proc_child, "Error running process: {} {}", f_bin, fmt::join(args, " "));
+    proc_child.wait();
+    //LOG(INFO, "ec = {}", proc_child.exit_code()) << out.rdbuf();
+    //GLOG(INFO) << err.rdbuf();
+#if PRINT_VERBOSE
+    str str_out = read_stream_to_str(out);
+    LOG(INFO, "Out (ec={}): {}", proc_child.exit_code(), str_out);
+    str str_err = read_stream_to_str(err);
+    LOG(INFO, "Err: {}", str_err);
+#endif
+    // TODO: Check stderr
+}
+
+set<str> GCovRunner::_collect_cov_ocaml() {
+    vec<str> run_arg = {"-xml", "-", f_ocaml_cov_file};
+
+    bp::ipstream out, err;
+    bp::child proc_child(f_cov_bin, bp::posix::use_vfork, bp::posix::sig.ign(),
+                         bp::args(run_arg), bp::start_dir(f_cov_wd),
+                         bp::std_out > out, bp::std_err > err);
+    CHECKF(proc_child, "Error running Ocaml bisect: {} {}", f_cov_bin, fmt::join(run_arg, " "));
+
+    set<str> res;
+    str xml_str = read_stream_to_str(out);
+
+    std::string serr = read_stream_to_str(err);
+    // TODO: Check error
+    if (!serr.empty()) {
+        CHECKF(0, "Ocaml bisect error (ec = {}). Stderr = \n", proc_child.exit_code()) << serr;
+    }
+    //====
+
+    GLOG(INFO) << xml_str;
+    return {};
+}
+
+void GCovRunner::_clean_cov_ocaml() {
+    std::filesystem::remove(f_ocaml_cov_file);
+}
+
 
 }

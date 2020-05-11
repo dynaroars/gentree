@@ -8,6 +8,7 @@
 #include "Config.h"
 
 #include <boost/container/small_vector.hpp>
+#include <boost/container/flat_set.hpp>
 #include <boost/iterator/counting_iterator.hpp>
 #include <boost/algorithm/string.hpp>
 
@@ -54,6 +55,7 @@ std::istream &Domain::parse(std::istream &input) {
     using ZSortTuple = std::tuple<z3::sort, z3::func_decl_vector, z3::func_decl_vector>;
     map<vec<str>, ZSortTuple> sorts;
     std::string line;
+    set<str> set_names;
     while (std::getline(input, line)) {
         std::stringstream ss(line);
         str name;
@@ -61,6 +63,7 @@ std::istream &Domain::parse(std::istream &input) {
 
         ss >> name;
         if (name.empty() || name[0] == '#') continue;
+        CHECKF(set_names.insert(name).second, "Duplicate option name: {}", name);
 
         std::string val;
         while (ss >> val) {

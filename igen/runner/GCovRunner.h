@@ -38,23 +38,34 @@ public:
 
     using Language = details::GCovRunnerLanguage;
 private:
+    // CPP
     void _run_cpp(vec<str> args);
 
     set<str> _collect_cov_cpp();
 
     void _clean_cov_cpp();
 
+    // Python
     void _run_py(vec<str> args);
 
     set<str> _collect_cov_py();
 
     void _clean_cov_py();
 
+    // Ocaml
+    void _run_ocaml(vec<str> args);
+
+    set<str> _collect_cov_ocaml();
+
+    void _clean_cov_ocaml();
+
+private:
     void _trim_file_prefix(str &file_str) const;
 
 private:
     str f_bin, f_wd, f_cov_wd, f_cov_bin, f_gcov_prog_name, f_gcov_gcda_file;
     str f_python_bin, f_python_cov_file;
+    str f_ocaml_cov_file;
     vec<str> f_cov_args;
     vec<str> f_loc_trim_prefix;
     map<str, str> vars_;
@@ -62,7 +73,7 @@ private:
     boost::process::environment prog_env, cov_env;
 
     enum class Cmd {
-        Run, CleanDir, Touch
+        Run, CleanWd, CleanDir, Touch
     };
     struct CmdEntry {
         Cmd cmd;

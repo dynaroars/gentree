@@ -29,7 +29,7 @@ Config::Config(const PMutConfig &c) : Config(c->ctx_mut(), c->values()) {
 Config::Config(PMutContext ctx, const str &str_values, int id) : Config(move(ctx), id) {
     vec<str> svals;
     boost::split(svals, str_values, boost::is_any_of(","));
-    CHECK(svals.size() == values().size());
+    CHECK_EQ(svals.size(), values().size());
     for (int i = 0; i < int(values().size()); ++i) {
         set(i, boost::lexical_cast<int>(svals[i]));
     }
