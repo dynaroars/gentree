@@ -12,6 +12,7 @@
 #include <boost/container/flat_set.hpp>
 #include <klib/print_stl.h>
 #include <klib/vecutils.h>
+#include <pugixml.hpp>
 
 #ifdef __MINGW32__
 typedef unsigned long DWORD;
@@ -36,7 +37,7 @@ typedef unsigned long DWORD;
 #include <rapidjson/istreamwrapper.h>
 
 namespace bp = boost::process;
-#define PRINT_VERBOSE 1
+#define PRINT_VERBOSE 0
 
 
 namespace igen {
@@ -144,7 +145,8 @@ void GCovRunner::parse(const str &filename, map<str, str> &varmap) {
         } else if (cmd == "python_bin") {
             f_python_bin = readval(ss);
         } else if (cmd == "cov_arg") {
-            f_cov_args.emplace_back(readval(ss));
+            auto args = readargs(ss);
+            vec_move_append(f_cov_args, args);
         } else {
             throw std::runtime_error(fmt::format("invalid command: {}", cmd));
         }
@@ -504,6 +506,7 @@ void GCovRunner::_run_ocaml(vec<str> args) {
 
 set<str> GCovRunner::_collect_cov_ocaml() {
     vec<str> run_arg = {"-xml", "-", f_ocaml_cov_file};
+    run_arg.insert(run_arg.end(), f_cov_args.begin(), f_cov_args.end());
 
     bp::ipstream out, err;
     bp::child proc_child(f_cov_bin, bp::posix::use_vfork, bp::posix::sig.ign(),
@@ -521,8 +524,39 @@ set<str> GCovRunner::_collect_cov_ocaml() {
     }
     //====
 
-    GLOG(INFO) << xml_str;
-    return {};
+    using namespace pugi;
+    xml_document doc;
+    xml_parse_result result = doc.load_buffer_inplace(xml_str.data(), xml_str.size());
+    CHECKF(result, "Parse XML error: description: {}, offset: {}", result.description(), result.offset);
+
+
+    int cur_n_locs = 0;
+    xml_node bisect_report = doc.child("bisect-report");
+    for (xml_node file : bisect_report.children("file")) {
+        str path = file.attribute("path").value();
+        CHECK(!path.empty());
+        _trim_file_prefix(path);
+        for (xml_node point : file.children("point")) {
+            int offset = point.attribute("offset").as_int(-1);
+            int count = point.attribute("count").as_int(-1);
+            CHECK(offset != -1 && count != -1);
+            if (count > 0) {
+                str loc = path;
+                loc.push_back(':');
+                loc += std::to_string(offset);
+                res.insert(move(loc));
+            }
+            cur_n_locs++;
+        }
+    }
+
+    n_locs_ = std::max(n_locs_, cur_n_locs);
+//    if (n_locs_ == -1)
+//        n_locs_ = cur_n_locs;
+//    else
+//        CHECK_EQ(n_locs_, cur_n_locs);
+    proc_child.wait();
+    return res;
 }
 
 void GCovRunner::_clean_cov_ocaml() {

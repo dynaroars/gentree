@@ -424,7 +424,7 @@ public:
         }
 
         if (!out_to_file) {
-            LOG(INFO, "OUTPUT: \n") << outss.rdbuf();
+            LOG(INFO, "OUTPUT: \n") << outss.str();
         }
     }
 

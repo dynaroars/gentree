@@ -40,6 +40,7 @@ find_package(Boost REQUIRED COMPONENTS headers program_options timer filesystem 
 # ===
 
 add_subdirectory(third_party/rapidjson)
+add_subdirectory(third_party/pugixml)
 add_subdirectory(third_party/robinmap)
 add_subdirectory(klib)
 add_subdirectory(igen)
