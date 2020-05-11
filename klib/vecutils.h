@@ -36,6 +36,23 @@ void unordered_erase(Vector &v, typename Vector::iterator it) {
     v.pop_back();
 }
 
+template<typename K, typename V>
+std::vector<K> get_keys_as_vec(const map <K, V> &m) {
+    std::vector<K> res;
+    res.reserve(m.size());
+    for (const auto &kv : m) res.push_back(kv.first);
+    return res;
+}
+
+template<typename T>
+long vec_median(const std::vector<T> &vec) {
+    auto size = vec.size();
+    if (size == 0)
+        throw std::domain_error("median of an empty vector");
+    auto mid = size / 2;
+    return size % 2 == 0 ? (vec[mid] + vec[mid - 1]) / 2 : vec[mid];
+}
+
 }
 
 #endif //IGEN4_VECUTILS_H

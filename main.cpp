@@ -3,6 +3,8 @@
 #include <klib/common.h>
 #include <klib/random.h>
 #include <klib/WorkQueue.h>
+#include <klib/vecutils.h>
+#include <klib/anyutils.h>
 #include <z3++.h>
 
 #include <boost/program_options/options_description.hpp>
@@ -22,6 +24,7 @@
 #include <igen/runner/ProgramRunnerMt.h>
 
 namespace po = boost::program_options;
+using namespace igen;
 
 void init_glog(int argc, char **argv) {
     (void) argc;
@@ -35,8 +38,40 @@ void init_glog(int argc, char **argv) {
     google::InstallFailureSignalHandler();
 }
 
+str analyze_res_to_csv(vec<map<str, boost::any>> v_results) {
+    constexpr long kNAN = kMIN<long>;
+    std::stringstream ss;
+    vec<str> cols = get_keys_as_vec(v_results.at(0));
+    vec<vec<long>> col_vals(cols.size());
+    fmt::print(ss, "{}\n", fmt::join(cols, ","));
+    for (const auto &mp : v_results) {
+        CHECK(get_keys_as_vec(mp) == cols);
+        int col_id = 0;
+        for (const auto &kv : mp) {
+            ss << any2string(kv.second) << ',';
+            col_vals[col_id].push_back(any2long(kv.second));
+            col_id++;
+        }
+        ss << '\n';
+    }
+    if (!v_results.empty()) {
+        int col_id = 0;
+        for (auto &v : col_vals) {
+            sort(v.begin(), v.end());
+            if (v.at(0) == kNAN) {
+                ss << "nan,";
+                continue;
+            } else if (cols.at(col_id++) == "_repeat_id") {
+                ss << "MED,";
+                continue;
+            }
+            ss << vec_median(v) << ",";
+        }
+    }
+    return ss.str();
+}
+
 int prog(int argc, char *argv[]) {
-    using str = std::string;
     po::options_description desc("Dynamic Interaction Inference for Configurable Software");
     desc.add_options()
             ("filestem,F", po::value<str>(), "Filestem")
@@ -49,6 +84,7 @@ int prog(int argc, char *argv[]) {
             ("otter-runner,Y", "Otter runner")
             ("seed,s", po::value<uint64_t>()->default_value(123), "Random seed")
             ("output,O", po::value<str>(), "Output result")
+            ("params-output,P", po::value<str>(), "Parameter Output result")
             ("disj-conj", "Gen expr strat DisjOfConj")
             ("cache,c", po::value<str>()->default_value(""), "Cache control: read/write/execute")
             ("cache-path,p", po::value<str>()->default_value(""), "Custom cachedb path")
@@ -139,7 +175,6 @@ int prog(int argc, char *argv[]) {
     const int n_threads = vm["rep-parallel"].as<int>();
     const bool fixed_seed = vm.count("fixed-seed");
 
-    using namespace igen;
     WorkQueue work_queue;
     if (n_threads > 1) work_queue.init(n_threads);
     vec<map<str, boost::any>> v_results(n_repeats);
@@ -195,14 +230,15 @@ int prog(int argc, char *argv[]) {
             opts["_shared_program_runner"] = shared_ctx->runner();
         }
 
+        auto &mp_res = v_results.at(repeat_id);
         // ====
         if (vm.count("c50")) {
             switch (vm["c50"].as<int>()) {
                 case 2:
-                    v_results.at(repeat_id) = igen::run_interative_algorithm_2(opts);
+                    mp_res = igen::run_interative_algorithm_2(opts);
                     break;
                 case 3:
-                    v_results.at(repeat_id) = igen::run_demo_algo(opts);
+                    mp_res = igen::run_demo_algo(opts);
                     break;
                 default:
                     CHECK(0) << "Invalid C50 version";
@@ -212,12 +248,15 @@ int prog(int argc, char *argv[]) {
         if (vm.count("analyze")) {
             switch (vm["analyze"].as<int>()) {
                 case 0:
-                    v_results.at(repeat_id) = igen::run_analyzer(opts);
+                    mp_res = igen::run_analyzer(opts);
                     break;
                 default:
                     CHECK(0) << "Invalid analyzer version";
             }
         }
+
+        mp_res["_thread_id"] = thread_id;
+        mp_res["_repeat_id"] = repeat_id;
     };
     if (n_threads > 1) {
         work_queue.start();
@@ -226,6 +265,15 @@ int prog(int argc, char *argv[]) {
         for (int i = 0; i < n_repeats; ++i) fn_each(0, i);
     }
 
+    str csv_params = analyze_res_to_csv(v_results);
+    if (vm.count("params-output")) {
+        str pout = vm["params-output"].as<str>();
+        std::ofstream file(pout);
+        file << csv_params;
+        LOG(INFO, "Wrote params output to {}", pout);
+    } else {
+        LOG(INFO, "Params output:\n") << csv_params;
+    }
 
     return 0;
 }

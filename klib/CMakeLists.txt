@@ -3,7 +3,7 @@ add_library(klib
         logging.h
         hash.cpp hash.h print_stl.h custom_container.h math.h random.cpp
         MurmurHash3.h MurmurHash3.cpp vecutils.h StreamHash.h WorkQueue.h WorkQueue.cpp
-        duktape.c duktape.h duk_config.h)
+        duktape.c duktape.h duk_config.h anyutils.cpp anyutils.h)
 
 target_link_libraries(klib
         PRIVATE

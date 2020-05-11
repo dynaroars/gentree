@@ -18,8 +18,10 @@
 #include <fstream>
 
 #include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string_regex.hpp>
 #include <boost/container/flat_map.hpp>
 #include <boost/container/flat_set.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include <tsl/robin_set.h>
 #include <tsl/robin_map.h>
@@ -37,6 +39,7 @@ public:
         bool ignored;
         bool is_first;
         unsigned id_;
+        vec<str> comments;
 
         [[nodiscard]] unsigned id() const { return id_; }
     };
@@ -94,13 +97,13 @@ public:
         return true;
     }
 
-    map<str, LocData> read_file(const str &path) {
+    map<str, LocData> read_file(const str &path, vec<str> *global_comments = nullptr) {
         map<str, LocData> res;
         std::ifstream f(path);
         CHECKF(!f.fail(), "Error reading file: {}", path);
         str line;
         int read_state = 0;
-        vec<str> locs;
+        vec<str> locs, comments;
         str sexpr, stree;
         bool ignored = false;
         set<unsigned> sexprid;
@@ -110,6 +113,7 @@ public:
             boost::algorithm::trim(line);
             if (line.empty()) continue;
             if (line[0] == '#') {
+                comments.push_back(line);
                 if (line.find("IGNORED") != str::npos) ignored = true;
                 continue;
             }
@@ -129,7 +133,12 @@ public:
                 CHECK_LE(read_state, 2);
                 continue;
             } else if (is_all(line, '=')) {
-                if (locs.empty()) continue;
+                if (locs.empty()) {
+                    if (global_comments != nullptr)
+                        vec_move_append(*global_comments, comments);
+                    comments.clear();
+                    continue;
+                }
                 expr e = dom()->parse_string(move(sexpr));
                 PMutCTree tree = new CTree(ctx_mut());
                 std::stringstream stream_stree(stree);
@@ -142,11 +151,11 @@ public:
                 bool is_first = true;
                 for (const str &s : locs) {
                     CHECKF(!res.contains(s), "Duplicated location ({}): {}", path, s);
-                    res.emplace(s, LocData{e, tree, ignored, is_first, cur_id});
+                    res.emplace(s, LocData{e, tree, ignored, is_first, cur_id, move(comments)});
                     is_first = false;
                 }
                 cur_id++, cnt_ignored += ignored;
-                ignored = false, read_state = 0, locs.clear(), sexpr.clear(), stree.clear();
+                ignored = false, read_state = 0, locs.clear(), comments.clear(), sexpr.clear(), stree.clear();
                 continue;
             }
             switch (read_state) {
@@ -371,6 +380,47 @@ public:
         LOG(INFO, "Multi-runner time: {}", boost::timer::format(ctx()->runner()->total_elapsed(), 0));
     }
 
+    // read exp result
+    map<str, boost::any> run_analyze_2() {
+        map<str, boost::any> ret;
+        vec<str> gcmt;
+        auto finp = get_inp();
+        CHECK_EQ(finp.size(), 1) << "Need 1 input file";
+        auto ma = read_file(finp.at(0), &gcmt);
+
+        vec<str> params;
+        boost::algorithm::split_regex(params, gcmt.at(2), boost::regex("[ |]+"));
+        LOG(INFO, "params {}", fmt::join(params, ","));
+
+//        fmt::print(out, "# {:>8} {:>4} {:>4} | {:>5} {:>5} | {:>2} {:>4} | {:>5} {:>5} {:>6} | {}\n======\n",
+//                   cov()->n_configs(), cov()->n_locs(), v_uniq.size(),
+//                   ctx()->runner()->n_cache_hit(), ctx()->runner()->n_locs(),
+//                   repeat_id_, iter,
+//
+//                   timer.elapsed().wall / NS, ctx()->runner()->local_timer().wall / NS,
+//                   ctx()->runner()->total_elapsed().wall / NS,
+//
+//                   state_hash().str()
+//        );
+#define RET_PARAM(type, p, pos) ret[p] = boost::lexical_cast<type>(params.at(pos));
+        RET_PARAM(int, "n_configs", 1);
+        RET_PARAM(int, "n_locs", 2);
+        RET_PARAM(int, "n_locs_uniq", 3);
+
+        RET_PARAM(int, "n_cache_hit", 4);
+        RET_PARAM(int, "n_locs_total", 5);
+
+        RET_PARAM(int, "repeat_id", 6);
+        RET_PARAM(int, "iter", 7);
+
+        RET_PARAM(int, "t_total", 8);
+        RET_PARAM(int, "t_runner", 9);
+        RET_PARAM(int, "t_runner_total", 10);
+
+        RET_PARAM(std::string, "hash", 11);
+        return ret;
+    }
+
     vec<str> get_inp() {
         str inp = ctx()->get_option_as<str>("input");
         boost::algorithm::replace_all(inp, ",", " ");
@@ -389,6 +439,8 @@ public:
             case 1:
                 run_analyze_1();
                 return {};
+            case 2:
+                return run_analyze_2();
             default:
                 CHECK(0);
         }
