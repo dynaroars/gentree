@@ -55,13 +55,13 @@ public:
                 ncex *= dom()->n_values(id);
             }
         }
-        LOG_IF(INFO, ncex > 1, "Has free variable");
+        VLOG_IF(10, ncex > 1, "Has free variable");
         return z3::mk_and(vecExpr);
     }
 
     tsl::robin_map<unsigned, double> cache_count_models;
 
-    static constexpr double DEF_LIM_MODELS = 1e18;
+    static constexpr double DEF_LIM_MODELS = 1e100;
 
     double count_models(const expr &ex, double lim = DEF_LIM_MODELS, z3::expr_vector *v_models = nullptr) {
         auto it = cache_count_models.find(ex.id());
