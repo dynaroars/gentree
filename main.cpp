@@ -39,17 +39,17 @@ void init_glog(int argc, char **argv) {
 }
 
 str analyze_res_to_csv(vec<map<str, boost::any>> v_results) {
-    constexpr long kNAN = kMIN<long>;
+    constexpr double kNAN = kMIN<double>;
     std::stringstream ss;
     vec<str> cols = get_keys_as_vec(v_results.at(0));
-    vec<vec<long>> col_vals(cols.size());
+    vec<vec<double>> col_vals(cols.size());
     fmt::print(ss, "{}\n", fmt::join(cols, ","));
     for (const auto &mp : v_results) {
         CHECK(get_keys_as_vec(mp) == cols);
         int col_id = 0;
         for (const auto &kv : mp) {
             ss << any2string(kv.second) << ',';
-            col_vals[col_id].push_back(any2long(kv.second));
+            col_vals[col_id].push_back(any2double(kv.second));
             col_id++;
         }
         ss << '\n';

@@ -45,7 +45,7 @@ std::vector<K> get_keys_as_vec(const map <K, V> &m) {
 }
 
 template<typename T>
-long vec_median(const std::vector<T> &vec) {
+T vec_median(const std::vector<T> &vec) {
     auto size = vec.size();
     if (size == 0)
         throw std::domain_error("median of an empty vector");

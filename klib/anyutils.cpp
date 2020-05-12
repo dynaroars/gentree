@@ -47,24 +47,36 @@ std::string any2string(const boost::any &anything) {
         return std::string(boost::any_cast<char *>(anything));
     }
     CHECK(0);
+    return "";
 }
 
-template<typename T>
-bool try_cast_long(long &res, const boost::any &anything) {
-    if (anything.type() == typeid(T)) {
-        res = (long) boost::any_cast<T>(anything);
+template<typename From, typename To>
+bool try_cast_to(To &res, const boost::any &anything) {
+    if (anything.type() == typeid(From)) {
+        res = (To) boost::any_cast<From>(anything);
         return true;
     } else {
         return false;
     }
 }
 
+template<typename To>
+To any2num(const boost::any &anything) {
+    To res;
+    if (try_cast_to<short, To>(res, anything)) return res;
+    if (try_cast_to<int, To>(res, anything)) return res;
+    if (try_cast_to<long, To>(res, anything)) return res;
+    if (try_cast_to<float, To>(res, anything)) return res;
+    if (try_cast_to<double, To>(res, anything)) return res;
+    return kMIN<To>;
+}
+
 long any2long(const boost::any &anything) {
-    long res;
-    if (try_cast_long<short>(res, anything)) return res;
-    if (try_cast_long<int>(res, anything)) return res;
-    if (try_cast_long<long>(res, anything)) return res;
-    return kMIN<long>;
+    return any2num<long>(anything);
+}
+
+double any2double(const boost::any &anything) {
+    return any2num<double>(anything);
 }
 
 }

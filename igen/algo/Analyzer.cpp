@@ -55,23 +55,26 @@ public:
                 ncex *= dom()->n_values(id);
             }
         }
-        VLOG_IF(10, ncex > 1, "Has free variable");
+        VLOG_IF(150, ncex > 1, "Has free variable");
         return z3::mk_and(vecExpr);
     }
 
-    tsl::robin_map<unsigned, double> cache_count_models;
+    map<std::pair<unsigned, int>, double> cache_count_models;
 
-    static constexpr double DEF_LIM_MODELS = 1e100;
+    static constexpr int DEF_LIM_MODELS = kMAX<int>;
 
-    double count_models(const expr &ex, double lim = DEF_LIM_MODELS, z3::expr_vector *v_models = nullptr) {
-        auto it = cache_count_models.find(ex.id());
-        if (it != cache_count_models.end()) return it->second;
-        double &ncex = cache_count_models[ex.id()];
+    double count_models(const expr &ex, int lim_n_runs = DEF_LIM_MODELS, z3::expr_vector *v_models = nullptr) {
+        std::pair<unsigned, int> cache_key = {ex.hash(), lim_n_runs};
+        if (v_models == nullptr) {
+            auto it = cache_count_models.find(cache_key);
+            if (it != cache_count_models.end()) return it->second;
+        }
+        double &ncex = (cache_count_models[cache_key] = 0);
 
         auto solver = ctx()->zscope();
         solver->add(ex);
 
-        while (ncex < lim) {
+        for (int n_run = 0; n_run < lim_n_runs; ++n_run) {
             z3::check_result checkres = solver->check();
             if (checkres == z3::unsat) {
                 break;
@@ -87,6 +90,7 @@ public:
             ncex += this_cex;
             solver->add(!mexpr);
             if (v_models != nullptr) v_models->push_back(mexpr);
+            //VLOG(100, "ncex {:10G}", ncex);
         }
         return ncex;
     }
@@ -143,7 +147,7 @@ public:
                 PMutCTree tree = new CTree(ctx_mut());
                 std::stringstream stream_stree(stree);
                 tree->deserialize(stream_stree);
-                CHECKF(sexprid.insert(e.id()).second, "Duplicated expression ({}), loc {}", path,
+                CHECKF(sexprid.insert(e.hash()).second, "Duplicated expression ({}), loc {}", path,
                        locs.empty() ? str() : locs.at(0));
                 //LOG(INFO, "EXPR: ") << e;
                 expr tree_e = tree->build_zexpr(CTree::FreeMix);
@@ -202,17 +206,9 @@ public:
                 smissing.insert(dat.id()), cntmissing++;
                 continue;
             }
-            const double LIM = DEF_LIM_MODELS;
             expr expr_cex = dat.e != it->second.e;
             ve_cex.push_back(expr_cex);
-            double num_cex = count_models(expr_cex, LIM, &ve_cex);
-            if (num_cex == LIM) {
-                if (dat.is_first) {
-                    LOG(WARNING, "Loc {} has more than {:G} cex", p.first, LIM);
-                } else {
-                    VLOG(7, "Loc {} has more than {:G} cex", p.first, LIM);
-                }
-            }
+            double num_cex = count_models(expr_cex, kMAX<int>, &ve_cex);
             if (num_cex == 0) {
                 //VLOG(0, "{} ok", p.first);
             } else {
@@ -418,8 +414,68 @@ public:
         RET_PARAM(int, "t_runner_total", 10);
 
         RET_PARAM(std::string, "hash", 11);
+#undef RET_PARAM
         return ret;
     }
+
+    double calc_mcc(double tp, double tn, double fp, double fn) {
+        double nom = tp * tn - fp * fn;
+        double denom = sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn));
+        if (denom == 0) denom = 1;
+
+        return nom / denom;
+    }
+
+    // calculate MCC
+    // https://en.wikipedia.org/wiki/Matthews_correlation_coefficient
+    map<str, boost::any> run_analyze_3() {
+        auto finp = get_inp();
+        CHECK_EQ(finp.size(), 2) << "Need two input files to compare";
+        auto m_truth = read_file(finp.at(0));
+        auto m_predicate = read_file(finp.at(1));
+
+        double cspace = dom()->config_space();
+        vec<PMutConfig> all_confs = dom()->gen_all_configs();
+        CHECK_EQ(cspace, all_confs.size());
+
+        double total_mcc = 0;
+        int cnt_interactions = 0;
+        for (const auto &p : m_truth) {
+            if (!p.second.is_first) continue;
+            cnt_interactions++;
+            double mcc = 0;
+            auto _pred = m_predicate.find(p.first);
+            if (_pred == m_predicate.end()) {
+                // Loc not found
+                mcc = 0;
+            } else {
+                const auto &truth = p.second, &pred = _pred->second;
+                if (count_models(truth.e != pred.e, 1) == 0) {
+                    mcc = 1;
+                } else {
+                    double tp = 0, tn = 0, fp = 0, fn = 0;
+                    truth.tree->build_interpreter(), pred.tree->build_interpreter();
+                    for (const auto &c : all_confs) {
+                        bool v_truth = truth.tree->interpret(*c), v_pred = pred.tree->interpret(*c);
+                        if (v_truth && v_pred) tp++;
+                        else if (!v_truth && !v_pred) tn++;
+                        else if (!v_truth && v_pred) fp++;
+                        else if (v_truth && !v_pred) fn++;
+                    }
+                    VLOG(1, "tp, tn, fp, fn = {:10G}, {:10G}, {:10G}, {:10G}", tp, tn, fp, fn);
+                    CHECK_EQ(tp + tn + fp + fn, cspace);
+                    mcc = calc_mcc(tp, tn, fp, fn);
+                }
+            }
+            total_mcc += mcc;
+            if(mcc != 1) LOG(INFO, "Loc {}: mcc {}", p.first, mcc);
+        }
+
+        map<str, boost::any> ret;
+        ret["avg_mcc"] = (total_mcc / cnt_interactions);
+        return ret;
+    }
+
 
     vec<str> get_inp() {
         str inp = ctx()->get_option_as<str>("input");
@@ -441,6 +497,8 @@ public:
                 return {};
             case 2:
                 return run_analyze_2();
+            case 3:
+                return run_analyze_3();
             default:
                 CHECK(0);
         }

@@ -15,6 +15,8 @@ std::string any2string(const boost::any &anything);
 
 long any2long(const boost::any &anything);
 
+double any2double(const boost::any &anything);
+
 }
 
 #endif //IGEN4_ANYUTILS_H
