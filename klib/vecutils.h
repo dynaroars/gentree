@@ -44,13 +44,45 @@ std::vector<K> get_keys_as_vec(const map <K, V> &m) {
     return res;
 }
 
-template<typename T>
-T vec_median(const std::vector<T> &vec) {
+template<typename T, typename Out = double>
+Out vec_median(const std::vector<T> &vec) {
     auto size = vec.size();
     if (size == 0)
         throw std::domain_error("median of an empty vector");
     auto mid = size / 2;
-    return size % 2 == 0 ? (vec[mid] + vec[mid - 1]) / 2 : vec[mid];
+    return size % 2 == 0 ? Out(vec[mid] + vec[mid - 1]) / 2 : vec[mid];
+}
+
+template<typename T, typename Out = double>
+Out vec_median(const std::vector<T> &vec, size_t beg, size_t end) {
+    if (beg > end)
+        throw std::domain_error("beg > end");
+    if (end > vec.size())
+        throw std::domain_error("end > vec.size()");
+    auto size = end - beg;
+    if (size == 0)
+        throw std::domain_error("median of an empty vector");
+    auto mid = size / 2;
+    return size % 2 == 0 ? Out(vec[beg + mid] + vec[beg + mid - 1]) / 2 : vec[beg + mid];
+}
+
+template<typename T, typename Out = double>
+Out vec_mean(const std::vector<T> &vec) {
+    Out sum = 0;
+    for (const auto &v : vec) sum += v;
+    return sum / (Out) vec.size();
+}
+
+// Semi-Interquartile Range
+template<typename T, typename Out = double>
+Out vec_sir(const std::vector<T> &vec) {
+    auto size = vec.size();
+    if (size == 0)
+        throw std::domain_error("sir of an empty vector");
+    auto mid = size / 2;
+    Out Q1 = vec_median<T, Out>(vec, 0, std::max<decltype(mid)>(mid, 1));
+    Out Q3 = vec_median<T, Out>(vec, std::min(mid, size - 1), size);
+    return (Q3 - Q1) / 2;
 }
 
 }

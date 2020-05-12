@@ -55,18 +55,28 @@ str analyze_res_to_csv(vec<map<str, boost::any>> v_results) {
         ss << '\n';
     }
     if (!v_results.empty()) {
-        int col_id = 0;
+        auto out_custom = [&ss, &col_vals, &cols](str name, std::function<double(const vec<double> &)> f) {
+            int col_id = 0;
+            for (auto &v : col_vals) {
+                sort(v.begin(), v.end());
+                if (v.at(0) == kNAN) {
+                    ss << "nan,";
+                    continue;
+                } else if (cols.at(col_id++) == "_repeat_id") {
+                    ss << name << ",";
+                    continue;
+                }
+                ss << f(v) << ",";
+            }
+            ss << '\n';
+        };
+
         for (auto &v : col_vals) {
             sort(v.begin(), v.end());
-            if (v.at(0) == kNAN) {
-                ss << "nan,";
-                continue;
-            } else if (cols.at(col_id++) == "_repeat_id") {
-                ss << "MED,";
-                continue;
-            }
-            ss << vec_median(v) << ",";
         }
+        out_custom("MED", [](const vec<double> &v) { return vec_median(v); });
+        out_custom("SIR", [](const vec<double> &v) { return vec_sir(v); });
+        out_custom("MEAN", [](const vec<double> &v) { return vec_mean(v); });
     }
     return ss.str();
 }
