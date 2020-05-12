@@ -1,0 +1,1 @@
+python parse.py ../../wd/2/otter/vsftpd/rawExecutionPaths/ ../../wd/2/otter/vsftpd/possibleValues.txt ../../wd/2/vsftpd.otter

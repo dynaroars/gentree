@@ -314,9 +314,9 @@ void GCovRunner::_run_cpp(vec<str> args) {
     //GLOG(INFO) << err.rdbuf();
 #if PRINT_VERBOSE
     str str_out = read_stream_to_str(out);
-    VLOG(10, "Out (ec={}): {}", proc_child.exit_code(), str_out);
+    LOG(INFO, "Out (ec={}): {}", proc_child.exit_code(), str_out);
     str str_err = read_stream_to_str(err);
-    VLOG(10, "Err: {}", str_err);
+    LOG(INFO, "Err: {}", str_err);
 #endif
     // TODO: Check stderr
 }

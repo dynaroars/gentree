@@ -22,6 +22,9 @@
 #include <assert.h>
 #include <limits.h>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
+
 #ifdef PUGIXML_WCHAR_MODE
 #	include <wchar.h>
 #endif
