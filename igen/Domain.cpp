@@ -144,7 +144,7 @@ std::istream &operator>>(std::istream &input, Domain &d) {
 }
 
 std::ostream &operator<<(std::ostream &output, const Domain &d) {
-    fmt::print(output, "Domain[{} -> {:.5G}]: ", d.n_vars(), d.config_space());
+    fmt::print(output, "Domain[{} -> {:.8G}]: ", d.n_vars(), d.config_space());
     bool first_var = true;
     for (const auto &e : d) {
         if (!first_var) output << "; "; else first_var = false;
