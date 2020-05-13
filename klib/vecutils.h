@@ -44,6 +44,19 @@ std::vector<K> get_keys_as_vec(const map <K, V> &m) {
     return res;
 }
 
+template<typename K, typename V>
+set <K> get_keys_as_set(const map <K, V> &m) {
+    set<K> res;
+    res.reserve(m.size());
+    for (const auto &kv : m) res.insert(kv.first);
+    return res;
+}
+
+template<typename T>
+set <T> vec_to_set(const vec <T> &v) {
+    return {v.begin(), v.end()};
+}
+
 template<typename T, typename Out = double>
 Out vec_median(const std::vector<T> &vec) {
     auto size = vec.size();

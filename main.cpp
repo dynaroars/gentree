@@ -38,31 +38,38 @@ void init_glog(int argc, char **argv) {
     google::InstallFailureSignalHandler();
 }
 
-str analyze_res_to_csv(vec<map<str, boost::any>> v_results) {
+str analyze_res_to_csv(const vec<map<str, boost::any>> &v_results, vec<str> fields) {
     constexpr double kNAN = kMIN<double>;
     std::stringstream ss;
-    vec<str> cols = get_keys_as_vec(v_results.at(0));
-    vec<vec<double>> col_vals(cols.size());
-    fmt::print(ss, "{}\n", fmt::join(cols, ","));
+    set<str> set_fields;
+    if (fields.empty() || (fields.size() == 1 && fields[0].empty())) {
+        fields = get_keys_as_vec(v_results.at(0));
+        set_fields = get_keys_as_set(v_results.at(0));
+    } else {
+        set_fields = vec_to_set(fields);
+    }
+    vec<vec<double>> col_vals(fields.size());
+    fmt::print(ss, "{}\n", fmt::join(fields, ","));
     for (const auto &mp : v_results) {
-        CHECK(get_keys_as_vec(mp) == cols);
+        CHECK(get_keys_as_set(mp) == set_fields);
         int col_id = 0;
-        for (const auto &kv : mp) {
-            ss << any2string(kv.second) << ',';
-            col_vals[col_id].push_back(any2double(kv.second));
+        for (const auto &f_name : fields) {
+            const auto kv = mp.find(f_name);
+            ss << any2string(kv->second) << ',';
+            col_vals[col_id].push_back(any2double(kv->second));
             col_id++;
         }
         ss << '\n';
     }
     if (!v_results.empty()) {
-        auto out_custom = [&ss, &col_vals, &cols](str name, std::function<double(const vec<double> &)> f) {
+        auto out_custom = [&ss, &col_vals, &fields](str name, std::function<double(const vec<double> &)> f) {
             int col_id = 0;
             for (auto &v : col_vals) {
                 sort(v.begin(), v.end());
                 if (v.at(0) == kNAN) {
                     ss << "nan,";
                     continue;
-                } else if (cols.at(col_id++) == "_repeat_id") {
+                } else if (fields.at(col_id++) == "_repeat_id") {
                     ss << name << ",";
                     continue;
                 }
@@ -96,6 +103,7 @@ int prog(int argc, char *argv[]) {
             ("seed,s", po::value<uint64_t>()->default_value(123), "Random seed")
             ("output,O", po::value<str>(), "Output result")
             ("params-output,P", po::value<str>(), "Parameter Output result")
+            ("params-fields", po::value<str>()->default_value(""), "Parameter Output fields order")
             ("disj-conj", "Gen expr strat DisjOfConj")
             ("cache,c", po::value<str>()->default_value(""), "Cache control: read/write/execute")
             ("cache-path,p", po::value<str>()->default_value(""), "Custom cachedb path")
@@ -276,7 +284,9 @@ int prog(int argc, char *argv[]) {
         for (int i = 0; i < n_repeats; ++i) fn_each(0, i);
     }
 
-    str csv_params = analyze_res_to_csv(v_results);
+    vec<str> fields;
+    boost::algorithm::split(fields, vm["params-fields"].as<str>(), boost::is_any_of(","));
+    str csv_params = analyze_res_to_csv(v_results, fields);
     if (vm.count("params-output")) {
         str pout = vm["params-output"].as<str>();
         std::ofstream file(pout);
