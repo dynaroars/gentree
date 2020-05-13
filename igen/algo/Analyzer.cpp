@@ -547,6 +547,7 @@ public:
         ret["cnt_interactions"] = cnt_interactions;
         ret["cnt_exact"] = cnt_exact;
         ret["cnt_wrong"] = cnt_interactions - cnt_exact;
+        ret["delta_locs"] = sz(m_predicate) - sz(m_truth);
         return ret;
     }
 
