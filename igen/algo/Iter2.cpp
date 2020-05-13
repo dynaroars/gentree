@@ -11,6 +11,7 @@
 #include <boost/range/adaptor/reversed.hpp>
 #include <boost/container/flat_set.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include <igen/Context.h>
 #include <igen/Domain.h>
@@ -100,6 +101,7 @@ public:
         pregen_configs = run_full || run_rand;
         n_iterations = ctx()->get_option_as<int>("rounds");
         save_each_iteration = ctx()->has_option("save-each-iteration");
+        if (ctx()->has_option("rand-each-iteration")) return run_rand_each_iteration();
         // ====
         vec<PMutConfig> init_configs;
         if (pregen_configs) {
@@ -627,6 +629,35 @@ private:
         } else abort();
         duk_pop(dctx);
         return res;
+    }
+
+    map<str, boost::any> run_rand_each_iteration() {
+        vec<str> vstr_params;
+        boost::algorithm::split(vstr_params, ctx()->get_option_as<str>("rand-each-iteration"), boost::is_any_of(","));
+        vec<int> params;
+        for (const auto &s : vstr_params) params.push_back(boost::lexical_cast<int>(s));
+        int iter = 0;
+        for (iter = 1; iter <= sz(params); ++iter) {
+            int nrand = params[iter - 1] - ctx()->cov()->n_configs();
+            CHECK_GT(nrand, 0);
+            vec<PMutConfig> confs = gen_rand_configs(nrand);
+
+            for (const auto &c : confs) set_conf_hash.insert(c->hash());
+            run_configs(confs);
+
+            LOG(INFO, "{:>4} | {:>7} {:>7} | {:>3} {:>3} {:>3} | {}",
+                iter,
+                ctx()->cov()->n_configs(), ctx()->runner()->n_cache_hit(),
+                timer.elapsed().wall / NS, ctx()->runner()->timer().wall / NS,
+                ctx()->runner()->total_elapsed().wall / NS,
+                state_hash().str());
+
+            prepare_vec_loc_data();
+            finish_alg(iter, "SAVE AFTER ONE ITERATION", false, true);
+        }
+        finish_alg(iter - 1, "FINISH", true, true);
+
+        return {};
     }
 };
 

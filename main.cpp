@@ -119,6 +119,7 @@ int prog(int argc, char *argv[]) {
             ("input,I", po::value<str>()->default_value(""), "Algorithm input")
             ("term-cnt", po::value<int>()->default_value(0), "Termination counter")
             ("save-each-iteration", "Save interactions after each iteration")
+            ("rand-each-iteration", po::value<str>(), "Gen random config each iteration")
 
             ("locs,X", po::value<str>()->default_value(""), "Interested location")
             ("rounds,R", po::value<int>()->default_value(int(1e9)), "Number of iterations")
