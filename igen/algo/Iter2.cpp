@@ -106,7 +106,10 @@ public:
         vec<PMutConfig> init_configs;
         if (pregen_configs) {
             if (run_full) init_configs = dom()->gen_all_configs(), n_iterations = 0;
-            else init_configs = gen_rand_configs(ctx()->get_option_as<int>("rand"));
+            else {
+                tsl::robin_set<hash_t> s;
+                init_configs = gen_rand_configs(ctx()->get_option_as<int>("rand"), s);
+            }
             LOG(INFO, "Running pregen configs (n_configs = {})", init_configs.size());
         } else {
             init_configs = dom()->gen_one_convering_configs();
@@ -542,9 +545,8 @@ private:
         d->last_build_iter = cur_iter, d->last_build_n_configs = cov()->n_configs();
     }
 
-    vec<PMutConfig> gen_rand_configs(int num) const {
+    vec<PMutConfig> gen_rand_configs(int num, tsl::robin_set<hash_t> &s) const {
         vec<PMutConfig> ret;
-        tsl::robin_set<hash_t> s;
         PMutConfig c;
         while (sz(ret) < num) {
             c = new Config(ctx_mut());
@@ -637,10 +639,11 @@ private:
         vec<int> params;
         for (const auto &s : vstr_params) params.push_back(boost::lexical_cast<int>(s));
         int iter = 0;
+        tsl::robin_set<hash_t> s;
         for (iter = 1; iter <= sz(params); ++iter) {
             int nrand = params[iter - 1] - ctx()->cov()->n_configs();
             CHECK_GT(nrand, 0);
-            vec<PMutConfig> confs = gen_rand_configs(nrand);
+            vec<PMutConfig> confs = gen_rand_configs(nrand, s);
 
             for (const auto &c : confs) set_conf_hash.insert(c->hash());
             run_configs(confs);
