@@ -393,13 +393,13 @@ public:
                     expr lhs = x.arg(0);
 
                     bool is_var = false;
-                    for(const auto &t : *dom()) {
-                        if(lhs.id() == t->zvar().id()) {
+                    for (const auto &t : *dom()) {
+                        if (lhs.id() == t->zvar().id()) {
                             is_var = true;
                             break;
                         }
                     }
-                    if(!is_var) return false;
+                    if (!is_var) return false;
 
                     if (last_id == -1) last_id = lhs.id();
                     else if (last_id != lhs.id()) return false;
@@ -421,7 +421,7 @@ public:
 
         vec<str> params;
         boost::algorithm::split_regex(params, gcmt.at(2), boost::regex("[ |]+"));
-        LOG(INFO, "params {}", fmt::join(params, ","));
+//        LOG(INFO, "params {}", fmt::join(params, ","));
 
 //        fmt::print(out, "# {:>8} {:>4} {:>4} | {:>5} {:>5} | {:>2} {:>4} | {:>5} {:>5} {:>6} | {}\n======\n",
 //                   cov()->n_configs(), cov()->n_locs(), v_uniq.size(),
@@ -479,6 +479,7 @@ public:
 
         RET_PARAM(int, "t_total", 8);
         RET_PARAM(int, "t_runner", 9);
+        ret["t_search"] = boost::any_cast<int>(ret["t_total"]) - boost::any_cast<int>(ret["t_runner"]);
         RET_PARAM(int, "t_runner_total", 10);
 
         RET_PARAM(std::string, "hash", 11);
