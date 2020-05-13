@@ -508,8 +508,10 @@ public:
     map<str, boost::any> run_analyze_3() {
         auto finp = get_inp();
         CHECK_EQ(finp.size(), 2) << "Need two input files to compare";
+        vec<str> gcmt, params;
         auto m_truth = read_file(finp.at(0));
-        auto m_predicate = read_file(finp.at(1));
+        auto m_predicate = read_file(finp.at(1), &gcmt);
+        boost::algorithm::split_regex(params, gcmt.at(2), boost::regex("[ |]+"));
 
         double cspace = dom()->config_space();
         vec<PMutConfig> all_confs = dom()->gen_all_configs();
@@ -557,6 +559,7 @@ public:
         ret["cnt_exact"] = cnt_exact;
         ret["cnt_wrong"] = cnt_interactions - cnt_exact;
         ret["delta_locs"] = sz(m_predicate) - sz(m_truth);
+        ret["n_configs"] = boost::lexical_cast<int>(params.at(1));
         return ret;
     }
 
