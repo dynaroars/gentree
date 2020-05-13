@@ -74,6 +74,7 @@ str analyze_res_to_csv(vec<map<str, boost::any>> v_results) {
         for (auto &v : col_vals) {
             sort(v.begin(), v.end());
         }
+        ss << '\n';
         out_custom("MED", [](const vec<double> &v) { return vec_median(v); });
         out_custom("SIR", [](const vec<double> &v) { return vec_sir(v); });
         out_custom("MEAN", [](const vec<double> &v) { return vec_mean(v); });

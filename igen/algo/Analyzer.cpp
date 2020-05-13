@@ -508,7 +508,7 @@ public:
         CHECK_EQ(cspace, all_confs.size());
 
         double total_mcc = 0;
-        int cnt_interactions = 0;
+        int cnt_interactions = 0, cnt_exact = 0;
         for (const auto &p : m_truth) {
             if (!p.second.is_first) continue;
             cnt_interactions++;
@@ -521,6 +521,7 @@ public:
                 const auto &truth = p.second, &pred = _pred->second;
                 if (count_models(truth.e != pred.e, 1) == 0) {
                     mcc = 1;
+                    cnt_exact++;
                 } else {
                     double tp = 0, tn = 0, fp = 0, fn = 0;
                     truth.tree->build_interpreter(), pred.tree->build_interpreter();
@@ -542,6 +543,9 @@ public:
 
         map<str, boost::any> ret;
         ret["avg_mcc"] = (total_mcc / cnt_interactions);
+        ret["cnt_interactions"] = cnt_interactions;
+        ret["cnt_exact"] = cnt_exact;
+        ret["cnt_wrong"] = cnt_interactions - cnt_exact;
         return ret;
     }
 

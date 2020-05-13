@@ -81,7 +81,12 @@ Out vec_sir(const std::vector<T> &vec) {
         throw std::domain_error("sir of an empty vector");
     auto mid = size / 2;
     Out Q1 = vec_median<T, Out>(vec, 0, std::max<decltype(mid)>(mid, 1));
-    Out Q3 = vec_median<T, Out>(vec, std::min(mid, size - 1), size);
+    Out Q3;
+    if (size % 2 == 0) {
+        Q3 = vec_median<T, Out>(vec, std::min(mid, size - 1), size);
+    } else {
+        Q3 = vec_median<T, Out>(vec, std::min(mid + 1, size - 1), size);
+    }
     return (Q3 - Q1) / 2;
 }
 
