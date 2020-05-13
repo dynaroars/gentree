@@ -465,6 +465,7 @@ public:
         RET_PARAM(cnt_or);
         RET_PARAM(cnt_mixed);
 #undef RET_PARAM
+        ret["cnt_total"] = cnt_singular + cnt_and + cnt_or + cnt_mixed;
 
 #define RET_PARAM(type, p, pos) ret[p] = boost::lexical_cast<type>(params.at(pos))
         RET_PARAM(int, "n_configs", 1);
