@@ -10,6 +10,7 @@
 
 #include <boost/range/adaptor/reversed.hpp>
 #include <boost/container/flat_set.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include <igen/Context.h>
 #include <igen/Domain.h>
@@ -45,7 +46,7 @@ public:
 
 public:
     int terminate_counter = 0, max_terminate_counter = 0, n_iterations = 0;
-    bool pregen_configs = false;
+    bool pregen_configs = false, save_each_iteration = false;
     tsl::robin_set<hash_t> set_conf_hash, set_ran_conf_hash;
     boost::timer::cpu_timer timer;
     int repeat_id_ = 0;
@@ -98,8 +99,9 @@ public:
         bool run_full = ctx()->has_option("full"), run_rand = ctx()->has_option("rand");
         pregen_configs = run_full || run_rand;
         n_iterations = ctx()->get_option_as<int>("rounds");
+        save_each_iteration = ctx()->has_option("save-each-iteration");
         // ====
-        vec <PMutConfig> init_configs;
+        vec<PMutConfig> init_configs;
         if (pregen_configs) {
             if (run_full) init_configs = dom()->gen_all_configs(), n_iterations = 0;
             else init_configs = gen_rand_configs(ctx()->get_option_as<int>("rand"));
@@ -144,6 +146,9 @@ public:
                     finish_alg(iter, "TEMP FINISH", cur_signal == SIGUSR2);
                     gSignalStatus = 0; // problematic when run repeat-parallel
                 }
+            }
+            if (save_each_iteration) {
+                finish_alg(iter, "SAVE AFTER ONE ITERATION", false, true);
             }
 
             print_iter_info:
@@ -355,7 +360,8 @@ public:
             if (!dat->ignored) v_next_iter.emplace_back(dat);
     }
 
-    void finish_alg(int iter, const str &header = "FINAL RESULT", bool expensive_simplify = true) {
+    void finish_alg(int iter, const str &header = "FINAL RESULT",
+                    bool expensive_simplify = true, bool build_tree_temp = false) {
         bool out_to_file = ctx()->has_option("output");
         auto expr_strat = CTree::FreeMix;
         if (ctx()->has_option("disj-conj")) expr_strat = CTree::DisjOfConj;
@@ -371,6 +377,7 @@ public:
         std::stringstream outss;
         if (out_to_file) {
             str fout = ctx()->get_option_as<str>("output");
+            boost::algorithm::replace_all(fout, "{iter}", std::to_string(iter));
             ofs.open(fout);
             if (ofs.fail()) {
                 LOG(ERROR, "Can't open output file {}", fout);
@@ -397,11 +404,16 @@ public:
             const auto &loc = dat->loc;
             if (dat->linked()) continue;
             CHECK(!dat->ignored || dat->need_rebuild);
-            if (dat->need_rebuild) build_tree(dat, iter);
+            if (!build_tree_temp && dat->need_rebuild) build_tree(dat, iter);
 
             bool do_simpl = expensive_simplify;
             LOG_IF(INFO, do_simpl, "Generating expr: {:>3} ({}) {}", ++simpl_cnt, loc->id(), loc->name());
-            auto &tree = dat->tree;
+            PMutCTree tree;
+            if (build_tree_temp && dat->need_rebuild) {
+                tree = new CTree(ctx()), tree->prepare_data(dat->loc), tree->build_tree();
+            } else {
+                tree = dat->tree;
+            }
             CHECK_NE(tree, nullptr);
 
             z3::expr e = tree->build_zexpr(expr_strat);
@@ -417,7 +429,7 @@ public:
             for (const auto &d : vvp[dat->id()])
                 out << d->loc->name() << ", ";
             out << "\n-\n" << e << "\n-\n";
-            dat->tree->serialize(out);
+            tree->serialize(out);
             out << "\n======\n";
 
             if (pregen_configs) tree = nullptr;
@@ -543,14 +555,15 @@ private:
         return ret;
     }
 
-    hash_t state_hash() {
+    hash_t state_hash() const {
         vec<hash_t> v_hashes;
         v_hashes.reserve(v_loc_data.size() + 1);
         v_hashes.push_back(cov()->state_hash());
         for (const auto &dat : v_loc_data) {
             const auto &tree = (dat->linked() ? dat->parent->tree : dat->tree);
-            CHECK_NE(tree, nullptr);
-            v_hashes.push_back(tree->hash());
+            //CHECK_NE(tree, nullptr);
+            if (tree != nullptr) v_hashes.emplace_back(tree->hash());
+            else v_hashes.emplace_back();
         }
         return calc_hash_128(v_hashes);
     }

@@ -118,6 +118,7 @@ int prog(int argc, char *argv[]) {
             ("batch-size", po::value<int>()->default_value(0), "Batch size")
             ("input,I", po::value<str>()->default_value(""), "Algorithm input")
             ("term-cnt", po::value<int>()->default_value(0), "Termination counter")
+            ("save-each-iteration", "Save interactions after each iteration")
 
             ("locs,X", po::value<str>()->default_value(""), "Interested location")
             ("rounds,R", po::value<int>()->default_value(int(1e9)), "Number of iterations")
@@ -207,10 +208,12 @@ int prog(int argc, char *argv[]) {
 
         // ====
         str str_item_id = std::to_string(repeat_id);
+        str str_item_id_plus_1 = std::to_string(repeat_id + 1);
         for (auto &kv : opts) {
             if (kv.second.type() == typeid(str)) {
                 str s = boost::any_cast<str>(kv.second);
                 boost::algorithm::replace_all(s, "{i}", str_item_id);
+                boost::algorithm::replace_all(s, "{i+1}", str_item_id_plus_1);
                 kv.second = s;
             }
         }
