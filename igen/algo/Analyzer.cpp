@@ -496,6 +496,13 @@ public:
         return nom / denom;
     }
 
+    double calc_fscore(double tp, double fp, double fn) {
+        double p = (tp + fp == 0) ? 0 : double(tp) / (tp + fp);
+        double r = (tp + fn == 0) ? 0 : double(tp) / (tp + fn);
+        double f = (r + p == 0) ? 0 : double(2 * r * p) / (r + p);
+        return f;
+    }
+
     // calculate MCC
     // https://en.wikipedia.org/wiki/Matthews_correlation_coefficient
     map<str, boost::any> run_analyze_3() {
@@ -508,20 +515,20 @@ public:
         vec<PMutConfig> all_confs = dom()->gen_all_configs();
         CHECK_EQ(cspace, all_confs.size());
 
-        double total_mcc = 0;
+        double total_mcc = 0, total_fscore = 0;
         int cnt_interactions = 0, cnt_exact = 0;
         for (const auto &p : m_truth) {
             if (!p.second.is_first) continue;
             cnt_interactions++;
-            double mcc = 0;
+            double mcc = 0, fscore = 0;
             auto _pred = m_predicate.find(p.first);
             if (_pred == m_predicate.end()) {
                 // Loc not found
-                mcc = 0;
+                mcc = fscore = 0;
             } else {
                 const auto &truth = p.second, &pred = _pred->second;
                 if (count_models(truth.e != pred.e, 1) == 0) {
-                    mcc = 1;
+                    mcc = fscore = 1;
                     cnt_exact++;
                 } else {
                     double tp = 0, tn = 0, fp = 0, fn = 0;
@@ -536,14 +543,16 @@ public:
                     VLOG(1, "tp, tn, fp, fn = {:10G}, {:10G}, {:10G}, {:10G}", tp, tn, fp, fn);
                     CHECK_EQ(tp + tn + fp + fn, cspace);
                     mcc = calc_mcc(tp, tn, fp, fn);
+                    fscore = calc_fscore(tp, fp, fn);
                 }
             }
-            total_mcc += mcc;
-            if (mcc != 1) LOG(INFO, "Loc {}: mcc {}", p.first, mcc);
+            total_mcc += mcc, total_fscore += fscore;
+            if (mcc != 1 || fscore != 1) LOG(INFO, "Loc {}: mcc {}, fscore {}", p.first, mcc, fscore);
         }
 
         map<str, boost::any> ret;
         ret["avg_mcc"] = (total_mcc / cnt_interactions);
+        ret["avg_f"] = (total_fscore / cnt_interactions);
         ret["cnt_interactions"] = cnt_interactions;
         ret["cnt_exact"] = cnt_exact;
         ret["cnt_wrong"] = cnt_interactions - cnt_exact;
