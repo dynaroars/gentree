@@ -376,6 +376,41 @@ public:
         LOG(INFO, "Multi-runner time: {}", boost::timer::format(ctx()->runner()->total_elapsed(), 0));
     }
 
+    bool is_pure(const expr &e, Z3_decl_kind outer, Z3_decl_kind inner) {
+        CHECK_EQ(e.decl().decl_kind(), outer);
+        int n_args = (int) e.num_args();
+        CHECK_GT(n_args, 0);
+        for (int i = 0; i < n_args; ++i) {
+            expr g = e.arg(i);
+            if (g.is_eq()) continue;
+            if (g.decl().decl_kind() == inner) {
+                long last_id = -1;
+                int n_args_g = (int) g.num_args();
+                for (int j = 0; j < n_args_g; ++j) {
+                    expr x = g.arg(j);
+                    if (!x.is_eq()) return false;
+                    CHECK_EQ(x.num_args(), 2);
+                    expr lhs = x.arg(0);
+
+                    bool is_var = false;
+                    for(const auto &t : *dom()) {
+                        if(lhs.id() == t->zvar().id()) {
+                            is_var = true;
+                            break;
+                        }
+                    }
+                    if(!is_var) return false;
+
+                    if (last_id == -1) last_id = lhs.id();
+                    else if (last_id != lhs.id()) return false;
+                }
+            } else {
+                return false;
+            }
+        }
+        return true;
+    }
+
     // read exp result
     map<str, boost::any> run_analyze_2() {
         map<str, boost::any> ret;
@@ -398,7 +433,40 @@ public:
 //
 //                   state_hash().str()
 //        );
-#define RET_PARAM(type, p, pos) ret[p] = boost::lexical_cast<type>(params.at(pos));
+
+        int cnt_singular = 0, cnt_and = 0, cnt_or = 0, cnt_mixed = 0;
+        for (const auto &p : ma) {
+            const auto &dat = p.second;
+            if (!dat.is_first) continue;
+            const expr &e = dat.e;
+            VLOG(10, "{}\n {}", p.first, e.to_string());
+            CHECK(e.is_app());
+            if (e.is_const() || e.is_eq()) {
+                VLOG(10, "=> Singular");
+                cnt_singular++;
+                continue;
+            }
+            if (e.is_and() && is_pure(e, Z3_OP_AND, Z3_OP_OR)) {
+                VLOG(10, "=> And");
+                cnt_and++;
+                continue;
+            }
+            if (e.is_or() && is_pure(e, Z3_OP_OR, Z3_OP_UNINTERPRETED)) {
+                VLOG(10, "=> Or");
+                cnt_or++;
+                continue;
+            }
+            VLOG(10, "=> Mixed");
+            cnt_mixed++;
+        }
+#define RET_PARAM(name) ret[#name] = name
+        RET_PARAM(cnt_singular);
+        RET_PARAM(cnt_and);
+        RET_PARAM(cnt_or);
+        RET_PARAM(cnt_mixed);
+#undef RET_PARAM
+
+#define RET_PARAM(type, p, pos) ret[p] = boost::lexical_cast<type>(params.at(pos))
         RET_PARAM(int, "n_configs", 1);
         RET_PARAM(int, "n_locs", 2);
         RET_PARAM(int, "n_locs_uniq", 3);
@@ -468,7 +536,7 @@ public:
                 }
             }
             total_mcc += mcc;
-            if(mcc != 1) LOG(INFO, "Loc {}: mcc {}", p.first, mcc);
+            if (mcc != 1) LOG(INFO, "Loc {}: mcc {}", p.first, mcc);
         }
 
         map<str, boost::any> ret;
