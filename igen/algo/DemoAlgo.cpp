@@ -46,8 +46,7 @@ public:
         }
     }
 
-    map<str, boost::any> run_alg() {
-
+    void demo_ex_paper() {
         {
             LOG(INFO, "{:=^80}", " Init ");
             config("0,1,1,0,0,0,1,2,1");
@@ -98,6 +97,66 @@ public:
         LOG(INFO, "\n{}", expr.to_string());
         LOG(INFO, "{:=^80}", " END ");
         LOG(INFO, "ran_hashes = {}", ran_hashes.size());
+    }
+
+    void demo_diff_c50() {
+        tbl_order = {"s", "t", "z"};
+        LOG(INFO, "{:=^80}", " Init ");
+        config("0,0,0");
+        config("0,0,1");
+        config("0,0,2");
+        config("0,0,3");
+        config("0,0,4");
+        config("0,1,0");
+        config("0,1,1");
+        config("0,1,2");
+        config("0,1,3");
+        config("0,1,4");
+        config("1,0,0");
+        config("1,0,1");
+        config("1,0,2");
+        config("1,0,3");
+        config("1,0,4");
+        config("1,1,0");
+        config("1,1,1");
+        config("1,1,2");
+        config("1,1,3");
+        config("1,1,4");
+        build();
+    }
+    void demo_diff_c50_2() {
+        tbl_order = {"s", "t", "z"};
+        LOG(INFO, "{:=^80}", " Init ");
+        config("0,0,0");
+        config("0,0,1");
+        config("0,0,2");
+        config("0,1,0");
+        config("0,1,3");
+        config("0,1,4");
+        config("1,0,1");
+        config("1,0,2");
+        config("1,0,3");
+        config("1,1,0");
+        config("1,1,1");
+        config("1,1,2");
+        config("1,1,3");
+        config("1,1,4");
+        build();
+    }
+    map<str, boost::any> run_alg() {
+        switch (ctx()->get_option_as<int>("alg-version")) {
+            case 0:
+                demo_ex_paper();
+                break;
+            case 1:
+                demo_diff_c50();
+                break;
+            case 2:
+                demo_diff_c50_2();
+                break;
+            default:
+                CHECK(0);
+        }
         return {};
     }
 
@@ -155,7 +214,17 @@ map<str, boost::any> run_demo_algo(const map<str, boost::any> &opts) {
     PMutContext ctx = new Context();
     ctx->set_options(opts);
     ctx->set_option("runner", str("builtin"));
-    ctx->set_option("filestem", str("@ex_paper"));
+    switch (ctx->get_option_as<int>("alg-version")) {
+        case 0:
+            ctx->set_option("filestem", str("@ex_paper"));
+            break;
+        case 1:
+        case 2:
+            ctx->set_option("filestem", str("@ex_paper_diff"));
+            break;
+        default:
+            CHECK(0);
+    }
     ctx->set_option("cache", str("x"));
     ctx->init();
     ctx->init_runner();

@@ -194,6 +194,15 @@ FN(ex_paper,
    })
 
 
+FN(ex_paper_diff,
+   VARS(s, t, z),
+   DOMS(2, 2, 5), {
+       if (s && t && (0 < z && z <= 3)) {
+           LOC("L8");
+       }
+   })
+
+
 FN(ex_paper_l,
    VARS(x, s, t, u, v, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p),
    DOMS(3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2), {
