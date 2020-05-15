@@ -86,6 +86,8 @@ str analyze_res_to_csv(const vec<map<str, boost::any>> &v_results, vec<str> fiel
         out_custom("MED", [](const vec<double> &v) { return vec_median(v); });
         out_custom("SIR", [](const vec<double> &v) { return vec_sir(v); });
         out_custom("MEAN", [](const vec<double> &v) { return vec_mean(v); });
+        out_custom("MIN", [](const vec<double> &v) { return *std::min_element(v.begin(), v.end()); });
+        out_custom("MAX", [](const vec<double> &v) { return *std::max_element(v.begin(), v.end()); });
     }
     return ss.str();
 }

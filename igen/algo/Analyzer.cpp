@@ -588,6 +588,87 @@ public:
         return ret;
     }
 
+    PMutConfig gen_model(expr e) {
+        auto &solver = ctx()->zsolver();
+        if (solver.check(1, &e) == z3::sat) {
+            PMutConfig c = new Config(ctx_mut());
+            z3::model m = solver.get_model();
+            for (int id = 0; id < dom()->n_vars(); ++id) {
+                expr const_interp = m.get_const_interp(dom()->var(id)->zvar().decl());
+                if (const_interp)
+                    c->set(id, dom()->var(id)->val_id_of(const_interp));
+                else
+                    c->set(id, Rand.get(dom()->n_values(id)));
+            }
+            return c;
+        }
+        return nullptr;
+    }
+
+    map<str, boost::any> run_analyze_cmin() {
+        auto finp = get_inp();
+        CHECK_EQ(finp.size(), 1) << "Need 1 input file";
+        auto ma = read_file(finp.at(0));
+
+        vec<LocData> vd;
+        for (const auto &p : ma) {
+            const auto &d = p.second;
+            d.tree->build_interpreter();
+            if (d.is_first) vd.emplace_back(d);
+        }
+        if (ctx()->get_option_as<int>("_repeat_id") > 0) {
+            LOG(INFO, "Randomly shuffle the interactions");
+            Rand.shuffle(vd);
+        }
+
+        vec<PMutConfig> confs;
+        set<hash_t> set_hash;
+        for (int L = 0; L < sz(vd);) {
+            int R = L;
+            z3::expr e = ctx()->ztrue();
+            while (R < sz(vd)) {
+                const auto &d = vd.at(R);
+                for (const auto &c : confs) {
+                    if (d.tree->interpret(*c)) {
+                        R++;
+                        goto continue_while;
+                    }
+                }
+                //VLOG(20, "Solve conj of {} interactions ({} -> {})", R - L, L, R);
+                if (gen_model(e && d.e)) {
+                    e = e && d.e;
+                    R++;
+                } else {
+                    break;
+                }
+                continue_while:
+                continue;
+            }
+            CHECK_GT(R, L);
+            VLOG(20, "Conj of {} interactions ({} -> {})", R - L, L, R);
+            PMutConfig c = gen_model(e);
+            CHECK_NE(c, nullptr);
+            confs.emplace_back(c);
+            CHECK(set_hash.insert(c->hash()).second);
+            L = R;
+        }
+
+        for (const auto &p : ma) {
+            bool ok = false;
+            for (const auto &c : confs) {
+                if (p.second.tree->interpret(*c)) {
+                    ok = true;
+                    break;
+                }
+            }
+            CHECK(ok);
+        }
+
+        map<str, boost::any> ret;
+        ret["min_c"] = sz(confs);
+        return ret;
+    }
+
 
     vec<str> get_inp() {
         str inp = ctx()->get_option_as<str>("input");
@@ -611,6 +692,8 @@ public:
                 return run_analyze_2();
             case 3:
                 return run_analyze_3();
+            case 4:
+                return run_analyze_cmin();
             default:
                 CHECK(0);
         }
