@@ -5,6 +5,7 @@
 #include <klib/WorkQueue.h>
 #include <klib/vecutils.h>
 #include <klib/anyutils.h>
+#include <klib/print_stl.h>
 #include <z3++.h>
 
 #include <boost/program_options/options_description.hpp>
@@ -51,7 +52,7 @@ str analyze_res_to_csv(const vec<map<str, boost::any>> &v_results, vec<str> fiel
     vec<vec<double>> col_vals(fields.size());
     fmt::print(ss, "{}\n", fmt::join(fields, ","));
     for (const auto &mp : v_results) {
-        CHECK(get_keys_as_set(mp) == set_fields);
+        CHECK_EQ(get_keys_as_set(mp), set_fields);
         int col_id = 0;
         for (const auto &f_name : fields) {
             const auto kv = mp.find(f_name);

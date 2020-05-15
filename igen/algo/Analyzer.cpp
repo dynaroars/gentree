@@ -519,6 +519,7 @@ public:
 
         double total_mcc = 0, total_fscore = 0;
         int cnt_interactions = 0, cnt_exact = 0;
+        std::stringstream wrong_locs;
         for (const auto &p : m_truth) {
             if (!p.second.is_first) continue;
             cnt_interactions++;
@@ -526,6 +527,7 @@ public:
             auto _pred = m_predicate.find(p.first);
             if (_pred == m_predicate.end()) {
                 // Loc not found
+                wrong_locs << '!' << p.first << ' ';
                 mcc = fscore = 0;
             } else {
                 const auto &truth = p.second, &pred = _pred->second;
@@ -533,6 +535,7 @@ public:
                     mcc = fscore = 1;
                     cnt_exact++;
                 } else {
+                    wrong_locs << p.first << ' ';
                     double tp = 0, tn = 0, fp = 0, fn = 0;
                     truth.tree->build_interpreter(), pred.tree->build_interpreter();
                     for (const auto &c : all_confs) {
@@ -560,6 +563,7 @@ public:
         ret["cnt_wrong"] = cnt_interactions - cnt_exact;
         ret["delta_locs"] = sz(m_predicate) - sz(m_truth);
         ret["n_configs"] = boost::lexical_cast<int>(params.at(1));
+        ret["wrong_locs"] = wrong_locs.str();
         return ret;
     }
 
