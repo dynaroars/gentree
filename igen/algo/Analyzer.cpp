@@ -616,6 +616,20 @@ public:
             d.tree->build_interpreter();
             if (d.is_first) vd.emplace_back(d);
         }
+//        int beg_sz = sz(vd);
+//        for (int i = 0; i < sz(vd); ++i) {
+//            for (int j = i + 1; j < sz(vd); ++j) {
+//                if (gen_model(!z3::implies(vd[i].e, vd[j].e)) == nullptr) {
+//                    vd.erase(vd.begin() + j);
+//                    --j;
+//                } else if (gen_model(!z3::implies(vd[j].e, vd[i].e)) == nullptr) {
+//                    vd.erase(vd.begin() + i);
+//                    --i;
+//                    break;
+//                }
+//            }
+//        }
+//        LOG(INFO, "Removed {} interactions", beg_sz - sz(vd));
         if (ctx()->get_option_as<int>("_repeat_id") > 0) {
             LOG(INFO, "Randomly shuffle the interactions");
             Rand.shuffle(vd);
