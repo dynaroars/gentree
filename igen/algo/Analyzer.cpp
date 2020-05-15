@@ -411,6 +411,21 @@ public:
         return true;
     }
 
+    bool is_igen_compat(const expr &e) {
+        if (!e.is_and()) return false;
+        int n_args = (int) e.num_args();
+        CHECK_GT(n_args, 0);
+        bool has_or_clause = false;
+        for (int i = 0; i < n_args; ++i) {
+            expr g = e.arg(i);
+            if (g.is_eq()) continue;
+            if (has_or_clause || !g.is_or()) return false;
+            has_or_clause = true;
+            if (!is_pure(g, Z3_OP_OR, Z3_OP_UNINTERPRETED)) return false;
+        }
+        return true;
+    }
+
     // read exp result
     map<str, boost::any> run_analyze_2() {
         map<str, boost::any> ret;
@@ -435,6 +450,7 @@ public:
 //        );
 
         int cnt_singular = 0, cnt_and = 0, cnt_or = 0, cnt_mixed = 0;
+        int cnt_pure = 0, cnt_mix_ok = 0, cnt_mix_fail = 0;
         for (const auto &p : ma) {
             const auto &dat = p.second;
             if (!dat.is_first) continue;
@@ -443,27 +459,32 @@ public:
             CHECK(e.is_app());
             if (e.is_const() || e.is_eq()) {
                 VLOG(10, "=> Singular");
-                cnt_singular++;
+                cnt_singular++, cnt_pure++;
                 continue;
             }
             if (e.is_and() && is_pure(e, Z3_OP_AND, Z3_OP_OR)) {
                 VLOG(10, "=> And");
-                cnt_and++;
+                cnt_and++, cnt_pure++;
                 continue;
             }
             if (e.is_or() && is_pure(e, Z3_OP_OR, Z3_OP_UNINTERPRETED)) {
                 VLOG(10, "=> Or");
-                cnt_or++;
+                cnt_or++, cnt_pure++;
                 continue;
             }
-            VLOG(10, "=> Mixed");
+            bool ig_compat = is_igen_compat(e);
+            VLOG(10, "=> Mixed{}", ig_compat ? ", igen compat" : "");
             cnt_mixed++;
+            if (ig_compat) cnt_mix_ok++; else cnt_mix_fail++;
         }
 #define RET_PARAM(name) ret[#name] = name
         RET_PARAM(cnt_singular);
         RET_PARAM(cnt_and);
         RET_PARAM(cnt_or);
         RET_PARAM(cnt_mixed);
+        RET_PARAM(cnt_pure);
+        RET_PARAM(cnt_mix_ok);
+        RET_PARAM(cnt_mix_fail);
 #undef RET_PARAM
         ret["cnt_total"] = cnt_singular + cnt_and + cnt_or + cnt_mixed;
 
