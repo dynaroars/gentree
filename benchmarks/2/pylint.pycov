@@ -1,0 +1,11 @@
+include conf.pycov
+
+var name pylint
+
+cov_arg --include={site-packages}/pylint/*
+loc_trim_prefix {site-packages}/pylint/
+
+bin {bindir}/{name}
+# =================================
+
+run {} {testdir}/py_pylint/alg_igen.py

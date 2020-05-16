@@ -1,0 +1,10 @@
+include conf.gcov
+
+var name ln
+
+bin {bindir}/{name}
+var td {testdir}/{name}
+# =================================
+
+clean_wd
+run {} {td}/a .

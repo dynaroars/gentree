@@ -1,0 +1,62 @@
+-a off 1 2
+-e off "NA"
+-o off 0 1.1 2.1
+-t off ','
+-v off 1 2 
+-1 off 1
+-2 off 1
+-j1 off 1
+-j2 off 1
+-j off 1
+--help off on
+--version off on
+
+#     If one of the arguments file1 or file2 is ``-'', the standard input is
+#      used.
+
+# EXIT STATUS
+#      The join utility exits 0 on success, and >0 if an error occurs.
+
+# COMPATIBILITY
+#      For compatibility with historic versions of join, the following options
+#      are available:
+
+#      -a      In addition to the default output, produce a line for each
+#              unpairable line in both file 1 and file 2.
+
+#      -j1 field
+#              Join on the field'th field of file 1.
+
+#      -j2 field
+#              Join on the field'th field of file 2.
+
+#      -j field
+#              Join on the field'th field of both file 1 and file 2.
+
+#      -o list ...
+#              Historical implementations of join permitted multiple arguments
+#              to the -o option.  These arguments were of the form
+#              `file_number.field_number' as described for the current -o
+#              option.  This has obvious difficulties in the presence of files
+#              named `1.2'.
+
+#      These options are available only so historic shell scripts do not require
+#      modification.  They should not be used in new code.
+
+# LEGACY DESCRIPTION
+#      The -e option causes a specified string to be substituted into empty
+#      fields, even if they are in the middle of a line.  In legacy mode, the
+#      substitution only takes place at the end of a line.
+
+#      Only documented options are allowed.  In legacy mode, some obsolete
+#      options are re-written into current options.
+
+#      For more information about legacy mode, see compat(5).
+
+# SEE ALSO
+#      awk(1), comm(1), paste(1), sort(1), uniq(1), compat(5)
+
+# STANDARDS
+#      The join command conforms to IEEE Std 1003.1-2001 (``POSIX.1'').
+
+# BSD                              July 5, 2004                              BSD

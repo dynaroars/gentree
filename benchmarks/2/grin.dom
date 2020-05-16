@@ -1,0 +1,111 @@
+# usage: grin [-h] [-v] [-i] [-A AFTER_CONTEXT] [-B BEFORE_CONTEXT] [-C CONTEXT]
+#             [-I INCLUDE] [-n] [-N] [-H] [--without-filename] [--emacs] [-l]
+#             [-L] [--no-color] [--use-color] [--force-color] [-s]
+#             [--skip-hidden-files] [-b] [--skip-backup-files] [-S]
+#             [--skip-hidden-dirs] [-d SKIP_DIRS] [-D] [-e SKIP_EXTS] [-E]
+#             [--no-follow] [--follow] [-f FILE] [-0] [--sys-path]
+#             regex [files [files ...]]
+
+# Search text files for a given regex pattern.
+
+# positional arguments:
+#   regex                 the regular expression to search for
+#   files                 the files to search
+
+# optional arguments:
+#   -h, --help            show this help message and exit
+
+#DO NOT USE THIS FLAG!  Because any flag error also prints out this help msg
+#which makes it harder to debug
+########## --help on off
+
+#   -v, --version         show program's version number and exit
+--version on off
+
+#   -i, --ignore-case     ignore case in the regex
+--ignore-case on off
+
+#   -A AFTER_CONTEXT, --after-context AFTER_CONTEXT
+#                         the number of lines of context to show after the match
+#                         [default=0]
+-A off 2
+
+#   -B BEFORE_CONTEXT, --before-context BEFORE_CONTEXT
+#                         the number of lines of context to show before the
+#                         match [default=0]
+-B off 2
+#   -C CONTEXT, --context CONTEXT
+#                         the number of lines of context to show on either side
+#                         of the match
+-C off 2
+#   -I INCLUDE, --include INCLUDE
+#                         only search in files matching this glob [default='*']
+#   -n, --line-number     show the line numbers [default]
+-n on off
+#   -N, --no-line-number  do not show the line numbers
+-N on off
+#   -H, --with-filename   show the filenames of files that match [default]
+-H on off
+#   --without-filename    do not show the filenames of files that match
+--without-filename on off
+#   --emacs               print the filename with every match for easier parsing
+#                         by e.g. Emacs
+--emacs on off
+#   -l, --files-with-matches
+#                         show only the filenames and not the texts of the
+#                         matches
+-l on off
+#   -L, --files-without-matches
+#                         show the matches with the filenames
+-L on off
+#   --no-color            do not use colorized output [default if piping the
+#                         output]
+--no-color on off
+#   --use-color           use colorized output [default if outputting to a
+#                         terminal]
+--use-color on off
+#   --force-color         always use colorized output even when piping to
+#                         something that may not be able to handle it
+--force-color on off
+#   -s, --no-skip-hidden-files
+#                         do not skip .hidden files
+-s on off
+#   --skip-hidden-files   do skip .hidden files [default]
+#   -b, --no-skip-backup-files
+#                         do not skip backup~ files [deprecated; edit --skip-
+#                         exts]
+#   --skip-backup-files   do skip backup~ files [default] [deprecated; edit
+#                         --skip-exts]
+#   -S, --no-skip-hidden-dirs
+#                         do not skip .hidden directories
+-S on off
+#   --skip-hidden-dirs    do skip .hidden directories [default]
+--skip-hidden-dirs on off
+#   -d SKIP_DIRS, --skip-dirs SKIP_DIRS
+#                         comma-separated list of directory names to skip
+#                         [default='CVS,RCS,.svn,.hg,.bzr,build,dist']
+#   -D, --no-skip-dirs    do not skip any directories
+-D on off
+#   -e SKIP_EXTS, --skip-exts SKIP_EXTS
+#                         comma-separated list of file extensions to skip [defau
+#                         lt='.pyc,.pyo,.so,.o,.a,.tgz,.tar.gz,.rar,.zip,~,#,.ba
+#                         k,.png,.jpg,.gif,.bmp,.tif,.tiff,.pyd,.dll,.exe,.obj,.
+#                         lib']
+#   -E, --no-skip-exts    do not skip any file extensions
+-E on off
+#   --no-follow           do not follow symlinks to directories and files
+#                         [default]
+--no-follow on off
+#   --follow              follow symlinks to directories and files
+--follow on off
+#   -f FILE, --files-from-file FILE
+#                         read files to search from a file, one per line; - for
+#                         stdin
+#   -0, --null-separated  filenames specified in --files-from-file are separated
+#                         by NULs
+# -0 on off
+#   --sys-path            search the directories on sys.path
+#VU: SLOW
+#--sys-path on off
+
+# Bug reports to <enthought-dev@mail.enthought.com>.

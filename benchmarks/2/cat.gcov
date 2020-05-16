@@ -1,0 +1,9 @@
+include conf.gcov
+
+var name cat
+
+bin {bindir}/{name}
+var td {testdir}/{name}
+# =================================
+
+run {} {td}/file1

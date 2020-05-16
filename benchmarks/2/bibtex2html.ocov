@@ -1,0 +1,12 @@
+include conf.ocov
+
+var name bibtex2html
+
+bin                 {prog_dir}/bibtex2html-1.99/bibtex2html
+# =================================
+
+env BSTINPUTS {testdir}/ocaml_bibtex2html/bst
+cov_arg -I {prog_dir}/bibtex2html-1.99
+
+clean_wd
+run {} -c /usr/bin/bibtex {testdir}/ocaml_bibtex2html/mymaster.bib

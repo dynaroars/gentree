@@ -1,0 +1,9 @@
+include conf.gcov
+
+var name date
+
+bin {bindir}/{name}
+var td {testdir}/{name}
+# =================================
+
+run {} -d '2004-02-29 16:21:42'

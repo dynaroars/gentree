@@ -1,0 +1,12 @@
+include conf.ocov
+
+var name unison
+
+bin                 {prog_dir}/unison-2.51.2/src/unison
+loc_trim_prefix     {prog_dir}/unison-2.51.2/src/
+# =================================
+
+env                 HOME   {wd_dir}/
+
+clean_wd
+run {} -batch {testdir}/ocaml_unison {wd_dir}/dest

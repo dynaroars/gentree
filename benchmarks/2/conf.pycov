@@ -1,0 +1,33 @@
+lang python
+
+var prefix              /mnt/ramdisk/gcov
+var prof_dir            {prefix}/prof_{tid}
+var testfiles_dir       {prefix}/testfiles_{tid}
+var wd_dir              {prefix}/wd_{tid}
+
+var virtualenv_dir   	/home/kh/apps/bench_progs/py_virtualenv
+var testfiles_srcdir    /home/kh/projects/igen/wd/2/testfiles
+
+###
+
+cp_replace_folder    	{testfiles_srcdir}           {testfiles_dir}
+
+var bindir   			{virtualenv_dir}/bin
+var testdir  			{testfiles_dir}
+
+####
+
+cov_env VIRTUAL_ENV     {virtualenv_dir}
+env 	VIRTUAL_ENV   	{virtualenv_dir}
+
+python_bin				{bindir}/python
+cov_bin	            	{bindir}/coverage
+cov_wd 	            	{wd_dir}
+
+var site-packages		{virtualenv_dir}/lib/python2.7/site-packages
+#loc_trim_prefix         {bindir}/
+#loc_trim_prefix         {site-packages}/
+
+####
+
+wd           {wd_dir}

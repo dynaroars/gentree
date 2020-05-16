@@ -1,0 +1,9 @@
+include conf.gcov
+
+var name uname
+
+bin {bindir}/{name}
+var td {testdir}/{name}
+# =================================
+
+run {}

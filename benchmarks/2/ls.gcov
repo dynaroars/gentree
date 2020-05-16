@@ -1,0 +1,30 @@
+include conf.gcov
+
+var name ls
+
+bin {bindir}/{name}
+var td {testdir}/{name}
+# =================================
+
+run {} {td}/
+
+#run {} {td}/a
+#run {} {td}/a_ln
+#run {} {td}
+#
+#run {} {td}/noexist_ln
+#run {} {td}/d1/.hidden1
+#run {} {td}/d1/d1d1/b
+#run {} {td}/d2/a.sh
+#run {} {td}/d2/dirA
+#run {} {td}/d2/dirA/*
+#
+#run {} {td}/d2_ln/a.sh
+#run {} {td}/d2_ln/.hidden_dir
+#
+##run {} /usr
+##run {} /usr/*
+#run {} /bin/ls
+#run {} .
+#run {} ..
+#

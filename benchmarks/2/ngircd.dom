@@ -1,0 +1,25 @@
+Conf_UID 0 4096
+
+Conf_GID 0 1
+
+Conf_ConnectRetry 5 60
+
+Conf_OperCanMode 1 0
+
+Conf_NoDNS 1 0
+
+Conf_ListenIPv4 1 0
+
+Conf_OperServerMode 1 0
+
+Conf_MaxJoins 0 1 2 100
+
+Conf_MaxConnectionsIP 0 1 2 100
+
+Conf_MaxNickLength 0 4 5 6 8 9 10 100
+
+Conf_PingTimeout 1 120 3600
+
+Conf_PongTimeout 1 20 3600
+
+Conf_PredefChannelsOnly 1 0

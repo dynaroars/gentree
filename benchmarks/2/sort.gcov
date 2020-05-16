@@ -1,0 +1,9 @@
+include conf.gcov
+
+var name sort
+
+bin {bindir}/{name}
+var td {testdir}/{name}
+# =================================
+
+run -S 100M {} {td}/file1

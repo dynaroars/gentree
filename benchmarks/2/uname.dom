@@ -1,0 +1,37 @@
+# -a, --all, print all information, in the following order, except omit -p and -i if unknown:
+-a on off
+
+# -s, --kernel-name, print the kernel name
+-s on off
+
+# -n, --nodename, print the network node hostname
+-n on off
+
+# -r, --kernel-release, print the kernel release
+-r on off
+
+# -v, --kernel-version, print the kernel version
+-v on off
+
+# -m, --machine, print the machine hardware name
+-m on off
+
+# # -p, --processor, print the processor type or "unknown"
+-p on off
+
+# # -i, --hardware-platform, print the hardware platform or "unknown"
+-i on off
+
+# # -o, --operating-system, print the operating system
+-o on off
+
+# # --help display this help and exit
+--help on off
+
+# # --version, output version information
+--version on off
+
+
+#--inv0 on off
+#--inv1 on off
+

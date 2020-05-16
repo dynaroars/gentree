@@ -1,0 +1,9 @@
+include conf.gcov
+
+var name join
+
+bin {bindir}/{name}
+var td {testdir}/{name}
+# =================================
+
+run {} {td}/file5.txt {td}/file6.txt

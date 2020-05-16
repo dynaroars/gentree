@@ -1,0 +1,29 @@
+lang cpp
+
+var prefix              /mnt/ramdisk/gcov
+var prof_dir            {prefix}/prof_{tid}
+var testfiles_dir       {prefix}/testfiles_{tid}
+var wd_dir              {prefix}/wd_{tid}
+
+var coreutils_srcdir    /home/kh/apps/cpplib/coreutils
+var testfiles_srcdir    /home/kh/projects/igen/wd/2/testfiles
+
+################
+
+env GCOV_PREFIX         {prof_dir}
+env GCOV_PREFIX_STRIP   6
+
+cov_bin	                /usr/bin/gcov-9
+cov_wd 	                {prof_dir}/src
+
+loc_trim_prefix         ../coreutils-8.32/src/
+
+####
+
+cp_replace_folder    {coreutils_srcdir}/cpy       {prof_dir}
+cp_replace_folder    {testfiles_srcdir}           {testfiles_dir}
+
+var bindir   {coreutils_srcdir}/build/src
+var testdir  {testfiles_dir}
+
+wd           {wd_dir}

@@ -1,0 +1,31 @@
+-auto              off on
+#-batch             batch mode: ask no questions at all
+-fat               off on
+-group             off on
+-owner             off on
+-silent            off on
+-terse             off on
+-testserver        off on
+-times             off on
+-version           off on
+
+-addversionno      off on
+#-backups           off on
+-contactquietly    off on
+-copymax           off 2 3        # maximum number of simultaneous copyprog transfers
+-copyonconflict    off on
+
+-dontchmod         off on
+-dumbtty           off on
+-fastercheckUNSAFE off on
+-halfduplex        off on
+-ignorearchives    off on
+-log               off on
+-numericids        off on
+-rsync             off on
+-selftest          off on
+-showarchive       off on
+-sortbysize        off on
+-sortnewfirst      off on
+-stream            off on
+-xferbycopying     off on

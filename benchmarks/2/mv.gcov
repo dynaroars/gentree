@@ -1,0 +1,10 @@
+include conf.gcov
+
+var name mv
+
+bin {bindir}/{name}
+var td {testdir}/{name}
+# =================================
+
+clean_wd
+run {} {testdir}/mv .

@@ -1,0 +1,25 @@
+lang ocaml
+
+var prefix              /mnt/ramdisk/ocov
+var prof_dir            {prefix}/prof_{tid}
+var testfiles_dir       {prefix}/testfiles_{tid}
+var wd_dir              {prefix}/wd_{tid}
+
+var opam_dir            /home/kh/.opam
+var prog_dir   	        /home/kh/apps/bench_progs/ocaml
+var testfiles_srcdir    /home/kh/projects/igen/wd/2/testfiles
+
+###
+
+cp_replace_folder    	{testfiles_srcdir}           {testfiles_dir}
+
+var testdir  			{testfiles_dir}
+
+####
+
+cov_bin	            	{opam_dir}/system/bin/bisect-report.opt
+cov_wd 	            	{wd_dir}
+
+####
+
+wd           {wd_dir}

@@ -1,0 +1,35 @@
+-s off plain alpha
+-d on off
+-a on off
+-u on off      
+-r on off      
+-revkeys on off
+-i on off        
+-both on off     
+-multiple on off 
+-single on off   
+-nodoc on off    
+-nokeys on off   
+-nolinks on off   
+-nobiblinks on off
+-rawurl on off    
+-noabstract on off
+-nokeywords on off
+-nodoi on off     
+-noeprint on off
+-linebreak on off
+-use-table on off
+-noheader on off 
+-nofooter on off 
+-noexpand on off 
+-nobibsource on off
+-dl on off       
+-unicode on off  
+-html-entities on off
+-labelname on off
+--print-keys on off
+#-debug and -q cannot go together so comment one of them out
+#-debug on off
+-q on off
+-w on off
+-v on off
