@@ -1,3 +1,13 @@
+diff --git a/src/util/CMakeLists.txt b/src/util/CMakeLists.txt
+index 13bc4715c..5c1c6fb51 100644
+--- a/src/util/CMakeLists.txt
++++ b/src/util/CMakeLists.txt
+@@ -70,3 +70,5 @@ z3_add_component(util
+     symbol.h
+     trace.h
+ )
++
++set_source_files_properties(symbol.cpp PROPERTIES COMPILE_FLAGS -std=c++17)
 diff --git a/src/util/memory_manager.cpp b/src/util/memory_manager.cpp
 index a325afca7..6d23f3426 100644
 --- a/src/util/memory_manager.cpp
@@ -60,3 +70,58 @@ index a325afca7..6d23f3426 100644
          if (g_memory_max_size != 0 && g_memory_alloc_size > g_memory_max_size)
              out_of_mem = true;
          if (g_memory_max_alloc_count != 0 && g_memory_alloc_count > g_memory_max_alloc_count)
+diff --git a/src/util/symbol.cpp b/src/util/symbol.cpp
+index 36910a47b..503b8bb45 100644
+--- a/src/util/symbol.cpp
++++ b/src/util/symbol.cpp
+@@ -22,8 +22,10 @@ Revision History:
+ #include "util/region.h"
+ #include "util/string_buffer.h"
+ #include <cstring>
++#include <shared_mutex>
+ 
+-static DECLARE_MUTEX(g_symbol_lock);
++//static DECLARE_MUTEX(g_symbol_lock);
++static std::shared_mutex g_symbol_lock_rw;
+ 
+ symbol symbol::m_dummy(TAG(void*, nullptr, 2));
+ const symbol symbol::null;
+@@ -37,9 +39,18 @@ class internal_symbol_table {
+ public:
+ 
+     char const * get_str(char const * d) {
+-        const char * result;
+-        lock_guard lock(*g_symbol_lock);
+         str_hashtable::entry * e;
++
++        {
++            std::shared_lock lock(g_symbol_lock_rw);
++            if ((e = m_table.find_core(d)) != nullptr) {
++                return e->get_data();
++            }
++        }
++
++        const char * result;
++        std::unique_lock lock(g_symbol_lock_rw);        
++        //lock_guard lock(*g_symbol_lock);
+         if (m_table.insert_if_not_there_core(d, e)) {
+             // new entry
+             size_t l   = strlen(d);
+@@ -64,13 +75,15 @@ static internal_symbol_table* g_symbol_table = nullptr;
+ 
+ void initialize_symbols() {
+     if (!g_symbol_table) {
+-        ALLOC_MUTEX(g_symbol_lock);
++        std::unique_lock lock(g_symbol_lock_rw);
++        //ALLOC_MUTEX(g_symbol_lock);
+         g_symbol_table = alloc(internal_symbol_table);
+     }
+ }
+ 
+ void finalize_symbols() {
+-    DEALLOC_MUTEX(g_symbol_lock);
++    std::unique_lock lock(g_symbol_lock_rw);
++    //DEALLOC_MUTEX(g_symbol_lock);
+     dealloc(g_symbol_table);
+     g_symbol_table = nullptr;
+ }
