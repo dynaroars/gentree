@@ -144,6 +144,8 @@ void GCovRunner::parse(const str &filename, map<str, str> &varmap) {
             lang = Language::_from_string_nocase(readval(ss).c_str());
         } else if (cmd == "python_bin") {
             f_python_bin = readval(ss);
+        } else if (cmd == "perl_bin") {
+            f_perl_bin = readval(ss);
         } else if (cmd == "cov_arg") {
             auto args = readargs(ss);
             vec_move_append(f_cov_args, args);
@@ -183,6 +185,9 @@ void GCovRunner::exec(const vec<str> &config_values) {
                     case Language::Ocaml:
                         _run_ocaml(std::move(run_arg));
                         break;
+                    case Language::Perl:
+                        _run_perl(std::move(run_arg));
+                        break;
                     default:
                         CHECK(0);
                 }
@@ -215,6 +220,8 @@ set<str> GCovRunner::collect_cov() {
             return _collect_cov_py();
         case Language::Ocaml:
             return _collect_cov_ocaml();
+        case Language::Perl:
+            return _collect_cov_perl();
         default:
             CHECK(0);
     }
@@ -229,6 +236,8 @@ void GCovRunner::clean_cov() {
             return _clean_cov_py();
         case Language::Ocaml:
             return _clean_cov_ocaml();
+        case Language::Perl:
+            return _clean_cov_perl();
         default:
             CHECK(0);
     }
@@ -265,6 +274,9 @@ void GCovRunner::init() {
             break;
         case Language::Ocaml:
             f_ocaml_cov_file = f_cov_wd + "/bisect0001.out";
+            break;
+        case Language::Perl:
+            f_dir_perl_cover_db = f_cov_wd + "/cover-db";
             break;
         default:
             break;
@@ -561,6 +573,87 @@ set<str> GCovRunner::_collect_cov_ocaml() {
 
 void GCovRunner::_clean_cov_ocaml() {
     std::filesystem::remove(f_ocaml_cov_file);
+}
+
+//======================================================================================================================
+
+void GCovRunner::_run_perl(vec<str> _args) {
+    vec<str> args{"-MDevel::Cover=-coverage,statement", f_bin};
+    vec_move_append(args, _args);
+
+#if PRINT_VERBOSE
+    bp::ipstream out, err;
+#endif
+    bp::child proc_child(
+            f_perl_bin, bp::posix::use_vfork, bp::posix::sig.ign(),
+            bp::args(args), bp::start_dir(f_wd), bp::env(prog_env),
+#if PRINT_VERBOSE
+            bp::std_out > out, bp::std_err > err
+#else
+            bp::std_out > bp::null, bp::std_err > bp::null
+#endif
+    );
+    CHECKF(proc_child, "Error running process: {} {}", f_perl_bin, fmt::join(args, " "));
+    proc_child.wait();
+    //LOG(INFO, "ec = {}", proc_child.exit_code()) << out.rdbuf();
+    //GLOG(INFO) << err.rdbuf();
+#if PRINT_VERBOSE
+    str str_out = read_stream_to_str(out);
+    LOG(INFO, "Out (ec={}): {}", proc_child.exit_code(), str_out);
+    str str_err = read_stream_to_str(err);
+    LOG(INFO, "Err: {}", str_err);
+#endif
+    // TODO: Check stderr
+}
+
+set<str> GCovRunner::_collect_cov_perl() {
+    static const vec<str> run_arg = {"-report", "sort"};
+
+    bp::ipstream out, err;
+    bp::child proc_child(f_cov_bin, bp::posix::use_vfork, bp::posix::sig.ign(),
+                         bp::args(run_arg), bp::start_dir(f_cov_wd),
+                         bp::std_out > out, bp::std_err > err);
+    CHECKF(proc_child, "Error running Perl cover: {} {}", f_cov_bin, fmt::join(run_arg, " "));
+
+    set<str> res;
+
+    str line;
+    str find_pat = f_bin + ":";
+    int cur_n_locs = 0;
+
+    str file_str = f_bin;
+    _trim_file_prefix(file_str);
+    while (std::getline(out, line)) {
+        if(sz(line) > sz(find_pat) && line.compare(0, find_pat.size(), find_pat) == 0) {
+            str b;
+            int verify_nlocs;
+            std::stringstream ss(line);
+            ss >> b >> b >> verify_nlocs >> b >> b;
+
+            cur_n_locs = sz(b);
+            CHECK_EQ(verify_nlocs, cur_n_locs);
+            int curLine = 1;
+            for(const char &c : b) {
+                if(c == '1') {
+                    str loc = file_str;
+                    loc.push_back(':');
+                    loc += std::to_string(curLine);
+                    res.insert(move(loc));
+                }
+                curLine++;
+            }
+            break;
+        }
+    }
+    while (std::getline(out, line));
+
+    n_locs_ = std::max(n_locs_, cur_n_locs);
+    proc_child.wait();
+    return res;
+}
+
+void GCovRunner::_clean_cov_perl() {
+    std::filesystem::remove_all(f_dir_perl_cover_db);
 }
 
 

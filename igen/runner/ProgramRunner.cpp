@@ -60,7 +60,7 @@ ProgramRunner::ProgramRunner(PMutContext _ctx, map<str, str> default_vars) :
     } else {
         str filestem = ctx()->get_option_as<str>("filestem");
         if (type == +RunnerType::GCov)
-            target = try_ext(filestem, {"gcov", "pycov", "ocov"});
+            target = try_ext(filestem, {"gcov", "pycov", "ocov", "perlcov"});
         else if (type == +RunnerType::Otter)
             target = filestem + ".otter";
         else
