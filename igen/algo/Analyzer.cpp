@@ -683,6 +683,51 @@ public:
         return ret;
     }
 
+    bool is_var(const expr &e) {
+        return e.is_const() && e.decl().decl_kind() == Z3_OP_UNINTERPRETED;
+    }
+
+    void collect_vars(set<str> &res, const expr &e) {
+        if (is_var(e)) {
+            res.insert(e.decl().name().str());
+        } else {
+            int nargs = e.num_args();
+            for (int i = 0; i < nargs; ++i) {
+                collect_vars(res, e.arg(i));
+            }
+        }
+    }
+
+    map<str, boost::any> run_analyze_complexity() {
+        auto finp = get_inp();
+        CHECK_EQ(finp.size(), 1) << "Need 1 input file";
+        auto ma = read_file(finp.at(0));
+
+        vec<int> samples;
+        int sum = 0, count = 0;
+        for (const auto &p : ma) {
+            const auto &d = p.second;
+            if (!d.is_first) continue;
+
+            set<str> s;
+            collect_vars(s, d.e);
+            sum += sz(s), count++;
+            samples.push_back(sz(s));
+        }
+
+        double avg = double(sum) / count;
+        double dev = 0;
+        for (int x : samples) {
+            dev += (x - avg) * (x - avg);
+        }
+        dev = std::sqrt(dev / count);
+
+        map<str, boost::any> ret;
+        ret["avg_len"] = avg;
+        ret["dev_len"] = dev;
+        return ret;
+    }
+
 
     vec<str> get_inp() {
         str inp = ctx()->get_option_as<str>("input");
@@ -708,6 +753,8 @@ public:
                 return run_analyze_3();
             case 4:
                 return run_analyze_cmin();
+            case 5:
+                return run_analyze_complexity();
             default:
                 CHECK(0);
         }
