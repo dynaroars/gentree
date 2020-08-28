@@ -451,10 +451,16 @@ public:
 
         int cnt_singular = 0, cnt_and = 0, cnt_or = 0, cnt_mixed = 0;
         int cnt_pure = 0, cnt_mix_ok = 0, cnt_mix_fail = 0;
+        vec<int> vec_len;
         for (const auto &p : ma) {
             const auto &dat = p.second;
             if (!dat.is_first) continue;
             const expr &e = dat.e;
+
+            set<str> vars;
+            collect_vars(vars, e);
+            vec_len.push_back(sz(vars));
+
             VLOG(10, "{}\n {}", p.first, e.to_string());
             CHECK(e.is_app());
             if (e.is_const() || e.is_eq()) {
@@ -487,6 +493,8 @@ public:
         RET_PARAM(cnt_mix_fail);
 #undef RET_PARAM
         ret["cnt_total"] = cnt_singular + cnt_and + cnt_or + cnt_mixed;
+        ret["max_len"] = (int) *std::max_element(vec_len.begin(), vec_len.end());
+        ret["median_len"] = (int) vec_median(vec_len);
 
 #define RET_PARAM(type, p, pos) ret[p] = boost::lexical_cast<type>(params.at(pos))
         RET_PARAM(int, "n_configs", 1);
