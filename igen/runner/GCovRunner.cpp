@@ -276,7 +276,7 @@ void GCovRunner::init() {
             f_ocaml_cov_file = f_cov_wd + "/bisect0001.out";
             break;
         case Language::Perl:
-            f_dir_perl_cover_db = f_cov_wd + "/cover-db";
+            f_dir_perl_cover_db = f_cov_wd + "/cover_db";
             break;
         default:
             break;
