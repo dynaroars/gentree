@@ -143,6 +143,31 @@ public:
         config("1,1,4");
         build();
     }
+    void demo_bdd() {
+        tbl_order = {};
+        xloc = "L1";
+        LOG(INFO, "{:=^80}", " Init ");
+        config("0,0,0,0,0,0,0,0,0,0,0");
+        config("1,0,0,0,0,0,0,0,0,0,0");
+        config("1,1,0,0,0,0,0,0,0,0,0");
+        config("1,0,1,0,0,0,0,0,0,0,0");
+        config("1,0,0,1,0,0,0,0,0,0,0");
+        config("1,0,0,0,1,0,0,0,0,0,0");
+        config("1,0,0,0,0,1,0,0,0,0,0");
+        config("1,0,0,0,0,0,1,0,0,0,0");
+        config("1,0,0,0,0,0,0,1,0,0,0");
+        config("1,0,0,0,0,0,0,0,1,0,0");
+        config("1,0,0,0,0,0,0,0,0,1,0");
+        config("1,0,0,0,0,0,0,0,0,0,1");
+        build();
+
+        LOG(INFO, "{:=^80}", " EXPR ");
+        auto expr = tree->build_zexpr(CTree::FreeMix);
+        expr = ctx()->zctx_solver_simplify(expr);
+        LOG(INFO, "\n{}", expr.to_string());
+        LOG(INFO, "{:=^80}", " END ");
+        LOG(INFO, "ran_hashes = {}", ran_hashes.size());
+    }
     map<str, boost::any> run_alg() {
         switch (ctx()->get_option_as<int>("alg-version")) {
             case 0:
@@ -153,6 +178,9 @@ public:
                 break;
             case 2:
                 demo_diff_c50_2();
+                break;
+            case 20:
+                demo_bdd();
                 break;
             default:
                 CHECK(0);
@@ -199,6 +227,7 @@ public:
     }
 
     void print_conf_tbl() {
+        if (tbl_order.empty()) return;
         std::stringstream q;
         q << "\\text{config} & ";
         for (const str &s : tbl_order) fmt::print(q, "{} & ", s);
@@ -221,6 +250,9 @@ map<str, boost::any> run_demo_algo(const map<str, boost::any> &opts) {
         case 1:
         case 2:
             ctx->set_option("filestem", str("@ex_paper_diff"));
+            break;
+        case 20:
+            ctx->set_option("filestem", str("@ex_bdd"));
             break;
         default:
             CHECK(0);
