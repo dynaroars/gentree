@@ -1,0 +1,14 @@
+{
+    "files.associations": {
+        "**/*.yml": "ansible",
+        "utility": "cpp",
+        "random": "cpp"
+    },
+    "cmake.buildDirectory": "${workspaceFolder}/cmake-build-vscode",
+    "cmake.cmakePath": "/home/hao/apps/install/bin/cmake",
+    "cmake.configureOnOpen": true,
+    "cmake.generator": "Unix Makefiles",
+    "cmake.configureSettings": {
+        "CMAKE_PREFIX_PATH": "/home/hao/apps/cpplib/install"
+    }
+}
