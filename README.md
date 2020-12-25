@@ -221,6 +221,7 @@ cat rcat/stat.csv
 |           |             |                                  |
 | C (Otter) | vsftpd      | `./gt -J2 -cx -YF 2/vsftpd`      |
 | C (Otter) | ngircd      | `./gt -J2 -cx -YF 2/ngircd`      |
+
 **Note:** It is recommended to use multicores runner for faster execution. E.g., add `-j 16` to use upto 16 cores.
 
 # Hacking
