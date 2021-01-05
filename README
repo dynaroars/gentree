@@ -10,7 +10,7 @@ Our experiments on 17 configurable systems spanning 4 languages show that *GenTr
 This repository contains an implementation of the GenTree algorithm, as described in the paper:
 > KimHao Nguyen and ThanhVu Nguyen. 2021. GenTree: Using Decision Trees to Learn Interactions for Configurable Software. In International Conference on Software Engineering.
 
-The full paper could be found at: **(TODO)**
+The full paper could be found at: [paper.pdf](https://github.com/unsat/gentree/releases/download/submit_icse21/gentree-icse21.pdf)
 
 # Quick Start
 The development and experiment environment is provided as a single Docker image at `unsatx/gentree_docker:icse21`.
@@ -46,8 +46,8 @@ cd ~/gentree/wd
 ### Download Docker image manually
 If, for some reasons, `unsatx/gentree_docker:icse21` is not available in the Docker Hub, you can downoad and import it from Github releases.
 ```bash
-wget https://github.com/unsat/gentree_docker/releases/download/icse21/gentree_docker-icse21.tgz.a
-wget https://github.com/unsat/gentree_docker/releases/download/icse21/gentree_docker-icse21.tgz.b
+wget https://github.com/unsat/gentree/releases/download/submit_icse21/gentree_docker-icse21.tgz.a
+wget https://github.com/unsat/gentree/releases/download/submit_icse21/gentree_docker-icse21.tgz.b
 cat gentree_docker-icse21.tgz.a gentree_docker-icse21.tgz.b | gunzip -c - | docker load
 ```
 
