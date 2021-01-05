@@ -10,7 +10,7 @@ Our experiments on 17 configurable systems spanning 4 languages show that *GenTr
 This repository contains an implementation of the GenTree algorithm, as described in the paper:
 > KimHao Nguyen and ThanhVu Nguyen. 2021. GenTree: Using Decision Trees to Learn Interactions for Configurable Software. In International Conference on Software Engineering.
 
-The full paper could be found at: [paper.pdf](https://github.com/unsat/gentree/releases/download/submit_icse21/gentree-icse21.pdf)
+The full paper could be found at: [gentree-icse21.pdf](https://github.com/unsat/gentree/releases/download/submit_icse21/gentree-icse21.pdf)
 
 # Quick Start
 The development and experiment environment is provided as a single Docker image at `unsatx/gentree_docker:icse21`.
