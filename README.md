@@ -46,8 +46,8 @@ cd ~/gentree/wd
 ### Download Docker image manually
 If, for some reasons, `unsatx/gentree_docker:icse21` is not available in the Docker Hub, you can downoad and import it from Github releases.
 ```bash
-wget https://github.com/unsat/gentree/releases/download/submit_icse21/gentree_docker-icse21.tgz.a
-wget https://github.com/unsat/gentree/releases/download/submit_icse21/gentree_docker-icse21.tgz.b
+wget https://github.com/unsat/gentree_docker/releases/download/icse21/gentree_docker-icse21.tgz.a
+wget https://github.com/unsat/gentree_docker/releases/download/icse21/gentree_docker-icse21.tgz.b
 cat gentree_docker-icse21.tgz.a gentree_docker-icse21.tgz.b | gunzip -c - | docker load
 ```
 
