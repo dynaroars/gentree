@@ -254,6 +254,3 @@ cd ~/gentree/wd
 ```bash
 nano ~/gentree/wd/iter2_config.js
 ```
-
-# Copyright
-**(TODO)**
