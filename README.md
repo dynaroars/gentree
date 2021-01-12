@@ -10,7 +10,7 @@ Our experiments on 17 configurable systems spanning 4 languages show that *GenTr
 This repository contains an implementation of the GenTree algorithm, as described in the paper:
 > KimHao Nguyen and ThanhVu Nguyen. 2021. GenTree: Using Decision Trees to Learn Interactions for Configurable Software. In International Conference on Software Engineering.
 
-The full paper could be found at: [gentree-icse21.pdf](https://github.com/unsat/gentree/releases/download/submit_icse21/gentree-icse21.pdf)
+The full paper could be found here: [gentree-icse21.pdf](https://github.com/unsat/gentree/releases/download/submit_icse21/gentree-icse21.pdf)
 
 # Quick Start
 The development and experiment environment is provided as a single Docker image at `unsatx/gentree_docker:icse21`.
@@ -31,12 +31,13 @@ docker run -it --rm --tmpfs /mnt/ramdisk unsatx/gentree_docker:icse21 fish
 **3. Run GenTree (inside container):**
 ```bash
 cd ~/gentree/wd
+
 ./gt -J2 -cx -BF @ex_paper        # figure 1b
 ./gt -J2 -cx -BF @ex_paper --full # figure 1b (all configurations)
+
 ./gt -J2 -cx -GF 2/id             # coreutils `id` (C)
-./gt -J2 -cx -GF 2/grin -j 8      # grin (Python), using 8 cores
 ./gt -J2 -cx -YF 2/vsftpd         # vsftpd (Otter)
-./gt --help                       # help
+./gt -J2 -cx -GF 2/grin -j 8      # grin (Python), using 8 cores
 ```
 
 **Note 1:** if you get permission error on directory `/mnt/ramdisk` while running GenTree, run the following command inside the container: `sudo chmod 777 -R /mnt/ramdisk`
