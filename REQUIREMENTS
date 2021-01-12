@@ -1,8 +1,0 @@
-1) Hardware:
-- The benchmarks presented in the paper was run on a workstation with an AMD Ryzen Threadripper 3990X 64-Core CPU and 64 GB RAM, and at least 60GB of free disk space.
-- Some small test programs could be run in less than 5 minutes on a normal 4-core laptop (the motivation example and all coreutils programs, except `sort` and `ls`).
-
-2) Software:
-- Linux-based OS (tested on Ubunutu 20.04 and Debian 10.7).
-- Docker (tested with Docker 19.03.14 and 20.10.1).
-    + Make sure you can successfully run `docker run hello-world` on the host machine.

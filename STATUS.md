@@ -1,11 +1,11 @@
-We are applying for Reusable and Available badges.
+We are applying for **Reusable** and **Available** badges.
 
-1) Reusable:
+### Reusable
 - We provide a docker image at `unsatx/gentree_docker:icse21` containing all the development and evaluation tools.
 - We provide an instruction to reproduce the results presented in the paper.
 - The tool is well-documented and highly modular, which makes it easy to modify/extend the core algoritm.
 
-2) Available:
-- The source code is available at https://github.com/unsat/gentree
+### Available
+- The GenTree source code is available at https://github.com/unsat/gentree
 - The Docker build script is available at https://github.com/unsat/gentree_docker/tree/master/icse21
-- The Docker image is available at https://hub.docker.com/repository/docker/unsatx/gentree_docker/ or https://github.com/unsat/gentree_docker/releases/tag/icse21
+- Source code snapshot is available at 10.5281/zenodo.4434917 (https://zenodo.org/record/4434917).
