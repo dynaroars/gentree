@@ -45,9 +45,11 @@ cd ~/gentree/wd
 
 # Interpret data
 
+**General notes:**
 - Replace `id` in the commands below by the desired program name (e.g., `id`, `uname`, `cat`, ...).
 - `./scripts/viewcsv.sh` allows using arrow keys (up/down/left/right) to navigate a pretty-printed .csv file. Press `q` to exit.
 - Each benchmark program is run 11 times with different seeds. The result presented in the paper is taken from the MED row (median).
+- The GenTree implementation and benchmark programs has some undetermistic components, so sometimes your results may not match exactly with the results in the paper. However, they should be close (+/- 1) or match exactly most of the time.
 
 ## Table II
 ```bash
