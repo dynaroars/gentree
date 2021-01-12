@@ -17,6 +17,7 @@ cd ~/gentree/wd
 
 # Check that GenTree is working properly.
 # The output should look similar to the one listed in INSTALL file.
+# If got "Permission error", run `sudo chmod 777 -R /mnt/ramdisk` and try again.
 ./gt -J2 -cx -GF 2/id
 
 # Clean up old results
