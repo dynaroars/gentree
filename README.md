@@ -9,8 +9,8 @@ The full paper could be found here: [gentree-icse21.pdf](https://github.com/unsa
 
 1. **Setup and run the Docker container** as described in INSTALL file.
 2. **Choose the benchmark suite:**
-   - **Fast** (run only `id, uname, cat, mv, ln, date, join, vsftpd`): takes around 3 minutes on an 8-core i9-9980H laptop with 64GB RAM.
-   - **All** (run all benchmarks): takes around 26 hours on a 64-core AMD Ryzen Threadripper 3990X workstation with 64GB RAM.
+   - **Fast** (run only `id, uname, cat, mv, ln, date, join, vsftpd`): takes around 3 minutes on an 8-core i9-9880H @ 2.30GHz laptop with 64GB RAM.
+   - **All** (run all benchmarks): takes around 26 hours on a 64-core AMD Ryzen Threadripper 3990X @ 2.9 GHz workstation with 64GB RAM.
 3. **Run benchmark:**
 ```bash
 cd ~/gentree/wd
