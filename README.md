@@ -50,11 +50,12 @@ cd ~/gentree/wd
 - Replace `id` in the commands below by the desired program name (e.g., `id`, `uname`, `cat`, ...).
 - `./scripts/viewcsv.sh` allows using arrow keys (up/down/left/right) to navigate a pretty-printed .csv file. Press `q` to exit.
 - Each benchmark program is run 11 times with different seeds. The result presented in the paper is taken from the MED row (median).
-- The GenTree implementation and benchmark programs has some undetermistic components, so sometimes your results may not match exactly with the results in the paper. However, they should be close (+/- 1) or match exactly most of the time.
+- The GenTree implementation and benchmark programs has some undetermistic components, so sometimes your results may not match exactly with the results in the paper. However, most of the time, they should be close or match exactly.
 
 ## Table II
 ```bash
-./scripts/viewcsv.sh res/Analyze/stat/id.csv
+./scripts/viewcsv.sh res/Analyze/stat/id.csv                   # Detailed view of one benchmark
+./scripts/summary.sh res/Analyze/stat | ./scripts/viewcsv.sh   # Summary view of all benchmarks
 ```
 | column       | Table II column      | Desciption                                  |
 | ------------ | -------------------- | ------------------------------------------- |
@@ -71,7 +72,7 @@ cd ~/gentree/wd
 | median_len   | inter. len / median  | median interaction len                      |
 
 ```bash
-./scripts/viewcsv.sh res/Analyze/cmin/id.csv
+./scripts/summary.sh res/Analyze/cmin MIN | ./scripts/viewcsv.sh
 ```
 | column | Table II column | Desciption                                      |
 | ------ | --------------- | ----------------------------------------------- |
@@ -79,7 +80,7 @@ cd ~/gentree/wd
 
 ## Table III
 ```bash
-./scripts/viewcsv.sh res/Analyze/mcc/id.csv
+./scripts/summary.sh res/Analyze/mcc | ./scripts/viewcsv.sh
 ```
 | column           | Table III(a) column | Desciption                                              |
 | ---------------- | ------------------- | ------------------------------------------------------- |
@@ -87,7 +88,7 @@ cd ~/gentree/wd
 | cnt_exact        | inter. / exact      | number of exact interactions compared to groundtruth    |
 | cnt_interactions | inter. / total      | total # of interactions                                 |
 ```bash
-./scripts/viewcsv.sh res/Analyze/stat_full/id.csv
+./scripts/summary.sh res/Analyze/stat_full | ./scripts/viewcsv.sh
 ```
 | column       | Table III(b) column | Desciption                                      |
 | ------------ | ------------------- | ----------------------------------------------- |
@@ -103,5 +104,5 @@ cd ~/gentree/wd
 # Progress of randomized algorithm
 ./scripts/viewcsv.sh res/Analyze/progress/rand/id.csv
 ```
-- Vertical axis (exact interactions (normalized)) = cnt_exact / cnt_interactions
-- Horizontal axis (configurations (normalized)) = n_configs / MAX(n_configs)
+- Exact interactions (Vertical axis) = cnt_exact / cnt_interactions
+- Configurations (Horizontal axis) = n_configs / MAX(n_configs)
