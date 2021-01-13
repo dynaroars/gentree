@@ -1,7 +1,6 @@
-## Note
-The lastest version of this artifact package could be found at https://github.com/unsat/gentree/tree/submit_icse21_artifact
-
 # GenTree
+
+**Note:** The lastest version of this artifact package could be found at https://github.com/unsat/gentree/tree/submit_icse21_artifact
 
 This artifact contains an implementation of the GenTree algorithm and benchmark programs, as described in the paper:
 > KimHao Nguyen and ThanhVu Nguyen. 2021. GenTree: Using Decision Trees to Learn Interactions for Configurable Software. In International Conference on Software Engineering.
