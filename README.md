@@ -56,8 +56,8 @@ cd ~/gentree/wd
 
 ## Table II
 ```bash
-./scripts/viewcsv.sh res/Analyze/stat/id.csv                   # Detailed view of one benchmark
-./scripts/summary.sh res/Analyze/stat | ./scripts/viewcsv.sh   # Summary view of all benchmarks
+./scripts/viewcsv.sh res/Analyze/stat/id.csv  # Detailed view of one benchmark
+./scripts/viewcsv.sh res/Analyze/stat         # Summary view of all benchmarks
 ```
 | column       | Table II column      | Desciption                                  |
 | ------------ | -------------------- | ------------------------------------------- |
@@ -74,7 +74,7 @@ cd ~/gentree/wd
 | median_len   | inter. len / median  | median interaction len                      |
 
 ```bash
-./scripts/summary.sh res/Analyze/cmin MIN | ./scripts/viewcsv.sh
+./scripts/viewcsv.sh res/Analyze/cmin MIN
 ```
 | column | Table II column | Desciption                                      |
 | ------ | --------------- | ----------------------------------------------- |
@@ -82,7 +82,7 @@ cd ~/gentree/wd
 
 ## Table III
 ```bash
-./scripts/summary.sh res/Analyze/mcc | ./scripts/viewcsv.sh
+./scripts/viewcsv.sh res/Analyze/mcc
 ```
 | column           | Table III(a) column | Desciption                                              |
 | ---------------- | ------------------- | ------------------------------------------------------- |
@@ -90,7 +90,7 @@ cd ~/gentree/wd
 | cnt_exact        | inter. / exact      | number of exact interactions compared to groundtruth    |
 | cnt_interactions | inter. / total      | total # of interactions                                 |
 ```bash
-./scripts/summary.sh res/Analyze/stat_full | ./scripts/viewcsv.sh
+./scripts/viewcsv.sh res/Analyze/stat_full
 ```
 | column       | Table III(b) column | Desciption                                      |
 | ------------ | ------------------- | ----------------------------------------------- |
