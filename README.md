@@ -49,15 +49,17 @@ cd ~/gentree/wd
 # Interpret data
 
 **General notes:**
-- Replace `id` in the commands below by the desired program name (e.g., `id`, `uname`, `cat`, ...).
 - `./scripts/viewcsv.sh` allows using arrow keys (up/down/left/right) to navigate a pretty-printed .csv file. Press `q` to exit.
 - Each benchmark program is run 11 times with different seeds. The result presented in the paper is the median values from those runs.
 - The GenTree implementation and benchmark programs has some undetermistic components, so sometimes your results may not match exactly with the results in the paper. However, most of the time, they should be close or match exactly.
 
 ## Table II
 ```bash
-./scripts/viewcsv.sh res/Analyze/stat/id.csv  # Detailed view of one benchmark
-./scripts/viewcsv.sh res/Analyze/stat         # Summary view of all benchmarks
+# Detailed view of one benchmark. Replace `id` by the desired program name.
+./scripts/viewcsv.sh res/Analyze/stat/id.csv
+
+# Summary view of all benchmarks
+./scripts/viewcsv.sh res/Analyze/stat
 ```
 | column       | Table II column      | Desciption                                  |
 | ------------ | -------------------- | ------------------------------------------- |
