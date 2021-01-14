@@ -6,7 +6,12 @@ The development and experiment environment is provided as a single Docker image 
 - Docker (tested with Docker 19.03.14 and 20.10.1).
   - Make sure you can run `docker run hello-world` successfully on the host machine.
 
-**2. Run container:**
+**2. Pull Docker image:**
+```bash
+docker pull unsatx/gentree_docker:icse21
+```
+
+**3. Run container:**
 ```bash
 docker run -it --rm --tmpfs /mnt/ramdisk unsatx/gentree_docker:icse21 bash
 ```
@@ -15,7 +20,7 @@ Alternatively, you could use fish shell inside container:
 docker run -it --rm --tmpfs /mnt/ramdisk unsatx/gentree_docker:icse21 fish
 ```
 
-**3. Test GenTree (inside container):**
+**4. Test GenTree (inside container):**
 ```bash
 cd ~/gentree/wd
 
@@ -24,7 +29,6 @@ cd ~/gentree/wd
 
 ./gt -J2 -cx -GF 2/id             # coreutils `id` (C)
 ./gt -J2 -cx -YF 2/vsftpd         # vsftpd (Otter)
-./gt -J2 -cx -GF 2/grin -j 8      # grin (Python), using 8 cores (maybe slow)
 ```
 
 **Note:** if you get permission error on directory `/mnt/ramdisk` while running GenTree, run the following command inside the container: `sudo chmod 777 -R /mnt/ramdisk`
@@ -39,6 +43,7 @@ If GenTree is working correctly, for each interaction, it outputs:
 
 ```
 $ ./gt -J2 -cx -BF @ex_paper
+
 (...)
 # seed = 123, repeat_id = 0, thread_id = 0
 #      171    9    9 |     0    -1 |  0    6 |     0     0      0 | 5bfa86673df79d5874cfa166ffc74067

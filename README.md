@@ -9,42 +9,51 @@ The full paper could be found here: [gentree-icse21.pdf](https://github.com/unsa
 
 # Benchmark
 
-1. **Setup and run the Docker container** as described in INSTALL file.
+1. **Setup and run the Docker container** as described in INSTALL.pdf file.
 2. **Choose the benchmark suite:**
-   - **Fast** (run only `id, uname, cat, mv, ln, date, join, vsftpd`): takes around 3 minutes on an 8-core i9-9880H @ 2.30GHz laptop with 64GB RAM.
-   - **All** (run all benchmarks): takes around 26 hours on a 64-core AMD Ryzen Threadripper 3990X @ 2.9 GHz workstation with 64GB RAM.
+   - **"fast" benchmark suite:**
+     - Run only `id, uname, cat, mv, ln, date, join, vsftpd`.
+     - Takes ~3 mins on an Intel i9-9880H 8-core @ 2.30GHz laptop with 64GB RAM.
+   - **"all" benchmark suite**:
+     - Run all benchmarks.
+     - Takes ~26 hours on a AMD Ryzen Threadripper 3990X 64-core @ 2.9 GHz workstation with 64GB RAM.
 3. **Run benchmark:**
 ```bash
 cd ~/gentree/wd
 
 # Check that GenTree is working properly.
-# The output should look similar to the one listed in INSTALL file.
+# The output should look similar to the one listed in INSTALL.pdf file.
 # If got "Permission error", run `sudo chmod 777 -R /mnt/ramdisk` and try again.
 ./gt -J2 -cx -GF 2/id
 
 # Clean up old results
 ./scripts/bm.sh --clean
 
-# If you want to run the "fast" benchmark suite
+# If you want to run the "fast" benchmark suite.   ~3 mins on i9-9880H.
 ./scripts/bm.sh --fast --bm
-# If you want to run the "all" benchmark suite
+# Or if you want to run the "all" benchmark suite. ~26 hours on Ryzen 3990X.
 ./scripts/bm.sh --all --bm
 ```
 4. **Analyze data:**
 ```bash
 # Run analysis for Table II, III
+#   "fast" benchmark suite: ~5s  on i9-9880H.
+#   "all"  benchmark suite: ~60s on Ryzen 3990X.
 ./scripts/bm.sh --all --analyze-all
 
-# Run analysis for Fig 8 (optional, may take upto 30 minutes)
+# Run analysis for Fig 8 (optional, ~30 mins on Ryzen 3990X).
 ./scripts/bm.sh --all --analyze-progress
-
-# Check result to make sure the analysis finished successfully
-./scripts/viewcsv.sh res/Analyze/mcc/id.csv
 ```
-
 
 **Note:** If you encounter "Duplicated expression" error while running analysis, run
 `./scripts/bm.sh --bm --keep-cachedb ls` (replace `ls` by the name of the failed program, most likely `sort` or `ls`). The root cause was because Z3 sometimes simplifies incorrecly a complex formula at the final stage. The command above runs GenTree again using the same traces (coverage information) as the previous runs.
+
+5. **Check results:**
+```bash
+./scripts/viewcsv.sh res/Analyze/mcc
+```
+![](screenshot_analysis.png)
+If everything works correctly, the command above should show something similar to the picture.
 
 # Interpret data
 
