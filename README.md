@@ -62,7 +62,6 @@ If everything works correctly, the command above should show something similar t
 
 **General notes:**
 - `./scripts/viewcsv.sh` allows using arrow keys (up/down/left/right) to navigate a pretty-printed .csv file. Press `q` to exit.
-- Each benchmark program is run 11 times with different seeds. The result presented in the paper is the median values from those runs.
 - The GenTree implementation and benchmark programs has some undetermistic components, so sometimes your results may not match exactly with the results in the paper. However, most of the time, they should be close or match exactly.
 
 ## Table II
