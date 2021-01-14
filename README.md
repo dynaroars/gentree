@@ -49,7 +49,7 @@ cd ~/gentree/wd
 ```
 
 **Note:** If you encounter "Duplicated expression" error while running analysis, run
-`./scripts/bm.sh --bm --keep-cachedb ls` (replace `ls` by the name of the failed program, most likely `sort` or `ls`). The root cause was because Z3 sometimes simplifies incorrecly a complex formula at the final stage. The command above runs GenTree again using the same traces (coverage information) as the previous runs.
+`./scripts/bm.sh --bm --keep-cachedb ls` (replace `ls` by the name of the failed program), and then run the analysis again. The root cause was because Z3 sometimes simplifies incorrecly a complex formula at the final stage. The command above runs GenTree again using the same traces (coverage information) as the previous runs.
 
 **5. Check results:**
 ```bash
