@@ -14,7 +14,7 @@ The full paper could be found here: [gentree-icse21.pdf](https://github.com/unsa
 **2. Choose the benchmark suite:**
    - **fast**:
      - Run only `id, uname, cat, mv, ln, date, join, vsftpd`.
-     - Takes ~3 mins on an Intel Core i9-9880H 8-core @ 2.30GHz laptop with 64GB RAM.
+     - Takes ~3 mins on an Intel Core i9-9880H 8-core @ 2.3 GHz laptop with 64GB RAM.
    - **all**:
      - Run all benchmarks.
      - Takes ~26 hours on an AMD Ryzen Threadripper 3990X 64-core @ 2.9 GHz workstation with 64GB RAM.
