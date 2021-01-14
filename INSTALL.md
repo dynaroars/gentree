@@ -31,7 +31,7 @@ cd ~/gentree/wd
 ./gt -J2 -cx -YF 2/vsftpd         # vsftpd (Otter)
 ```
 
-**Note:** if you get permission error on directory `/mnt/ramdisk` while running GenTree, run the following command inside the container: `sudo chmod 777 -R /mnt/ramdisk`
+**Note:** if you get permission error on directory `/mnt/ramdisk` while running GenTree, run `sudo chmod 777 -R /mnt/ramdisk` inside the container.
 
 # Output
 If GenTree is working correctly, for each interaction, it outputs:
