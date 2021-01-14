@@ -37,7 +37,7 @@ If GenTree is working correctly, for each interaction, it outputs:
 - Interaction formula in SMT-LIB v2 format
 - Pre-order traversal of the decision tree
 
-```
+```bash
 $ ./gt -J2 -cx -BF @ex_paper
 (...)
 # seed = 123, repeat_id = 0, thread_id = 0
