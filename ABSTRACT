@@ -1,0 +1,18 @@
+# Artifact Abstract
+
+Paper title:
+    GenTree: Using Decision Trees to Learn Interactions for Configurable Software (#925).
+
+Purpose of the research artifact:
+    The artifact contains the GenTree implementation and the benchmark suite. 
+    It could be used to replicate the results presented in the paper.
+
+Badges:
+    Reusable and Available.
+
+Technology skills assumed by the reviewer:
+    Use Linux-based OS command-line interface (Debian, Ubunutu, etc.) and Docker.
+
+OS/environment: 
+    Linux-based OS with Docker installed.
+    Tested with Docker 20.10.1 on Ubunutu 20.04 and Docker 19.03.14 on Debian 10.7.
