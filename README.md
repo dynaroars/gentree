@@ -37,8 +37,8 @@ cd ~/gentree/wd
 4. **Analyze data:**
 ```bash
 # Run analysis for Table II, III
-#   "fast" benchmark suite: ~5s  on i9-9880H.
-#   "all"  benchmark suite: ~60s on Ryzen 3990X.
+# "fast" benchmark suite: ~5s  on i9-9880H.
+# "all"  benchmark suite: ~60s on Ryzen 3990X.
 ./scripts/bm.sh --all --analyze-all
 
 # Run analysis for Fig 8 (optional, ~30 mins on Ryzen 3990X).
