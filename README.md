@@ -9,15 +9,17 @@ The full paper could be found here: [gentree-icse21.pdf](https://github.com/unsa
 
 # Benchmark
 
-1. **Setup and run the Docker container** as described in INSTALL.pdf file.
-2. **Choose the benchmark suite:**
+**1. Setup and run the Docker container** as described in INSTALL.pdf file.
+
+**2. Choose the benchmark suite:**
    - **"fast" benchmark suite:**
      - Run only `id, uname, cat, mv, ln, date, join, vsftpd`.
      - Takes ~3 mins on an Intel Core i9-9880H 8-core @ 2.30GHz laptop with 64GB RAM.
    - **"all" benchmark suite**:
      - Run all benchmarks.
      - Takes ~26 hours on an AMD Ryzen Threadripper 3990X 64-core @ 2.9 GHz workstation with 64GB RAM.
-3. **Run benchmark:**
+
+**3. Run benchmark:**
 ```bash
 cd ~/gentree/wd
 
@@ -34,7 +36,8 @@ cd ~/gentree/wd
 # Or if you want to run the "all" benchmark suite. ~26 hours on Ryzen 3990X.
 ./scripts/bm.sh --all --bm
 ```
-4. **Analyze data:**
+
+**4. Analyze data:**
 ```bash
 # Run analysis for Table II, III
 # "fast" benchmark suite: ~5s  on i9-9880H.
@@ -48,7 +51,7 @@ cd ~/gentree/wd
 **Note:** If you encounter "Duplicated expression" error while running analysis, run
 `./scripts/bm.sh --bm --keep-cachedb ls` (replace `ls` by the name of the failed program, most likely `sort` or `ls`). The root cause was because Z3 sometimes simplifies incorrecly a complex formula at the final stage. The command above runs GenTree again using the same traces (coverage information) as the previous runs.
 
-5. **Check results:**
+**5. Check results:**
 ```bash
 ./scripts/viewcsv.sh res/Analyze/mcc
 ```
