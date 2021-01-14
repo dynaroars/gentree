@@ -55,7 +55,7 @@ cd ~/gentree/wd
 ```bash
 ./scripts/viewcsv.sh res/Analyze/mcc
 ```
-![](screenshot_analysis.png)
+![screenshot_analysis](https://user-images.githubusercontent.com/7188260/104651311-177e8380-567d-11eb-8332-f8452bb45ed2.png)
 If everything works correctly, the command above should show something similar to the picture.
 
 # Interpret data
