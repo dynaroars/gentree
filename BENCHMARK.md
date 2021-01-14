@@ -2,7 +2,7 @@
 
 # Benchmark
 
-**1. Setup and run the Docker container** as described in [INSTALL.md](INSTALL.md) file.
+**1. Setup and run the Docker container** as described in [README.md](README.md) file.
 
 **2. Choose the benchmark suite:**
    - **fast**:
@@ -17,7 +17,7 @@
 cd ~/gentree/wd
 
 # Check that GenTree is working properly.
-# The output should look similar to the one listed in INSTALL.pdf file.
+# The output should look similar to the one listed in README.md file.
 # If got "Permission error", run `sudo chmod 777 -R /mnt/ramdisk` and try again.
 ./gt -J2 -cx -GF 2/id
 
