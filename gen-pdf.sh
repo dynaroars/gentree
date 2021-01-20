@@ -15,3 +15,4 @@ gen REQUIREMENTS
 gen STATUS
 
 cp LICENSE $DEST/LICENSE
+cp icse2021-paper925.pdf $DEST/icse2021-paper925.pdf
