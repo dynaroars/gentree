@@ -4,6 +4,7 @@ This artifact contains an implementation of the GenTree algorithm and benchmark 
 > KimHao Nguyen and ThanhVu Nguyen. 2021. GenTree: Using Decision Trees to Learn Interactions for Configurable Software. In International Conference on Software Engineering.
 
 The full paper could be found here: [gentree-icse21.pdf](https://github.com/unsat/gentree/releases/download/submit_icse21/gentree-icse21.pdf).
+The repo snapshot is available at DOI [10.5281/zenodo.4514687](https://zenodo.org/record/4514687).
 
 # Quick Start
 The development and experiment environment is provided as a single Docker image at `unsatx/gentree_docker:icse21`.
